@@ -1,155 +1,101 @@
-define(['../node_modules/ramda/dist/ramda'], function(R){
+define([
+	'../node_modules/ramda/dist/ramda', 
+	'../node_modules/baconjs/dist/Bacon', 
+	'./curve'
+	], function(
+		R,
+		B,
+		curve
+	){
 	'use strict';
 
-	var canvas = document.getElementsByTagName('canvas')[0],
-		context = canvas.getContext('2d');
-
-	var input = [7948,3201,2760,7062,10007,5881,13857,1931],
-		//transforming from original dimensions of 16000 x 9000 to 800 x 450
-		pts = R.map(R.compose(Math.floor, R.flip(R.divide)(20)), input);
-
-	var tension = 0.5,
-		segments = input.length*2;
-
-// var angle =function (_pts) {
-
-// 	var p0 = { x : _pts[0], y : _pts[1] },
-// 		c = { x : _pts[2], y : _pts[3] },
-// 		p1 = { x : _pts[4], y : _pts[5] };
-
-//     var p0c = Math.sqrt(Math.pow(c.x-p0.x,2)+
-//                         Math.pow(c.y-p0.y,2)); // p0->c (b)   
-//     var p1c = Math.sqrt(Math.pow(c.x-p1.x,2)+
-//                         Math.pow(c.y-p1.y,2)); // p1->c (a)
-//     var p0p1 = Math.sqrt(Math.pow(p1.x-p0.x,2)+
-//                          Math.pow(p1.y-p0.y,2)); // p0->p1 (c)
-//     var rads = Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c));
-
-//     return rads*(180/Math.PI);
-// };
-
-var curve = function(points, tension, segments, close) {
-
-	'use strict';
-
-	var defaults = {
-		tension : 0.5,
-		segments : 25,
-		close : false
-	},
-	tension = (typeof tension === 'number') ? tension : defaults.tension,
-	segments = (typeof segments === 'number') ? segments : defaults.segments;
-
-	var pts,															// for cloning point array
-		i = 1,
-		l = points.length,
-		rPos = 0,
-		rLen = (l-2) * segments + 2 + (close ? 2 * segments: 0),
-		res = new Float32Array(rLen),
-		cache = new Float32Array((segments + 2) * 4),
-		cachePtr = 4;
-
-	pts = points.slice(0);
-
-	if (close) {
-		pts.unshift(points[l - 1]);										// insert end point as first point
-		pts.unshift(points[l - 2]);
-		pts.push(points[0], points[1]); 								// first point as last point
-	}
-	else {
-		pts.unshift(points[1]);											// copy 1. point and insert at beginning
-		pts.unshift(points[0]);
-		pts.push(points[l - 2], points[l - 1]);							// duplicate end-points
-	}
-
-	// cache inner-loop calculations as they are based on t alone
-	cache[0] = 1;														// 1,0,0,0
-
-	for (; i < segments; i++) {
-
-		var st = i / segments,
-			st2 = st * st,
-			st3 = st2 * st,
-			st23 = st3 * 2,
-			st32 = st2 * 3;
-
-		cache[cachePtr++] =	st23 - st32 + 1;							// c1
-		cache[cachePtr++] =	st32 - st23;								// c2
-		cache[cachePtr++] =	st3 - 2 * st2 + st;							// c3
-		cache[cachePtr++] =	st3 - st2;									// c4
-	}
-
-	cache[++cachePtr] = 1;												// 0,1,0,0
-
-	// calc. points
-	parse(pts, cache, l, tension);
-
-	if (close) {
-		pts = [];
-		pts.push(points[l - 4], points[l - 3],
-				 points[l - 2], points[l - 1], 							// second last and last
-				 points[0], points[1],
-				 points[2], points[3]); 								// first and second
-		parse(pts, cache, 4, tension);
-	}
-
-	function parse(pts, cache, l, tension) {
-
-		for (var i = 2, t; i < l; i += 2) {
-
-			var pt1 = pts[i],
-				pt2 = pts[i+1],
-				pt3 = pts[i+2],
-				pt4 = pts[i+3],
-
-				t1x = (pt3 - pts[i-2]) * tension,
-				t1y = (pt4 - pts[i-1]) * tension,
-				t2x = (pts[i+4] - pt1) * tension,
-				t2y = (pts[i+5] - pt2) * tension,
-				c = 0, c1, c2, c3, c4;
-
-			for (t = 0; t < segments; t++) {
-
-				c1 = cache[c++];
-				c2 = cache[c++];
-				c3 = cache[c++];
-				c4 = cache[c++];
-
-				res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-				res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-			}
-		}
-	}
-
-	// add last point
-	l = close ? 0 : points.length - 2;
-	res[rPos++] = points[l++];
-	res[rPos] = points[l];
-
-	return res;
-}
-
-var ctx = R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context)),
-	setCtx = function(key, val){
-		return R.prop(key, context) ? function(val){ return context[key] = val; } : function(){ return; };
-	},
-	makePairs = function(b, a){ 
-		if(b[b.length-1] && b[b.length-1].length < 2) 
-			b[b.length-1].push(a); 
-		else b.push([a]); 
-
-		return b; 
-	},
-	drawPts = R.compose(R.map(R.apply(ctx('lineTo'))), R.reduce(makePairs, [])),
+	var $canvas = document.getElementsByTagName('canvas')[0],
+		context = $canvas.getContext('2d'),
+		canvas = R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context)),
+		setContext = function(val, key, obj){
+			return R.prop(key, context) ? context[key] = val : null;
+		},
+		configure = R.mapObjIndexed(setContext),
+		//partitions an array into chunks
+		splitEvery = R.curry(function(amount, list){
+			//recursive function
+			var split = function(memo){
+				  return R.ifElse(R.compose(R.flip(R.gt)(amount), R.length, R.last), 
+				                  R.converge(R.concat, [R.compose(R.of, R.head), R.compose(split, R.splitAt(amount), R.last)]),
+				                  R.identity)(memo);
+				};
+			// check input and start recursion
+			return list && list.length > amount ? R.compose(split, R.splitAt(amount))(list) : list;
+		}),
+		//split array into chunks of two, and map to lineTo for drawing
+		drawSpline = R.compose(R.map(R.apply(canvas('lineTo'))), splitEvery(2)),
+		drawVertices = R.compose(R.chain(R.apply(canvas('rect'))),  R.map(R.compose(R.flip(R.concat)([6, 6]), R.map(R.flip(R.subtract)(3)))), splitEvery(2));
 	
-	res = curve(pts, tension, segments, true);
+	//DRAW
+	/////////////////////////////////////////////////////////////////////////
+	var renderCurve = function(points, options){
+			configure(options);
+			canvas('beginPath')();
+			drawSpline( points );
+			canvas('stroke')();
+		},
+		renderVertices = function(points, options){
+			configure(options);
+			canvas('beginPath')();
+			drawVertices( points );
+			canvas('stroke')();			
+		},
+		render = function(points, options){
+			var points = curve(points, options['curve']);
 
-setCtx('strokeStyle')('#6677cc');
-setCtx('lineWidth')(3);
-ctx('beginPath')();
-ctx('moveTo')(pts[0], pts[1]);
-drawPts(res);
-ctx('stroke')();
+			renderCurve(points, options['canvas']);
+			renderVertices(points, options['vertex']);
+		},
+		
+		testInput = [7948,3201,2760,7062,10007,5881,13857,1931],
+		//transforming from original dimensions of 16000 x 9000 to 800 x 450
+		testPoints = R.map(R.compose(Math.floor, R.flip(R.divide)(20)), testInput),
+
+		testOptions = {
+			canvas : {
+				'strokeStyle' : '#f3f3f3',
+				'lineWidth' : 3
+			},
+			curve : {
+				tension : 0.5,
+				segments : testPoints.length*2,
+				closed : true
+			},
+			vertex : {
+				'strokeStyle' : 'rgba(0,0,0,0.7)',
+				'lineWidth' : 1
+			}
+		};
+
+	render(testPoints, testOptions);
+
+	Bacon.fromEvent($canvas, 'click').onValue(function(event){
+		var x = event.clientX,
+			y = event.clientY;
+
+		console.log(event);
+	});
+	// var angle =function (_pts) {
+
+	// 	var p0 = { x : _pts[0], y : _pts[1] },
+	// 		c = { x : _pts[2], y : _pts[3] },
+	// 		p1 = { x : _pts[4], y : _pts[5] };
+
+	//     var p0c = Math.sqrt(Math.pow(c.x-p0.x,2)+
+	//                         Math.pow(c.y-p0.y,2)); // p0->c (b)   
+	//     var p1c = Math.sqrt(Math.pow(c.x-p1.x,2)+
+	//                         Math.pow(c.y-p1.y,2)); // p1->c (a)
+	//     var p0p1 = Math.sqrt(Math.pow(p1.x-p0.x,2)+
+	//                          Math.pow(p1.y-p0.y,2)); // p0->p1 (c)
+	//     var rads = Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c));
+
+	//     return rads*(180/Math.PI);
+	// };
 
 });
 

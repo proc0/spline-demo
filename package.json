@@ -4,6 +4,7 @@
   "description": "Cardinal spline demo using functional JS",
   "main": "index.js",
   "dependencies": {
+    "baconjs": "^0.7.84",
     "ramda": "^0.20.1",
     "requirejs": "^2.2.0"
   },
