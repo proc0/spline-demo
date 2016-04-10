@@ -1,101 +1,97 @@
 define([
 	'../node_modules/ramda/dist/ramda', 
 	'../node_modules/baconjs/dist/Bacon', 
-	'./curve'
+	'./view'
 	], function(
 		R,
 		B,
-		curve
+		view
 	){
 	'use strict';
 
 	var $canvas = document.getElementsByTagName('canvas')[0],
 		context = $canvas.getContext('2d'),
-		canvas = R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context)),
-		setContext = function(val, key, obj){
-			return R.prop(key, context) ? context[key] = val : null;
+
+		isHovering = function(mouseXY, points){
+			var x = mouseXY[0],
+				y = mouseXY[1],
+				area = 10,
+				
+				_sub = R.compose(R.flip(R.gt), R.flip(R.subtract)(area)),
+				_add = R.compose(R.flip(R.lt), R.flip(R.add)(area)),
+				area_axis = R.converge(Array, [_sub, _add]),
+				area_curve = R.compose(R.map(R.map(area_axis))),
+				
+				check_axis = R.compose(R.map, R.flip(R.apply), R.of),
+				check_curve = R.converge(R.concat, [R.compose(check_axis(x), R.head), R.compose(check_axis(y), R.last)]),
+				
+				calculate = R.compose(R.map(check_curve), area_curve),
+				
+				atLeast = R.compose(R.apply(R.compose), R.append(R.filter(R.identity)), R.append(R.length), R.of, R.equals), 
+				checkLength = R.compose(atLeast(1), R.map(atLeast(4)));
+
+			return checkLength(calculate(points));
 		},
-		configure = R.mapObjIndexed(setContext),
-		//partitions an array into chunks
-		splitEvery = R.curry(function(amount, list){
-			//recursive function
-			var split = function(memo){
-				  return R.ifElse(R.compose(R.flip(R.gt)(amount), R.length, R.last), 
-				                  R.converge(R.concat, [R.compose(R.of, R.head), R.compose(split, R.splitAt(amount), R.last)]),
-				                  R.identity)(memo);
-				};
-			// check input and start recursion
-			return list && list.length > amount ? R.compose(split, R.splitAt(amount))(list) : list;
-		}),
-		//split array into chunks of two, and map to lineTo for drawing
-		drawSpline = R.compose(R.map(R.apply(canvas('lineTo'))), splitEvery(2)),
-		drawVertices = R.compose(R.chain(R.apply(canvas('rect'))),  R.map(R.compose(R.flip(R.concat)([6, 6]), R.map(R.flip(R.subtract)(3)))), splitEvery(2));
 	
-	//DRAW
-	/////////////////////////////////////////////////////////////////////////
-	var renderCurve = function(points, options){
-			configure(options);
-			canvas('beginPath')();
-			drawSpline( points );
-			canvas('stroke')();
-		},
-		renderVertices = function(points, options){
-			configure(options);
-			canvas('beginPath')();
-			drawVertices( points );
-			canvas('stroke')();			
-		},
-		render = function(points, options){
-			var points = curve(points, options['curve']);
-
-			renderCurve(points, options['canvas']);
-			renderVertices(points, options['vertex']);
-		},
-		
-		testInput = [7948,3201,2760,7062,10007,5881,13857,1931],
-		//transforming from original dimensions of 16000 x 9000 to 800 x 450
-		testPoints = R.map(R.compose(Math.floor, R.flip(R.divide)(20)), testInput),
-
-		testOptions = {
-			canvas : {
-				'strokeStyle' : '#f3f3f3',
-				'lineWidth' : 3
-			},
+		points = [],
+		options = {
 			curve : {
 				tension : 0.5,
-				segments : testPoints.length*2,
+				segments : 0,
 				closed : true
 			},
-			vertex : {
-				'strokeStyle' : 'rgba(0,0,0,0.7)',
-				'lineWidth' : 1
+			style : {
+				curve : {
+					'strokeStyle' : '#f0f0f0',
+					'lineWidth' : 2
+				},				
+				verts : {
+					'strokeStyle' : '#aa0000',
+					'lineWidth' : 1
+				}
 			}
 		};
 
-	render(testPoints, testOptions);
+	B.fromEvent($canvas, 'dblclick').onValue(function(context, event){
+		
+		var client = context.canvas.getBoundingClientRect(),
+			x = event.x - client.left,
+			y = event.y - client.top,
+			w = context.canvas.width,
+			h = context.canvas.height;
 
-	Bacon.fromEvent($canvas, 'click').onValue(function(event){
-		var x = event.clientX,
-			y = event.clientY;
+		context.clearRect(0, 0, w, h);
 
-		console.log(event);
-	});
-	// var angle =function (_pts) {
+		points.push(x, y);
+		options.curve.segments = points.length*2;
 
-	// 	var p0 = { x : _pts[0], y : _pts[1] },
-	// 		c = { x : _pts[2], y : _pts[3] },
-	// 		p1 = { x : _pts[4], y : _pts[5] };
+		view.render(context, points, options);
+		// isHovering([x,y], view.chunk(2)(points));
 
-	//     var p0c = Math.sqrt(Math.pow(c.x-p0.x,2)+
-	//                         Math.pow(c.y-p0.y,2)); // p0->c (b)   
-	//     var p1c = Math.sqrt(Math.pow(c.x-p1.x,2)+
-	//                         Math.pow(c.y-p1.y,2)); // p1->c (a)
-	//     var p0p1 = Math.sqrt(Math.pow(p1.x-p0.x,2)+
-	//                          Math.pow(p1.y-p0.y,2)); // p0->p1 (c)
-	//     var rads = Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c));
+	}, context);
 
-	//     return rads*(180/Math.PI);
-	// };
+	B.fromEvent($canvas, 'click').onValue(function(context, event){
+		
+		var client = context.canvas.getBoundingClientRect(),
+			x = event.x - client.left,
+			y = event.y - client.top,
+			w = context.canvas.width,
+			h = context.canvas.height,
+			_points = points.length > 2 ? view.chunk(2)(points) : [points],
+			hover = points.length ? isHovering([x,y], _points) : false;
+
+		if(hover){
+			console.log(event);
+		}
+
+		// context.clearRect(0, 0, w, h);
+
+		// points.push(x, y);
+		// options.curve.segments = points.length*2;
+
+		// view.render(context, points, options);
+
+	}, context);
 
 });
 

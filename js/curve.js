@@ -10,7 +10,7 @@ define(['../node_modules/ramda/dist/ramda'], function(R){
 				segments : 25,
 				closed : false
 			}, curveOptions),
-
+			//TODO : transform into functional style
 			parse = R.curry(function(options, points) {
 
 				if(!points || !points.length)
