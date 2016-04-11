@@ -1,5 +1,115 @@
-define(['../node_modules/ramda/dist/ramda'], function(R){
-	
+define([
+	'../node_modules/ramda/dist/ramda',
+	'./point'
+	], function(
+		R,
+		point
+	){
+	'use strict';
+
+	var cache = [],
+		segments = 0,
+		// shortcut functions
+		flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),
+		cacheSegments = function(segments){
+			var _cache = new Float32Array((segments + 2) * 4),
+				cachePtr = 4;
+
+			// cache inner-loop calculations as they are based on t alone
+			_cache[0] = 1;														// 1,0,0,0
+
+			for (var i = 1; i < segments; i++) {
+
+				var st = i / segments,
+					st2 = st * st,
+					st3 = st2 * st,
+					st23 = st3 * 2,
+					st32 = st2 * 3;
+
+				_cache[cachePtr++] = st23 - st32 + 1;							// c1
+				_cache[cachePtr++] = st32 - st23;								// c2
+				_cache[cachePtr++] = st3 - 2 * st2 + st;						// c3
+				_cache[cachePtr++] = st3 - st2;									// c4
+			}
+
+			_cache[++cachePtr] = 1;												// 0,1,0,0
+
+			return _cache;
+		},
+		//TODO : transform into functional style
+		parse = R.curry(function(options, _points) {
+
+			// if(!points || !points.length)
+			// 	return points;
+
+			var segments = options.segments,
+				tension = options.tension,
+				closed = options.closed,
+				points = R.compose(flatten, R.map(point.getPoint))(_points),
+				res = [];
+
+			// for (var i = 0; i < points.length; i++) {
+
+			// 	var p = points[i],
+			// 		p1 = points[i+1] || { x : 0, y : 0 },
+			// 		p_1 = points[i-1] || { x : 0, y : 0 },
+			// 		p2 = points[i+2] || { x : 0, y : 0 },
+			// 		pt1 = p.x,
+			// 		pt2 = p.y,
+			// 		pt3 = p1.x,
+			// 		pt4 = p1.y,
+
+			// 		t1x = (pt3 - p_1.x) * tension,
+			// 		t1y = (pt4 - p_1.y) * tension,
+			// 		t2x = (p2.x - pt1) * tension,
+			// 		t2y = (p2.y - pt2) * tension,
+			// 		c = 0, c1, c2, c3, c4;
+
+			// 	for (var t = 0; t < segments; t++) {
+
+			// 		c1 = cache[c++];
+			// 		c2 = cache[c++];
+			// 		c3 = cache[c++];
+			// 		c4 = cache[c++];
+
+			// 		var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+			// 		// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+			// 		var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+			// 		// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+			// 		res.push(new point(_x, _y));
+			// 	}
+			// }
+
+			for (var i = 2; i < points.length; i += 2) {
+
+				var pt1 = points[i],
+					pt2 = points[i+1],
+					pt3 = points[i+2],
+					pt4 = points[i+3],
+					t1x = (pt3 - points[i-2]) * tension,
+					t1y = (pt4 - points[i-1]) * tension,
+					t2x = (points[i+4] - pt1) * tension,
+					t2y = (points[i+5] - pt2) * tension,
+					c = 0, c1, c2, c3, c4;
+
+				for (var t = 0; t < segments; t++) {
+
+					c1 = cache[c++];
+					c2 = cache[c++];
+					c3 = cache[c++];
+					c4 = cache[c++];
+
+					var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+					// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+					var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+					// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+					res.push(new point(_x, _y));
+				}
+			}
+
+			return res;
+		});			
+
 	return function(curvePoints, curveOptions) {
 		
 		if(!curvePoints || !curvePoints.length)
@@ -8,86 +118,25 @@ define(['../node_modules/ramda/dist/ramda'], function(R){
 		var options = R.merge({ //defaults
 				tension : 0.5,
 				segments : 25,
-				closed : false
+				closed : false,
 			}, curveOptions),
-			//TODO : transform into functional style
-			parse = R.curry(function(options, points) {
-
-				if(!points || !points.length)
-					return points;
-
-				var segments = options.segments,
-					tension = options.tension,
-					closed = options.closed,
-
-					cache = new Float32Array((segments + 2) * 4),
-					cachePtr = 4;
-
-				// cache inner-loop calculations as they are based on t alone
-				cache[0] = 1;														// 1,0,0,0
-
-				for (var i = 1; i < segments; i++) {
-
-					var st = i / segments,
-						st2 = st * st,
-						st3 = st2 * st,
-						st23 = st3 * 2,
-						st32 = st2 * 3;
-
-					cache[cachePtr++] =	st23 - st32 + 1;							// c1
-					cache[cachePtr++] =	st32 - st23;								// c2
-					cache[cachePtr++] =	st3 - 2 * st2 + st;							// c3
-					cache[cachePtr++] =	st3 - st2;									// c4
-				}
-
-				cache[++cachePtr] = 1;												// 0,1,0,0
-
-				var length = (points.length - 2) * segments + 2 + (closed ? 2 * segments: 0),
-					res = new Float32Array(length),
-					rPos = 0;
-
-				for (var i = 2, t; i < length; i += 2) {
-
-					var pt1 = points[i],
-						pt2 = points[i+1],
-						pt3 = points[i+2],
-						pt4 = points[i+3],
-
-						t1x = (pt3 - points[i-2]) * tension,
-						t1y = (pt4 - points[i-1]) * tension,
-						t2x = (points[i+4] - pt1) * tension,
-						t2y = (points[i+5] - pt2) * tension,
-						c = 0, c1, c2, c3, c4;
-
-
-					for (t = 0; t < segments; t++) {
-
-						c1 = cache[c++];
-						c2 = cache[c++];
-						c3 = cache[c++];
-						c4 = cache[c++];
-
-						res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-						res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-					}
-				}
-
-				return res;
-			}),
-			// shortcut functions
-			flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),			
-			render = R.compose(parse(options), flatten),
 			//define key points
 			p 	= curvePoints,
 			l 	= p.length,
-			p1 	= [p[0], p[1]], //first point
-			p2 	= [p[2], p[3]], //second point
-			p_2 = [p[l - 4], p[l - 3]], //second to last
-			p_1 = [p[l - 2], p[l - 1]], //last point
-			// points are parsed in diff order depending on whether curve is closed
-			// for a closed curve, calculate last segment, and flip endpoints for main curve
-			// -------------------->  [ mainCurve, closingCurve, closingPoint ]
-			points = options.closed ? [ render(p_1, p, p1), render(p_2, p_1, p1, p2), p1 ]
+			p1 = p[0],
+			p2 = p[1],
+			p_2 = p[l-2],
+			p_1 = p[l-1],
+			render = R.compose(parse(options), flatten);
+
+		if(segments !== options.segments){
+			cache = cacheSegments(options.segments);
+			segments = options.segments;
+		}
+		// points are parsed in diff order depending on whether curve is closed
+		// for a closed curve, calculate last segment, and flip endpoints for main curve
+		// -------------------->  [ mainCurve, closingCurve, closingPoint ]
+		var points = options.closed ? [ render(p_1, p, p1), render(p_2, p_1, p1, p2), p1 ]
 						 			: [ render(p1, p, p_1), p_1 ];
 
 		return flatten( points );
