@@ -77,13 +77,16 @@ define([
 		//partitions an array into chunks
 		chunk : R.curry(function(amount, list){
 			//recursive function
-			var split = function(memo){
-					return R.ifElse(R.compose(R.flip(R.gt)(amount), R.length, R.last), 
-									R.converge(R.concat, [R.compose(R.of, R.head), R.compose(split, R.splitAt(amount), R.last)]),
-									R.identity)(memo);
-				};
+			var split = function(list){
+					var step = R.compose(split, R.splitAt(amount), R.last),
+						recurse = R.converge(R.concat, [R.compose(R.of, R.head), step]),
+						hasLength = R.compose(R.flip(R.gt)(amount), R.length, R.last);
+						
+					return R.ifElse(hasLength, recurse, R.identity)(list);
+				},
+				init = R.compose(split, R.splitAt(amount));
 			// check input and start recursion
-			return (list && list.length > amount) ? R.compose(split, R.splitAt(amount))(list) : (list.length === amount) ? [list] : list;
+			return (list && list.length > amount) ? init(list) : (list.length === amount) ? [list] : list;
 		}),
 
 		findPoint : function(mouse, points){
