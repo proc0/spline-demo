@@ -81,7 +81,7 @@ define([
 					var step = R.compose(split, R.splitAt(amount), R.last),
 						recurse = R.converge(R.concat, [R.compose(R.of, R.head), step]),
 						hasLength = R.compose(R.flip(R.gt)(amount), R.length, R.last);
-						
+
 					return R.ifElse(hasLength, recurse, R.identity)(list);
 				},
 				init = R.compose(split, R.splitAt(amount));
@@ -89,7 +89,7 @@ define([
 			return (list && list.length > amount) ? init(list) : (list.length === amount) ? [list] : list;
 		}),
 
-		findPoint : function(mouse, points){
+		findPoint : R.curry(function(mouse, points){
 			var x = mouse.x,
 				y = mouse.y,
 				area = 10,
@@ -110,22 +110,6 @@ define([
 				extract = R.compose(R.findIndex(R.identity), R.map(atLeast(4)));
 
 			return extract(search_area( points ));
-		}		
+		})	
 	};
-
-	// var angle =function (_pts) {
-	// 	var p0 = { x : _pts[0], y : _pts[1] },
-	// 		c = { x : _pts[2], y : _pts[3] },
-	// 		p1 = { x : _pts[4], y : _pts[5] };
-
-	//     var p0c = Math.sqrt(Math.pow(c.x-p0.x,2)+
-	//                         Math.pow(c.y-p0.y,2)); // p0->c (b)   
-	//     var p1c = Math.sqrt(Math.pow(c.x-p1.x,2)+
-	//                         Math.pow(c.y-p1.y,2)); // p1->c (a)
-	//     var p0p1 = Math.sqrt(Math.pow(p1.x-p0.x,2)+
-	//                          Math.pow(p1.y-p0.y,2)); // p0->p1 (c)
-	//     var rads = Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c));
-
-	//     return rads*(180/Math.PI);
-	// };
 });

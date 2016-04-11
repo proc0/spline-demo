@@ -7,7 +7,26 @@
 	</head>
 	<body>
 		<main>
-			<canvas width="800" height="450"></canvas>
+			<h1>Cardinal spline with functional JS</h1>
+			<canvas class="noselect" width="800" height="450"></canvas>
+			<div class="options noselect">
+				<label for="tension">Tension:</label>
+				<input id="tension" type="range" value="5" min="-10" max="25"/>
+				<span class="value">0.5</span>
+
+				<label for="segments">Segments:</label>
+				<input id="segments" type="range" value="25" min=1 max=100 />
+				<span class="value">25</span>
+
+				<label for="closed">Closed:</label>
+				<input id="closed" type="checkbox">
+
+				<label for="showPoints">Show Points:</label>
+				<input id="showPoints" type="checkbox" checked>
+
+				<label for="fill">Fill:</label>
+				<input id="fill" type="checkbox">
+			</div>
 		</main>
 	</body>
 </html>

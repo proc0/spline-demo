@@ -13,7 +13,12 @@ define([
 
 	var $canvas = document.getElementsByTagName('canvas')[0],
 		context = $canvas.getContext('2d'),
-
+		getMouse = function(context, event){
+			var client = context.canvas.getBoundingClientRect(),
+				x = event.x - client.left,
+				y = event.y - client.top;
+			return new point(x, y);
+		},
 		points = [],
 		selected = [],
 		options = {
@@ -32,55 +37,37 @@ define([
 					'lineWidth' : 1
 				}
 			}
+		},
+		handlers = {
+			dblclick : function(event){
+			
+				points.push(getMouse(context, event));
+
+				return view.render(context, points, options);
+			},
+			mousemove : function(event){
+
+				if(selected.length > 0){
+
+					points.splice(selected[0], 1, getMouse(context, event));
+					
+					return view.render(context, points, options);
+				}
+			},
+			mousedown : function(event){
+			
+				var search = view.findPoint(getMouse(context, event)),
+					index = points.length ? search(points) : -1;
+
+				return selected.push(index);
+			},
+			mouseup : function(event){ selected = []; },
 		};
 
-	B.fromEvent($canvas, 'dblclick').onValue(function(context, event){
-		
-		var client = context.canvas.getBoundingClientRect(),
-			x = event.x - client.left,
-			y = event.y - client.top;
-
-		points.push(new point(x, y));
-
-		view.render(context, points, options);
-
-	}, context);
-
-	B.fromEvent($canvas, 'mousedown').onValue(function(context, event){
-		
-		var client = context.canvas.getBoundingClientRect(),
-			x = event.x - client.left,
-			y = event.y - client.top,
-			mouse = new point(x, y),
-			pointIndex = points.length ? view.findPoint(mouse, points) : -1;
-
-		if(pointIndex !== -1){
-			selected.push({ index : pointIndex, mouse : mouse });
-		} else {
-			selected = [];
-		}
-
-	}, context);
-
-	B.fromEvent($canvas, 'mouseup').onValue(function(context, event){
-		selected = [];
-	}, context);
-
-	window.onmousemove = function(event){
-
-		if(selected.length > 0){
-
-			var client = context.canvas.getBoundingClientRect(),
-				x = event.x - client.left,
-				y = event.y - client.top,
-				w = context.canvas.width,
-				h = context.canvas.height;
-
-			points.splice(selected[0].index, 1, new point(x, y));
-			
-			view.render(context, points, options);
-		}
-	}
+	B.fromEvent($canvas, 'dblclick').onValue(handlers.dblclick);
+	B.fromEvent($canvas, 'mousedown').onValue(handlers.mousedown);
+	B.fromEvent($canvas, 'mouseup').onValue(handlers.mouseup);
+	B.fromEvent($canvas, 'mousemove').onValue(handlers.mousemove);
 
 });
 

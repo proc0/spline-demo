@@ -1,24 +1,62 @@
 html {
-	background : black;
+	
 	width : 100%;
 	height : 100%;
+
+	font-family : Arial;
+	font-size : 16px;
+
+	background: #888;
+
+}
+
+h1 {
+	font-size : 1.5em;
+	font-weight: normal;
+	color: #222;
 }
 
 main {
 	width: 100%;
-	height: 450px;
 	position: absolute;
 	text-align: center;
-	top: 50%;
-	transform: translateY(-50%);
+	padding: 0 0 5% 0;
+	margin: 0;
+	cursor: default;
 }
 
 body {
 	position: relative;
 	width: 100%;
 	height: 100%;
+	margin: 0;
+	padding: 0;
 }
 
 canvas {
-	background : grey;
+	background : #bababa;
+	cursor: crosshair;
+}
+
+.options {
+	width: 800px;
+	margin: 0 auto;
+	background: #ccc;
+	padding: 1% 0;
+	box-shadow: 0 2px 4px #222;
+
+}
+
+.options input:hover {
+	cursor: pointer
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Chrome/Safari/Opera */
+  -khtml-user-select: none;    /* Konqueror */
+  -moz-user-select: none;      /* Firefox */
+  -ms-user-select: none;       /* IE/Edge */
+  user-select: none;           /* non-prefixed version, currently
+                                  not supported by any browser */
 }
