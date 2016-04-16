@@ -2,12 +2,14 @@ define([
 	'../node_modules/ramda/dist/ramda', 
 	'../node_modules/baconjs/dist/Bacon', 
 	'./curve',
-	'./point'
+	'./point',
+	'./menu'
 	], function(
 		R,
 		B,
 		curve,
-		point
+		point,
+		menu
 	){
 	'use strict';
 
@@ -19,7 +21,7 @@ define([
 				};
 
 			this.canvas = R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
-			this.configure = R.mapObjIndexed(setContext);
+			this.configure = R.mapObjIndexed(setContext);		
 			
 			this.draw = {
 				curve : this.drawCurve.bind(this),
@@ -42,7 +44,7 @@ define([
 			context.clearRect(0, 0, w, h);
 
 			if(points.length > 1){
-				options.curve.segments = points.length * 2;
+				// options.curve.segments = points.length * 2;
 				this.curve = curve( points, options['curve'] );
 				draw('curve')(this.curve);
 			}

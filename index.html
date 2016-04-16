@@ -8,25 +8,34 @@
 	<body>
 		<main>
 			<h1>Cardinal spline with functional JS</h1>
-			<canvas class="noselect" width="800" height="450"></canvas>
-			<div class="options noselect">
-				<label for="tension">Tension:</label>
-				<input id="tension" type="range" value="5" min="-10" max="25"/>
-				<span class="value">0.5</span>
+			
+			<div id="options" class="options noselect">
+				
+				<div class="slider">
+					<div class="component">
+						<div class="label-contain"><label><span class="value"></span></label></div>
+						<input id="segments" type="range" min="1" max="100" />
+					</div>
+					<label for="segments">segments</label>
+				</div>
+				<div class="slider">
+					<div class="component">
+						<div class="label-contain"><label><span class="value"></span></label></div>
+						<input id="tension" type="range" data-fractional="true" min="-10" max="25"/>
+					</div>
+					<label for="tension">tension</label>
+				</div>
 
-				<label for="segments">Segments:</label>
-				<input id="segments" type="range" value="25" min=1 max=100 />
-				<span class="value">25</span>
-
-				<label for="closed">Closed:</label>
+				<label for="closed">close</label>
 				<input id="closed" type="checkbox">
 
-				<label for="showPoints">Show Points:</label>
+				<label for="showPoints">points</label>
 				<input id="showPoints" type="checkbox" checked>
 
-				<label for="fill">Fill:</label>
+				<label for="fill">fill</label>
 				<input id="fill" type="checkbox">
 			</div>
+			<canvas class="noselect" width="800" height="450"></canvas>
 		</main>
 	</body>
 </html>
