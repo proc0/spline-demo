@@ -37,19 +37,32 @@ define([
 
 			var self = this,
 				w = context.canvas.width,
-				h = context.canvas.height,
-				getOpts = R.flip(R.prop)(options.style),
-				draw = R.converge(this.paint, [R.identity, getOpts, R.always(self)]);
+				h = context.canvas.height;
 
 			context.clearRect(0, 0, w, h);
 
+			if(!points || !points.length){
+				var $canvas = document.getElementsByTagName('canvas')[0],
+					helpText = $canvas.innerHTML;
+					
+				self.configure({ 'font' : '24px sans-serif' });
+
+				return self.canvas('fillText')(helpText, (w/2 - (helpText.length*10)/2), h/2);
+			}
+
+			var getOpts = R.flip(R.prop)(options.style),
+				draw = R.converge(this.paint, [R.identity, getOpts, R.always(self)]);
+
 			if(points.length > 1){
-				// options.curve.segments = points.length * 2;
 				this.curve = curve( points, options['curve'] );
 				draw('curve')(this.curve);
 			}
+
+			if(options.curve.fill)
+				self.canvas('fill')();
 			
-			draw('verts')(points);
+			if(options.curve.showPoints)
+				draw('verts')(points);
 		},
 
 		paint : R.curry(function(drawer, options, view, points){

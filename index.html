@@ -3,39 +3,44 @@
 	<head>
 		<title>Spline Demo</title>
 		<link rel="stylesheet" type="text/css" href="css/style.css">
-		<script data-main="js/index" src="node_modules/requirejs/require.js"></script>
 	</head>
 	<body>
 		<main>
-			<h1>Cardinal spline with functional JS</h1>
+			<h1>Canvas Spline Tool Demo</h1>
 			
 			<div id="options" class="options noselect">
 				
 				<div class="slider">
 					<div class="component">
 						<div class="label-contain"><label><span class="value"></span></label></div>
-						<input id="segments" type="range" min="1" max="100" />
+						<input id="segments" type="range" value="12" min="1" max="20" />
 					</div>
 					<label for="segments">segments</label>
 				</div>
 				<div class="slider">
 					<div class="component">
 						<div class="label-contain"><label><span class="value"></span></label></div>
-						<input id="tension" type="range" data-fractional="true" min="-10" max="25"/>
+						<input id="tension" type="range" data-fractional="true" value="50" min="-100" max="100"/>
 					</div>
 					<label for="tension">tension</label>
 				</div>
-
-				<label for="closed">close</label>
-				<input id="closed" type="checkbox">
-
-				<label for="showPoints">points</label>
-				<input id="showPoints" type="checkbox" checked>
-
-				<label for="fill">fill</label>
-				<input id="fill" type="checkbox">
+				<div class="panel">
+					<div class="checkbox">
+						<label for="closed">closed</label>
+						<input id="closed" type="checkbox" checked>
+					</div>
+					<div class="checkbox">
+						<label for="showPoints">points</label>
+						<input id="showPoints" type="checkbox" checked>
+					</div>
+					<div class="checkbox">
+						<label for="fill">fill</label>
+						<input id="fill" type="checkbox">
+					</div>
+				</div>
 			</div>
-			<canvas class="noselect" width="800" height="450"></canvas>
+			<canvas class="noselect" width="800" height="450">Double click to add a point.</canvas>
 		</main>
+		<script data-main="js/index" src="node_modules/requirejs/require.js"></script>
 	</body>
 </html>
