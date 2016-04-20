@@ -1,7 +1,7 @@
 {
-  "name": "spline-demo",
-  "version": "1.0.0",
-  "description": "Cardinal spline demo using functional JS",
+  "name": "2d Spline Curve Editor",
+  "version": "0.1",
+  "description": "Example curve editor using functional JS",
   "main": "index.js",
   "dependencies": {
     "baconjs": "^0.7.84",
