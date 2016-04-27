@@ -15,10 +15,10 @@ define([
 	){
 	'use strict';
 
-	var $canvas 	= document.getElementsByTagName('canvas')[0],
+	var $canvas 	= document.getElementsByTagName('canvas'),
 		$sliders 	= document.getElementsByClassName('slider'),
 		$checkboxes = document.getElementsByClassName('checkbox'),
-		context = $canvas.getContext('2d'),
+		context = $canvas[0].getContext('2d'),
 		options = { //defaults
 			curve : {
 				tension : 0.5,
@@ -48,11 +48,11 @@ define([
 	events.init(context, options);
 	//bind events to its respective handlers
 	//TODO: separate handlers?
-	events.bindElement($canvas, events.canvasEvents);
+	events.bindElements($canvas, events.canvasEvents);
 	events.bindElements($sliders, events.sliderEvents);
 	events.bindElements($checkboxes, events.checkboxEvents);
 
-	return view.render(context);
+	return view.render(context, options);
 
 });
 

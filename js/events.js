@@ -12,88 +12,84 @@ define([
 		menu
 	){
 
+	//closures to keep state
 	var context,
 		options,
 		points = [],
 		selected = [],
+		//calculate mouse X Y
 		getMouse = function(context, event){
 			var client = context.canvas.getBoundingClientRect(),
 				x = event.x - client.left,
 				y = event.y - client.top;
 			return new point(x, y);
-		},
-		mouseHandlers = {
-			mousemove : function(event){
-				var mouse = getMouse(context, event);
-
-				if(selected.length > 0){
-
-					points.splice(selected[0], 1, mouse);
-					
-					return view.render(context, points, options);
-				}
-			},
-			focus : function(event){
-				var _slider = event.target.parentElement.parentElement;
-				this.slider = event.type === 'mousedown' ? _slider : false;
-			}
 		};
 
 	return {
+		//save context state and options
 		init : function(_context, _options){
 			context = _context;
 			options = _options;
 		},
-
+		//bind an element to a Bacon Events
 		bindElement : function(element, events){
 			var mapEvent = function(handler, event){
 					return B.fromEvent(element, event).onValue(handler);
 				};
 			return R.mapObjIndexed(mapEvent, events);
 		},
-
+		//bind an array of elements to Bacon events
 		bindElements : function(elements, events){
 			return R.map(R.flip(this.bindElement)(events), elements);
 		},
 
 		canvasEvents : {
+			//new point on double click
 			dblclick : function(event){
-			
-				var mouse = getMouse(context, event),
-					search = view.findPoint(mouse),
-					index = -1;
-
-				if(view.curve && view.curve.length){
-					index = search(view.curve);
-				}
-
-				if(index !== -1){
-					view.curve.splice(index, 1, mouse);
-					return view.draw.curve(view.curve);
-				} else {
-					points.push(mouse);
-				}
-
-				return view.render(context, points, options);
+				//closure the user clicked point
+				points.push(getMouse(context, event));
+				//render new curve from mouse points
+				return view.render(context, options, points);
 			},
+			//check if point selected on mousedown
 			mousedown : function(event){
 			
-				var search = view.findPoint(getMouse(context, event)),
-					index = points.length ? search(points) : -1;
-
-				return selected.push(index);
+				var mouse = getMouse(context, event),
+					index = view.findPoint(mouse)(points);
+				//needs to store in closure to communicate 
+				//to mousemove event
+				return index > -1 && selected.push(index);
 			},
-			mouseup : function(event){ 
+			//clear selection on mouseup
+			mouseup : function(event){
+				//clear selection
 				selected = [];
 			},
-			mousemove : mouseHandlers.mousemove
-		},
-		menuEvents : {
-			mousemove : mouseHandlers.mousemove
+			//drag move the point if selection exists
+			mousemove : function(event){
+				//update points, if one is selected
+				if(selected.length){
+					points.splice(selected[0], 1, getMouse(context, event))
+
+					return view.render(context, options, points);
+				}
+			}
 		},
 		sliderEvents : {
-			mouseup   : mouseHandlers.focus,
-			mousedown : mouseHandlers.focus,
+			//closure to share 
+			//between handlers
+			slider : null,
+			//clear slider selection on mouseup
+			mouseup   : function(event){
+				this.slider = null;
+			},
+			//save slider in closure for next event
+			mousedown : function(event){
+				if(event.target.tagName === 'INPUT')
+					this.slider = event.target.parentElement.parentElement;
+			},
+			//if slider is selected, update its label 
+			//on mousemove (dragging handler)
 			mousemove : function(event){
 				var mouse = getMouse(context, event);
 				if(this.slider){
@@ -111,10 +107,12 @@ define([
 					_options = R.merge(options, _options);
 					options = _options;
 
-					return view.render(context, points, _options);
+					return view.render(context, _options, points);
 				}
 			}
 		},
+		//render with new options
+		//upon checkbox change
 		checkboxEvents : {
 			change : function(event){
 				var type = event.target.getAttribute('id'),
@@ -127,7 +125,7 @@ define([
 					_options = R.merge(options, _options);
 					options = _options;
 
-					return view.render(context, points, _options);
+					return view.render(context, _options, points);
 			}
 		}
 	};

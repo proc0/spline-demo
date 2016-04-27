@@ -14,69 +14,87 @@ define([
 	'use strict';
 
 	return {
-		init : function(context){
-			
+		curve : [],
+
+		init : function(context, options){
+				//setting context properties has to change context state
+				//so wrapping it in a function
 			var setContext = function(val, key, obj){
 					return R.prop(key, context) ? context[key] = val : null;
-				};
+				},
+				//extract style options
+				getOpts = R.compose(R.flip(R.prop), R.prop('style'));
 
+			this.context = context;
+			//load render functions with context
+			this.configure = R.mapObjIndexed(setContext);
 			this.canvas = R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
-			this.configure = R.mapObjIndexed(setContext);		
-			
-			this.draw = {
+			this.draw = R.compose(R.converge(this.paint), R.prepend(R.identity), R.prepend(R.always(this)), R.of, getOpts);
+			this.drawComp = {
 				curve : this.drawCurve.bind(this),
 				verts : this.drawVerts.bind(this)
 			};
-			
-			context.loaded = true;
+
+			return context.loaded = true;
 		},
-		render : function(context, points, options){
+		render : function(context, options, points){
 
+			//init context and 
+			//dependent functions
 			if(!context.loaded) 
-				this.init(context);
+				this.init(context, options);
 
-			var self = this,
-				w = context.canvas.width,
+			var w = context.canvas.width,
 				h = context.canvas.height;
 
 			context.clearRect(0, 0, w, h);
 
-			if(!points || !points.length){
-				var $canvas = document.getElementsByTagName('canvas')[0],
-					helpText = $canvas.innerHTML;
-					
-				self.configure({ 'font' : '24px sans-serif' });
-
-				return self.canvas('fillText')(helpText, (w/2 - (helpText.length*10)/2), h/2);
-			}
-
-			var getOpts = R.flip(R.prop)(options.style),
-				draw = R.converge(this.paint, [R.identity, getOpts, R.always(self)]);
-
-			if(points.length > 1){
+			//render points
+			if(points && points.length >= 2){
+				//save curve points for select drag render
 				this.curve = curve( points, options['curve'] );
-				draw('curve')(this.curve);
+				//render curve
+				this.draw(options)('curve')(this.curve);
+				//fill curve
+				if(options.curve.fill)
+					this.canvas('fill')();
+
+			} else if(!points || points.length < 1){ //no points to render
+				var font = { 'font' : '24px sans-serif' },
+					helpText = document.getElementsByTagName('canvas')[0].innerHTML;
+				//render default text
+				return this.defaultText(this, font, helpText);
 			}
 
-			if(options.curve.fill)
-				self.canvas('fill')();
-			
-			if(options.curve.showPoints)
-				draw('verts')(points);
+			//draw vertex points
+			if(options.curve.showPoints) 
+				this.draw(options)('verts')(points);
 		},
 
-		paint : R.curry(function(drawer, options, view, points){
+		paint : R.curry(function(drawer, view, options, points){
 			view.configure( options );
 			view.canvas('beginPath')();
-			view.draw[drawer]( points );
+			view.drawComp[drawer]( points );
 			view.canvas('stroke')();
 		}),
 
+		defaultText : function(view, options, text){
+			var w = view.context.canvas.width,
+				h = view.context.canvas.height,
+				//center text
+				x = w/2 - (text.length*10)/2,
+				y = h/2;
+
+			view.configure( options );
+
+			return view.canvas('fillText')(text, x, y);
+		},
+
 		drawCurve : function(points){
 			var lineTo = R.apply(this.canvas('lineTo')),
-				draw = R.compose(R.map(lineTo), R.map(point.getPoint));
+				_draw = R.compose(R.map(lineTo), R.map(point.getPoint));
 			
-			return draw(points);
+			return _draw(points);
 		},
 
 		drawVerts : function(points){
@@ -85,9 +103,9 @@ define([
 				dimens = R.flip(R.concat)([w, h]),
 				params = R.compose(dimens, point.getPoint, R.map(offset)),
 				rect = R.apply(this.canvas('rect')),
-				draw = R.compose(R.map(rect), R.map(params));
+				_draw = R.compose(R.map(rect), R.map(params));
 
-			return draw(points);
+			return _draw(points);
 		},
 		//partitions an array into chunks
 		chunk : R.curry(function(amount, list){
