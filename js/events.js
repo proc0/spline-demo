@@ -1,20 +1,17 @@
 'use strict';
 import R from '../node_modules/ramda/dist/ramda';
 import B from '../node_modules/baconjs/dist/Bacon';
-import view from './view';
-import point from './point';
 import menu from './menu';
-import closures from './closures';
 import * as elements from './elements/index';
-
 
 export default {
 	//save context state and options
-	init : function(_context, _options){
-		//save closures
-		closures.context = _context;
-		closures.options = _options;
-
+	init : function(){
+		var $sliders = document.getElementsByClassName('slider');
+		//initialize UI controllers
+		menu.updateLabels($sliders);
+		//TODO: needs to be called twice to avoid offset?
+		menu.updateLabels($sliders);
 		//bind all events to all elements
 		return R.mapObjIndexed(this.bindElements.bind(this), elements);
 	},

@@ -62,20 +62,20 @@
 
 	var _options2 = _interopRequireDefault(_options);
 
+	var _closures = __webpack_require__(13);
+
+	var _closures2 = _interopRequireDefault(_closures);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var $canvas = document.getElementsByTagName('canvas'),
-	    $sliders = document.getElementsByClassName('slider'),
-	    $checkboxes = document.getElementsByClassName('checkbox'),
-	    context = $canvas[0].getContext('2d');
+	var context = document.getElementsByTagName('canvas')[0].getContext('2d');
 
-	//initialize UI controllers
-	_menu2.default.updateLabels($sliders);
-	//TODO: needs to be called twice to avoid offset?
-	_menu2.default.updateLabels($sliders);
+	_closures2.default.context = context;
+	_closures2.default.options = _options2.default;
+
 	//initialize var closures
 	_events2.default.init(context, _options2.default);
-
+	//first render
 	_view2.default.render(context, _options2.default);
 
 /***/ },
@@ -12725,23 +12725,11 @@
 
 	var _Bacon2 = _interopRequireDefault(_Bacon);
 
-	var _view = __webpack_require__(1);
-
-	var _view2 = _interopRequireDefault(_view);
-
-	var _point = __webpack_require__(8);
-
-	var _point2 = _interopRequireDefault(_point);
-
 	var _menu = __webpack_require__(9);
 
 	var _menu2 = _interopRequireDefault(_menu);
 
-	var _closures = __webpack_require__(11);
-
-	var _closures2 = _interopRequireDefault(_closures);
-
-	var _index = __webpack_require__(12);
+	var _index = __webpack_require__(11);
 
 	var elements = _interopRequireWildcard(_index);
 
@@ -12752,10 +12740,11 @@
 	exports.default = {
 		//save context state and options
 		init: function init(_context, _options) {
-			//save closures
-			_closures2.default.context = _context;
-			_closures2.default.options = _options;
-
+			var $sliders = document.getElementsByClassName('slider');
+			//initialize UI controllers
+			_menu2.default.updateLabels($sliders);
+			//TODO: needs to be called twice to avoid offset?
+			_menu2.default.updateLabels($sliders);
 			//bind all events to all elements
 			return _ramda2.default.mapObjIndexed(this.bindElements.bind(this), elements);
 		},
@@ -12777,22 +12766,6 @@
 
 /***/ },
 /* 11 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = {
-		context: {},
-		options: {},
-		points: [],
-		selected: []
-	};
-
-/***/ },
-/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12801,7 +12774,7 @@
 	  value: true
 	});
 
-	var _slider = __webpack_require__(13);
+	var _slider = __webpack_require__(12);
 
 	Object.defineProperty(exports, 'slider', {
 	  enumerable: true,
@@ -12831,7 +12804,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12852,7 +12825,7 @@
 
 	var _menu2 = _interopRequireDefault(_menu);
 
-	var _closures = __webpack_require__(11);
+	var _closures = __webpack_require__(13);
 
 	var _closures2 = _interopRequireDefault(_closures);
 
@@ -12895,6 +12868,22 @@
 	};
 
 /***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = {
+		context: {},
+		options: {},
+		points: [],
+		selected: []
+	};
+
+/***/ },
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -12908,7 +12897,7 @@
 
 	var _view2 = _interopRequireDefault(_view);
 
-	var _closures = __webpack_require__(11);
+	var _closures = __webpack_require__(13);
 
 	var _closures2 = _interopRequireDefault(_closures);
 
@@ -12965,7 +12954,7 @@
 
 	var _view2 = _interopRequireDefault(_view);
 
-	var _closures = __webpack_require__(11);
+	var _closures = __webpack_require__(13);
 
 	var _closures2 = _interopRequireDefault(_closures);
 
@@ -12995,7 +12984,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = { //defaults
+	exports.default = {
 		curve: {
 			tension: 0.8,
 			segments: 20,

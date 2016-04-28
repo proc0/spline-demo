@@ -1,6 +1,6 @@
 {
   "name": "SplineEditorDemo",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Example curve editor using functional JS",
   "main": "index.js",
   "dependencies": {
