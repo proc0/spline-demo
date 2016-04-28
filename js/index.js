@@ -1,58 +1,20 @@
-define([
-	'../node_modules/ramda/dist/ramda', 
-	'../node_modules/baconjs/dist/Bacon', 
-	'./view',
-	'./point',
-	'./menu',
-	'./events'
-	], function(
-		R,
-		B,
-		view,
-		point,
-		menu,
-		events
-	){
-	'use strict';
+import view from './view';
+import menu from './menu';
+import events from './events';
+import options from './options';
 
-	var $canvas 	= document.getElementsByTagName('canvas'),
-		$sliders 	= document.getElementsByClassName('slider'),
-		$checkboxes = document.getElementsByClassName('checkbox'),
-		context = $canvas[0].getContext('2d'),
-		options = { //defaults
-			curve : {
-				tension : 0.5,
-				segments : 20,
-				closed : true,
-				showPoints : true,
-				fill : false
-			},
-			style : {
-				curve : {
-					'strokeStyle' : '#f0f0f0',
-					'fillStyle' : '#e9efa0',
-					'lineWidth' : 2
-				},				
-				verts : {
-					'strokeStyle' : '#aa0000',
-					'lineWidth' : 1
-				}
-			}
-		};
+var $canvas 	= document.getElementsByTagName('canvas'),
+	$sliders 	= document.getElementsByClassName('slider'),
+	$checkboxes = document.getElementsByClassName('checkbox'),
+	context = $canvas[0].getContext('2d');
 
-	//initialize UI controllers
-	menu.updateLabels($sliders);
-	//TODO: needs to be called twice to avoid offset?
-	menu.updateLabels($sliders);
-	//initialize var closures
-	events.init(context, options);
-	//bind events to its respective handlers
-	//TODO: separate handlers?
-	events.bindElements($canvas, events.canvasEvents);
-	events.bindElements($sliders, events.sliderEvents);
-	events.bindElements($checkboxes, events.checkboxEvents);
+//initialize UI controllers
+menu.updateLabels($sliders);
+//TODO: needs to be called twice to avoid offset?
+menu.updateLabels($sliders);
+//initialize var closures
+events.init(context, options);
 
-	return view.render(context, options);
+view.render(context, options);
 
-});
 
