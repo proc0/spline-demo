@@ -1,10 +1,7 @@
 'use strict';
 import R from '../node_modules/ramda/dist/ramda';
 
-var getPoint = R.converge(R.compose(R.call.bind(R), R.bind), [R.prop('get'), R.identity]);
-
 export default function Point(x, y){
-	this.getPoint = getPoint.bind(R);
 	return {
 		x : x,
 		y : y,

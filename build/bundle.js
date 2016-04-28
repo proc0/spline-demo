@@ -136,6 +136,7 @@
 
 			return context.loaded = true;
 		},
+		getPoint: _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
 		//calculate mouse X Y
 		getMouse: function getMouse(context, event) {
 			var client = context.canvas.getBoundingClientRect(),
@@ -197,7 +198,7 @@
 
 		drawCurve: function drawCurve(points) {
 			var lineTo = _ramda2.default.apply(this.canvas('lineTo')),
-			    _draw = _ramda2.default.compose(_ramda2.default.map(lineTo), _ramda2.default.map(_point2.default.getPoint));
+			    _draw = _ramda2.default.compose(_ramda2.default.map(lineTo), _ramda2.default.map(this.getPoint));
 
 			return _draw(points);
 		},
@@ -207,7 +208,7 @@
 			    h = 6,
 			    offset = _ramda2.default.flip(_ramda2.default.subtract)(w / 2),
 			    dimens = _ramda2.default.flip(_ramda2.default.concat)([w, h]),
-			    params = _ramda2.default.compose(dimens, _point2.default.getPoint, _ramda2.default.map(offset)),
+			    params = _ramda2.default.compose(dimens, this.getPoint, _ramda2.default.map(offset)),
 			    rect = _ramda2.default.apply(this.canvas('rect')),
 			    _draw = _ramda2.default.compose(_ramda2.default.map(rect), _ramda2.default.map(params));
 
@@ -12449,151 +12450,164 @@
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
+	'use strict';
 
-	!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(2), __webpack_require__(8)], __WEBPACK_AMD_DEFINE_RESULT__ = function (R, point) {
-		'use strict';
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
 
-		var cache = [],
-		    segments = 0,
+	exports.default = function (curvePoints, curveOptions) {
 
-		// shortcut functions
-		flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),
-		    cacheSegments = function cacheSegments(segments) {
-			var _cache = new Float32Array((segments + 2) * 4),
-			    cachePtr = 4;
+		if (!curvePoints || !curvePoints.length) throw new Error('Attempted to draw a pointless curve.');
 
-			// cache inner-loop calculations as they are based on t alone
-			_cache[0] = 1; // 1,0,0,0
+		var options = _ramda2.default.merge({ //defaults
+			tension: 0.5,
+			segments: 25,
+			closed: false
+		}, curveOptions),
 
-			for (var i = 1; i < segments; i++) {
+		//define key points
+		p = curvePoints,
+		    l = p.length,
+		    p1 = p[0],
+		    p2 = p[1],
+		    p_2 = p[l - 2],
+		    p_1 = p[l - 1],
+		    render = _ramda2.default.compose(parse(options), flatten);
 
-				var st = i / segments,
-				    st2 = st * st,
-				    st3 = st2 * st,
-				    st23 = st3 * 2,
-				    st32 = st2 * 3;
+		if (segments !== options.segments) {
+			cache = cacheSegments(options.segments);
+			segments = options.segments;
+		}
+		// points are parsed in diff order depending on whether curve is closed
+		// for a closed curve, calculate last segment, and flip endpoints for main curve
+		// -------------------->  [ mainCurve, closingCurve, closingPoint ]
+		var points = options.closed ? [render(p_1, p, p1), render(p_2, p_1, p1, p2), p1] : [render(p1, p, p_1), p_1];
 
-				_cache[cachePtr++] = st23 - st32 + 1; // c1
-				_cache[cachePtr++] = st32 - st23; // c2
-				_cache[cachePtr++] = st3 - 2 * st2 + st; // c3
-				_cache[cachePtr++] = st3 - st2; // c4
+		return flatten(points);
+	};
+
+	var _ramda = __webpack_require__(2);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	var _point = __webpack_require__(8);
+
+	var _point2 = _interopRequireDefault(_point);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var cache = [],
+	    getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
+	    segments = 0,
+
+	// shortcut functions
+	flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype)),
+	    cacheSegments = function cacheSegments(segments) {
+		var _cache = new Float32Array((segments + 2) * 4),
+		    cachePtr = 4;
+
+		// cache inner-loop calculations as they are based on t alone
+		_cache[0] = 1; // 1,0,0,0
+
+		for (var i = 1; i < segments; i++) {
+
+			var st = i / segments,
+			    st2 = st * st,
+			    st3 = st2 * st,
+			    st23 = st3 * 2,
+			    st32 = st2 * 3;
+
+			_cache[cachePtr++] = st23 - st32 + 1; // c1
+			_cache[cachePtr++] = st32 - st23; // c2
+			_cache[cachePtr++] = st3 - 2 * st2 + st; // c3
+			_cache[cachePtr++] = st3 - st2; // c4
+		}
+
+		_cache[++cachePtr] = 1; // 0,1,0,0
+
+		return _cache;
+	},
+
+	//TODO : transform into functional style
+	parse = _ramda2.default.curry(function (options, _points) {
+
+		// if(!points || !points.length)
+		// 	return points;
+
+		var segments = options.segments,
+		    tension = options.tension,
+		    closed = options.closed,
+		    points = _ramda2.default.compose(flatten, _ramda2.default.map(getPoint))(_points),
+		    res = [];
+
+		// for (var i = 0; i < points.length; i++) {
+
+		// 	var p = points[i],
+		// 		p1 = points[i+1] || { x : 0, y : 0 },
+		// 		p_1 = points[i-1] || { x : 0, y : 0 },
+		// 		p2 = points[i+2] || { x : 0, y : 0 },
+		// 		pt1 = p.x,
+		// 		pt2 = p.y,
+		// 		pt3 = p1.x,
+		// 		pt4 = p1.y,
+
+		// 		t1x = (pt3 - p_1.x) * tension,
+		// 		t1y = (pt4 - p_1.y) * tension,
+		// 		t2x = (p2.x - pt1) * tension,
+		// 		t2y = (p2.y - pt2) * tension,
+		// 		c = 0, c1, c2, c3, c4;
+
+		// 	for (var t = 0; t < segments; t++) {
+
+		// 		c1 = cache[c++];
+		// 		c2 = cache[c++];
+		// 		c3 = cache[c++];
+		// 		c4 = cache[c++];
+
+		// 		var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+		// 		// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+		// 		var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+		// 		// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+		// 		res.push(new point(_x, _y));
+		// 	}
+		// }
+
+		for (var i = 2; i < points.length; i += 2) {
+
+			var pt1 = points[i],
+			    pt2 = points[i + 1],
+			    pt3 = points[i + 2],
+			    pt4 = points[i + 3],
+			    t1x = (pt3 - points[i - 2]) * tension,
+			    t1y = (pt4 - points[i - 1]) * tension,
+			    t2x = (points[i + 4] - pt1) * tension,
+			    t2y = (points[i + 5] - pt2) * tension,
+			    c = 0,
+			    c1,
+			    c2,
+			    c3,
+			    c4;
+
+			for (var t = 0; t < segments; t++) {
+
+				c1 = cache[c++];
+				c2 = cache[c++];
+				c3 = cache[c++];
+				c4 = cache[c++];
+
+				var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+				// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
+				var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+				// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
+				res.push(new _point2.default(_x, _y));
 			}
+		}
 
-			_cache[++cachePtr] = 1; // 0,1,0,0
+		return res;
+	});
 
-			return _cache;
-		},
-
-		//TODO : transform into functional style
-		parse = R.curry(function (options, _points) {
-
-			// if(!points || !points.length)
-			// 	return points;
-
-			var segments = options.segments,
-			    tension = options.tension,
-			    closed = options.closed,
-			    points = R.compose(flatten, R.map(point.getPoint))(_points),
-			    res = [];
-
-			// for (var i = 0; i < points.length; i++) {
-
-			// 	var p = points[i],
-			// 		p1 = points[i+1] || { x : 0, y : 0 },
-			// 		p_1 = points[i-1] || { x : 0, y : 0 },
-			// 		p2 = points[i+2] || { x : 0, y : 0 },
-			// 		pt1 = p.x,
-			// 		pt2 = p.y,
-			// 		pt3 = p1.x,
-			// 		pt4 = p1.y,
-
-			// 		t1x = (pt3 - p_1.x) * tension,
-			// 		t1y = (pt4 - p_1.y) * tension,
-			// 		t2x = (p2.x - pt1) * tension,
-			// 		t2y = (p2.y - pt2) * tension,
-			// 		c = 0, c1, c2, c3, c4;
-
-			// 	for (var t = 0; t < segments; t++) {
-
-			// 		c1 = cache[c++];
-			// 		c2 = cache[c++];
-			// 		c3 = cache[c++];
-			// 		c4 = cache[c++];
-
-			// 		var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-			// 		// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-			// 		var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-			// 		// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-			// 		res.push(new point(_x, _y));
-			// 	}
-			// }
-
-			for (var i = 2; i < points.length; i += 2) {
-
-				var pt1 = points[i],
-				    pt2 = points[i + 1],
-				    pt3 = points[i + 2],
-				    pt4 = points[i + 3],
-				    t1x = (pt3 - points[i - 2]) * tension,
-				    t1y = (pt4 - points[i - 1]) * tension,
-				    t2x = (points[i + 4] - pt1) * tension,
-				    t2y = (points[i + 5] - pt2) * tension,
-				    c = 0,
-				    c1,
-				    c2,
-				    c3,
-				    c4;
-
-				for (var t = 0; t < segments; t++) {
-
-					c1 = cache[c++];
-					c2 = cache[c++];
-					c3 = cache[c++];
-					c4 = cache[c++];
-
-					var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-					// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-					var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-					// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-					res.push(new point(_x, _y));
-				}
-			}
-
-			return res;
-		});
-
-		return function (curvePoints, curveOptions) {
-
-			if (!curvePoints || !curvePoints.length) throw new Error('Attempted to draw a pointless curve.');
-
-			var options = R.merge({ //defaults
-				tension: 0.5,
-				segments: 25,
-				closed: false
-			}, curveOptions),
-
-			//define key points
-			p = curvePoints,
-			    l = p.length,
-			    p1 = p[0],
-			    p2 = p[1],
-			    p_2 = p[l - 2],
-			    p_1 = p[l - 1],
-			    render = R.compose(parse(options), flatten);
-
-			if (segments !== options.segments) {
-				cache = cacheSegments(options.segments);
-				segments = options.segments;
-			}
-			// points are parsed in diff order depending on whether curve is closed
-			// for a closed curve, calculate last segment, and flip endpoints for main curve
-			// -------------------->  [ mainCurve, closingCurve, closingPoint ]
-			var points = options.closed ? [render(p_1, p, p1), render(p_2, p_1, p1, p2), p1] : [render(p1, p, p_1), p_1];
-
-			return flatten(points);
-		};
-	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	;
 
 /***/ },
 /* 8 */
@@ -12612,10 +12626,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call.bind(_ramda2.default), _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]);
-
 	function Point(x, y) {
-		this.getPoint = getPoint.bind(_ramda2.default);
 		return {
 			x: x,
 			y: y,

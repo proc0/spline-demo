@@ -1,4 +1,4 @@
-export default { //defaults
+export default {
 	curve : {
 		tension : 0.8,
 		segments : 20,

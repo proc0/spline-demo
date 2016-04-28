@@ -1,13 +1,9 @@
-define([
-	'../node_modules/ramda/dist/ramda',
-	'./point'
-	], function(
-		R,
-		point
-	){
-	'use strict';
+'use strict';
+import R from '../node_modules/ramda/dist/ramda';
+import point from './point';
 
 	var cache = [],
+		getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]),
 		segments = 0,
 		// shortcut functions
 		flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),
@@ -45,7 +41,7 @@ define([
 			var segments = options.segments,
 				tension = options.tension,
 				closed = options.closed,
-				points = R.compose(flatten, R.map(point.getPoint))(_points),
+				points = R.compose(flatten, R.map(getPoint))(_points),
 				res = [];
 
 			// for (var i = 0; i < points.length; i++) {
@@ -110,35 +106,34 @@ define([
 			return res;
 		});			
 
-	return function(curvePoints, curveOptions) {
-		
-		if(!curvePoints || !curvePoints.length)
-			throw new Error('Attempted to draw a pointless curve.');
+export default function(curvePoints, curveOptions) {
+	
+	if(!curvePoints || !curvePoints.length)
+		throw new Error('Attempted to draw a pointless curve.');
 
-		var options = R.merge({ //defaults
-				tension : 0.5,
-				segments : 25,
-				closed : false,
-			}, curveOptions),
-			//define key points
-			p 	= curvePoints,
-			l 	= p.length,
-			p1 = p[0],
-			p2 = p[1],
-			p_2 = p[l-2],
-			p_1 = p[l-1],
-			render = R.compose(parse(options), flatten);
+	var options = R.merge({ //defaults
+			tension : 0.5,
+			segments : 25,
+			closed : false,
+		}, curveOptions),
+		//define key points
+		p 	= curvePoints,
+		l 	= p.length,
+		p1 = p[0],
+		p2 = p[1],
+		p_2 = p[l-2],
+		p_1 = p[l-1],
+		render = R.compose(parse(options), flatten);
 
-		if(segments !== options.segments){
-			cache = cacheSegments(options.segments);
-			segments = options.segments;
-		}
-		// points are parsed in diff order depending on whether curve is closed
-		// for a closed curve, calculate last segment, and flip endpoints for main curve
-		// -------------------->  [ mainCurve, closingCurve, closingPoint ]
-		var points = options.closed ? [ render(p_1, p, p1), render(p_2, p_1, p1, p2), p1 ]
-						 			: [ render(p1, p, p_1), p_1 ];
+	if(segments !== options.segments){
+		cache = cacheSegments(options.segments);
+		segments = options.segments;
+	}
+	// points are parsed in diff order depending on whether curve is closed
+	// for a closed curve, calculate last segment, and flip endpoints for main curve
+	// -------------------->  [ mainCurve, closingCurve, closingPoint ]
+	var points = options.closed ? [ render(p_1, p, p1), render(p_2, p_1, p1, p2), p1 ]
+					 			: [ render(p1, p, p_1), p_1 ];
 
-		return flatten( points );
-	};
-});
+	return flatten( points );
+};

@@ -30,6 +30,7 @@ export default {
 
 		return context.loaded = true;
 	},
+	getPoint : R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]),
 	//calculate mouse X Y
 	getMouse : function(context, event){
 		var client = context.canvas.getBoundingClientRect(),
@@ -93,7 +94,7 @@ export default {
 
 	drawCurve : function(points){
 		var lineTo = R.apply(this.canvas('lineTo')),
-			_draw = R.compose(R.map(lineTo), R.map(point.getPoint));
+			_draw = R.compose(R.map(lineTo), R.map(this.getPoint));
 		
 		return _draw(points);
 	},
@@ -102,7 +103,7 @@ export default {
 		var w = 6, h = 6,
 			offset = R.flip(R.subtract)(w/2),
 			dimens = R.flip(R.concat)([w, h]),
-			params = R.compose(dimens, point.getPoint, R.map(offset)),
+			params = R.compose(dimens, this.getPoint, R.map(offset)),
 			rect = R.apply(this.canvas('rect')),
 			_draw = R.compose(R.map(rect), R.map(params));
 
