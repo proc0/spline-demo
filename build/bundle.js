@@ -73,8 +73,9 @@
 	_closures2.default.context = context;
 	_closures2.default.options = _options2.default;
 
-	//initialize var closures
-	_events2.default.init(context, _options2.default);
+	//initialize events
+	//with closures
+	_events2.default.init();
 	//first render
 	_view2.default.render(context, _options2.default);
 
@@ -12498,11 +12499,11 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var cache = [],
-	    getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
 	    segments = 0,
 
 	// shortcut functions
-	flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype)),
+	getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
+	    flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype)),
 	    cacheSegments = function cacheSegments(segments) {
 		var _cache = new Float32Array((segments + 2) * 4),
 		    cachePtr = 4;
@@ -12739,7 +12740,7 @@
 
 	exports.default = {
 		//save context state and options
-		init: function init(_context, _options) {
+		init: function init() {
 			var $sliders = document.getElementsByClassName('slider');
 			//initialize UI controllers
 			_menu2.default.updateLabels($sliders);
