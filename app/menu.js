@@ -1,6 +1,5 @@
 'use strict';
-import R from '../node_modules/ramda/dist/ramda';
-import B from '../node_modules/baconjs/dist/Bacon';
+import { R, B } from './util';
 import point from './point';
 
 export default {

@@ -15,6 +15,9 @@ export default {
 		verts : {
 			'strokeStyle' : '#aa0000',
 			'lineWidth' : 1
+		},
+		bgtext : {
+			'font' : '24px sans-serif',
 		}
 	}
 };

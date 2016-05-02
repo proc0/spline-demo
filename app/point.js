@@ -1,5 +1,4 @@
 'use strict';
-import R from '../node_modules/ramda/dist/ramda';
 
 export default function Point(x, y){
 	return {

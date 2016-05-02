@@ -1,11 +1,9 @@
 'use strict';
-import R from '../node_modules/ramda/dist/ramda';
+import { R, getPoint } from './util';
 import point from './point';
 
 	var cache = [],
 		segments = 0,
-		// shortcut functions
-		getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]),
 		flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),
 		cacheSegments = function(segments){
 			var _cache = new Float32Array((segments + 2) * 4),

@@ -46,15 +46,15 @@
 
 	'use strict';
 
-	var _view = __webpack_require__(1);
+	var _data = __webpack_require__(1);
+
+	var _data2 = _interopRequireDefault(_data);
+
+	var _view = __webpack_require__(2);
 
 	var _view2 = _interopRequireDefault(_view);
 
-	var _menu = __webpack_require__(9);
-
-	var _menu2 = _interopRequireDefault(_menu);
-
-	var _events = __webpack_require__(10);
+	var _events = __webpack_require__(11);
 
 	var _events2 = _interopRequireDefault(_events);
 
@@ -62,25 +62,47 @@
 
 	var _options2 = _interopRequireDefault(_options);
 
-	var _closures = __webpack_require__(13);
-
-	var _closures2 = _interopRequireDefault(_closures);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var context = document.getElementsByTagName('canvas')[0].getContext('2d');
+	var canvas = document.getElementsByTagName('canvas')[0],
+	    sliders = document.getElementsByClassName('slider'),
+	    context = canvas.getContext('2d');
 
-	_closures2.default.context = context;
-	_closures2.default.options = _options2.default;
+	//load options
+	//set default text from the template
+	_options2.default.helpText = canvas.innerHTML;
 
-	//initialize events
-	//with closures
-	_events2.default.init();
-	//first render
-	_view2.default.render(context, _options2.default);
+	//assign closures
+	_data2.default.context = context;
+	_data2.default.options = _options2.default;
+
+	function start() {
+		//initialize events
+		_events2.default.init(sliders);
+		//first render
+		_view2.default.init(context, _options2.default);
+	}
+
+	document.addEventListener('DOMContentLoaded', start, false);
 
 /***/ },
 /* 1 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = {
+		context: {},
+		options: {},
+		points: [],
+		selected: []
+	};
+
+/***/ },
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -88,69 +110,94 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.render = undefined;
 
-	var _ramda = __webpack_require__(2);
+	var _util = __webpack_require__(3);
 
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	var _Bacon = __webpack_require__(3);
-
-	var _Bacon2 = _interopRequireDefault(_Bacon);
-
-	var _curve = __webpack_require__(7);
+	var _curve = __webpack_require__(10);
 
 	var _curve2 = _interopRequireDefault(_curve);
 
-	var _point = __webpack_require__(8);
-
-	var _point2 = _interopRequireDefault(_point);
-
-	var _menu = __webpack_require__(9);
-
-	var _menu2 = _interopRequireDefault(_menu);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = {
+	var view = {
 		//local closure
 		curve: [],
-
+		context: {},
 		init: function init(context, options) {
-			//setting context properties has to change context state
-			//so wrapping it in a function
-			var setContext = function setContext(val, key, obj) {
-				return _ramda2.default.prop(key, context) ? context[key] = val : null;
+			//save context to closure
+			this.context = context;
+
+			_util.R.mapObjIndexed(this.load.bind(this), this.loaders);
+
+			//render default text
+			return this.render(context, options);
+		},
+
+		load: function load(loader, prop) {
+			this[prop] = loader.bind(this)(this.context);
+		},
+
+		loaders: {
+
+			config: function config(context) {
+				//setting context properties has to change context state
+				//so wrapping it in a function
+				var setContext = function setContext(val, key, obj) {
+					return _util.R.prop(key, context) ? context[key] = val : null;
+				};
+				return _util.R.mapObjIndexed(setContext);
 			},
 
-			//extract style options
-			getOpts = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.prop), _ramda2.default.prop('style'));
+			canvas: function canvas(context) {
+				// return R.converge(R.compose, [R.flip(R.bind), R.flip(R.prop)])(context);
+				return _util.R.compose(_util.R.flip(_util.R.bind)(context), _util.R.flip(_util.R.prop)(context));
+			},
 
-			this.context = context;
-			//load render functions with context
-			this.configure = _ramda2.default.mapObjIndexed(setContext);
-			this.canvas = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.bind)(context), _ramda2.default.flip(_ramda2.default.prop)(context));
-			this.draw = _ramda2.default.compose(_ramda2.default.converge(this.paint), _ramda2.default.prepend(_ramda2.default.identity), _ramda2.default.prepend(_ramda2.default.always(this)), _ramda2.default.of, getOpts);
-			this.drawComp = {
-				curve: this.drawCurve.bind(this),
-				verts: this.drawVerts.bind(this)
-			};
+			draw: function draw() {
+				//extract style options
+				var getOptions = _util.R.compose(_util.R.flip(_util.R.prop), _util.R.prop('style')),
+				    buildParams = _util.R.compose(_util.R.prepend(_util.R.identity), _util.R.prepend(_util.R.always(this)));
 
-			return context.loaded = true;
-		},
-		getPoint: _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
-		//calculate mouse X Y
-		getMouse: function getMouse(context, event) {
-			var client = context.canvas.getBoundingClientRect(),
-			    x = event.x - client.left,
-			    y = event.y - client.top;
-			return new _point2.default(x, y);
+				return _util.R.compose(_util.R.converge(this.paint), buildParams, _util.R.of, getOptions);
+			},
+
+			drawComp: function drawComp() {
+				var comp = {
+					curve: function curve(points, view) {
+						var lineTo = _util.R.apply(view.canvas('lineTo')),
+						    _draw = _util.R.compose(_util.R.map(lineTo), _util.R.map(_util.getPoint));
+
+						return _draw(points);
+					},
+					verts: function verts(points, view) {
+						var w = 6,
+						    h = 6,
+						    offset = _util.R.flip(_util.R.subtract)(w / 2),
+						    dimens = _util.R.flip(_util.R.concat)([w, h]),
+						    params = _util.R.compose(dimens, _util.getPoint, _util.R.map(offset)),
+						    rect = _util.R.apply(view.canvas('rect')),
+						    _draw = _util.R.compose(_util.R.map(rect), _util.R.map(params));
+
+						return _draw(points);
+					},
+					bgtext: function bgtext(text, view) {
+						var w = view.context.canvas.width,
+						    h = view.context.canvas.height,
+
+						//center text
+						x = w / 2 - text.length * 10 / 2,
+						    y = h / 2;
+
+						return view.canvas('fillText')(text, x, y);
+					}
+				};
+
+				return comp;
+			}
 		},
 
 		render: function render(context, options, points) {
-
-			//init context and
-			//dependent functions
-			if (!context.loaded) this.init(context, options);
 
 			var w = context.canvas.width,
 			    h = context.canvas.height;
@@ -165,93 +212,139 @@
 				this.draw(options)('curve')(this.curve);
 				//fill curve
 				if (options.curve.fill) this.canvas('fill')();
-			} else if (!points || points.length < 1) {
 				//no points to render
-				var font = { 'font': '24px sans-serif' },
-				    helpText = document.getElementsByTagName('canvas')[0].innerHTML;
-				//render default text
-				return this.defaultText(this, font, helpText);
-			}
+			} else if (!points || points.length < 1) {
+					//render default text
+					return this.draw(options)('bgtext')(options.helpText);
+				}
 
 			//draw vertex points
 			if (options.curve.showPoints) this.draw(options)('verts')(points);
 		},
 
-		paint: _ramda2.default.curry(function (drawer, view, options, points) {
-			view.configure(options);
-			view.canvas('beginPath')();
-			view.drawComp[drawer](points);
-			view.canvas('stroke')();
-		}),
+		paint: _util.R.curry(function (drawer, view, options, data) {
+			view.config(options);
 
-		defaultText: function defaultText(view, options, text) {
-			var w = view.context.canvas.width,
-			    h = view.context.canvas.height,
+			if (typeof data !== 'string') view.canvas('beginPath')();
 
-			//center text
-			x = w / 2 - text.length * 10 / 2,
-			    y = h / 2;
+			view.drawComp[drawer](data, view);
 
-			view.configure(options);
-
-			return view.canvas('fillText')(text, x, y);
-		},
-
-		drawCurve: function drawCurve(points) {
-			var lineTo = _ramda2.default.apply(this.canvas('lineTo')),
-			    _draw = _ramda2.default.compose(_ramda2.default.map(lineTo), _ramda2.default.map(this.getPoint));
-
-			return _draw(points);
-		},
-
-		drawVerts: function drawVerts(points) {
-			var w = 6,
-			    h = 6,
-			    offset = _ramda2.default.flip(_ramda2.default.subtract)(w / 2),
-			    dimens = _ramda2.default.flip(_ramda2.default.concat)([w, h]),
-			    params = _ramda2.default.compose(dimens, this.getPoint, _ramda2.default.map(offset)),
-			    rect = _ramda2.default.apply(this.canvas('rect')),
-			    _draw = _ramda2.default.compose(_ramda2.default.map(rect), _ramda2.default.map(params));
-
-			return _draw(points);
-		},
-		//partitions an array into chunks
-		chunk: _ramda2.default.curry(function (amount, list) {
-			//recursive function
-			var split = function split(list) {
-				var step = _ramda2.default.compose(split, _ramda2.default.splitAt(amount), _ramda2.default.last),
-				    recurse = _ramda2.default.converge(_ramda2.default.concat, [_ramda2.default.compose(_ramda2.default.of, _ramda2.default.head), step]),
-				    hasLength = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt)(amount), _ramda2.default.length, _ramda2.default.last);
-
-				return _ramda2.default.ifElse(hasLength, recurse, _ramda2.default.identity)(list);
-			},
-			    init = _ramda2.default.compose(split, _ramda2.default.splitAt(amount));
-			// check input and start recursion
-			return list && list.length > amount ? init(list) : list.length === amount ? [list] : list;
-		}),
-
-		findPoint: _ramda2.default.curry(function (mouse, points) {
-			var x = mouse.x,
-			    y = mouse.y,
-			    area = 10,
-			    sub_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt), _ramda2.default.flip(_ramda2.default.subtract)(area)),
-			    add_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.lt), _ramda2.default.flip(_ramda2.default.add)(area)),
-			    area_point = _ramda2.default.converge(Array, [sub_area, add_area]),
-			    area_curve = _ramda2.default.compose(_ramda2.default.map(_ramda2.default.map(area_point))),
-			    check_point = _ramda2.default.compose(_ramda2.default.map, _ramda2.default.flip(_ramda2.default.apply), _ramda2.default.of),
-			    check_x = _ramda2.default.compose(check_point(x), _ramda2.default.prop('x')),
-			    check_y = _ramda2.default.compose(check_point(y), _ramda2.default.prop('y')),
-			    check_curve = _ramda2.default.converge(_ramda2.default.concat, [check_x, check_y]),
-			    search_area = _ramda2.default.compose(_ramda2.default.map(check_curve), area_curve),
-			    atLeast = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), _ramda2.default.append(_ramda2.default.filter(_ramda2.default.identity)), _ramda2.default.append(_ramda2.default.length), _ramda2.default.of, _ramda2.default.equals),
-			    extract = _ramda2.default.compose(_ramda2.default.findIndex(_ramda2.default.identity), _ramda2.default.map(atLeast(4)));
-
-			return extract(search_area(points));
+			if (typeof data !== 'string') view.canvas('stroke')();
 		})
+
+		// drawCurve : function(points, view){
+		// 	var lineTo = R.apply(this.canvas('lineTo')),
+		// 		_draw = R.compose(R.map(lineTo), R.map(getPoint));
+
+		// 	return _draw(points);
+		// },
+
+		// drawVerts : function(points, view){
+		// 	var w = 6, h = 6,
+		// 		offset = R.flip(R.subtract)(w/2),
+		// 		dimens = R.flip(R.concat)([w, h]),
+		// 		params = R.compose(dimens, getPoint, R.map(offset)),
+		// 		rect = R.apply(this.canvas('rect')),
+		// 		_draw = R.compose(R.map(rect), R.map(params));
+
+		// 	return _draw(points);
+		// },
+
+		// drawBgText : function(text, view){
+		// 	var w = view.context.canvas.width,
+		// 		h = view.context.canvas.height,
+		// 		//center text
+		// 		x = w/2 - (text.length*10)/2,
+		// 		y = h/2;
+
+		// 	return view.canvas('fillText')(text, x, y);
+		// }
 	};
 
+	exports.default = { init: view.init.bind(view) };
+	var render = exports.render = view.render.bind(view);
+
 /***/ },
-/* 2 */
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.B = exports.R = exports.chunk = exports.findPoint = exports.getMouse = exports.getPoint = undefined;
+
+	var _ramda = __webpack_require__(4);
+
+	Object.defineProperty(exports, 'R', {
+		enumerable: true,
+		get: function get() {
+			return _interopRequireDefault(_ramda).default;
+		}
+	});
+
+	var _Bacon = __webpack_require__(5);
+
+	Object.defineProperty(exports, 'B', {
+		enumerable: true,
+		get: function get() {
+			return _interopRequireDefault(_Bacon).default;
+		}
+	});
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	var _point = __webpack_require__(9);
+
+	var _point2 = _interopRequireDefault(_point);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	//get the Point class [x,y] by calling its method
+	var getPoint = exports.getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]);
+	//calculate mouse X Y
+	var getMouse = exports.getMouse = function getMouse(context, event) {
+		var client = context.canvas.getBoundingClientRect(),
+		    x = event.x - client.left,
+		    y = event.y - client.top;
+		return new _point2.default(x, y);
+	};
+	var findPoint = exports.findPoint = _ramda2.default.curry(function (mouse, points) {
+		var x = mouse.x,
+		    y = mouse.y,
+		    area = 10,
+		    sub_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt), _ramda2.default.flip(_ramda2.default.subtract)(area)),
+		    add_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.lt), _ramda2.default.flip(_ramda2.default.add)(area)),
+		    area_point = _ramda2.default.converge(Array, [sub_area, add_area]),
+		    area_curve = _ramda2.default.compose(_ramda2.default.map(_ramda2.default.map(area_point))),
+		    check_point = _ramda2.default.compose(_ramda2.default.map, _ramda2.default.flip(_ramda2.default.apply), _ramda2.default.of),
+		    check_x = _ramda2.default.compose(check_point(x), _ramda2.default.prop('x')),
+		    check_y = _ramda2.default.compose(check_point(y), _ramda2.default.prop('y')),
+		    check_curve = _ramda2.default.converge(_ramda2.default.concat, [check_x, check_y]),
+		    search_area = _ramda2.default.compose(_ramda2.default.map(check_curve), area_curve),
+		    atLeast = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), _ramda2.default.append(_ramda2.default.filter(_ramda2.default.identity)), _ramda2.default.append(_ramda2.default.length), _ramda2.default.of, _ramda2.default.equals),
+		    extract = _ramda2.default.compose(_ramda2.default.findIndex(_ramda2.default.identity), _ramda2.default.map(atLeast(4)));
+
+		return extract(search_area(points));
+	});
+	//partitions an array into chunks
+	var chunk = exports.chunk = _ramda2.default.curry(function (amount, list) {
+		//recursive function
+		var split = function split(list) {
+			var step = _ramda2.default.compose(split, _ramda2.default.splitAt(amount), _ramda2.default.last),
+			    recurse = _ramda2.default.converge(_ramda2.default.concat, [_ramda2.default.compose(_ramda2.default.of, _ramda2.default.head), step]),
+			    hasLength = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt)(amount), _ramda2.default.length, _ramda2.default.last);
+
+			return _ramda2.default.ifElse(hasLength, recurse, _ramda2.default.identity)(list);
+		},
+		    init = _ramda2.default.compose(split, _ramda2.default.splitAt(amount));
+		// check input and start recursion
+		return list && list.length > amount ? init(list) : list.length === amount ? [list] : list;
+	});
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//  Ramda v0.20.1
@@ -9013,7 +9106,7 @@
 
 
 /***/ },
-/* 3 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {(function() {
@@ -12399,7 +12492,7 @@
 	  return withDesc(new Bacon.Desc(this, "zip", [other]), Bacon.zipWith([this, other], f || Array));
 	};
 
-	if ("function" !== "undefined" && __webpack_require__(5) !== null && __webpack_require__(6) != null) {
+	if ("function" !== "undefined" && __webpack_require__(7) !== null && __webpack_require__(8) != null) {
 	  !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 	    return Bacon;
 	  }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -12414,10 +12507,10 @@
 	  }
 	}).call(this);
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(6)(module)))
 
 /***/ },
-/* 4 */
+/* 6 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -12433,14 +12526,14 @@
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
@@ -12448,7 +12541,34 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ },
-/* 7 */
+/* 9 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = Point;
+	function Point(x, y) {
+		return {
+			x: x,
+			y: y,
+			map: function map(transform) {
+				var p = new Float32Array([this.x, this.y]),
+				    _x = transform(p[0]),
+				    _y = transform(p[1]);
+
+				return new Point(_x, _y);
+			},
+			get: function get() {
+				return [this.x, this.y];
+			}
+		};
+	};
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12461,7 +12581,7 @@
 
 		if (!curvePoints || !curvePoints.length) throw new Error('Attempted to draw a pointless curve.');
 
-		var options = _ramda2.default.merge({ //defaults
+		var options = _util.R.merge({ //defaults
 			tension: 0.5,
 			segments: 25,
 			closed: false
@@ -12474,7 +12594,7 @@
 		    p2 = p[1],
 		    p_2 = p[l - 2],
 		    p_1 = p[l - 1],
-		    render = _ramda2.default.compose(parse(options), flatten);
+		    render = _util.R.compose(parse(options), flatten);
 
 		if (segments !== options.segments) {
 			cache = cacheSegments(options.segments);
@@ -12488,11 +12608,9 @@
 		return flatten(points);
 	};
 
-	var _ramda = __webpack_require__(2);
+	var _util = __webpack_require__(3);
 
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	var _point = __webpack_require__(8);
+	var _point = __webpack_require__(9);
 
 	var _point2 = _interopRequireDefault(_point);
 
@@ -12500,10 +12618,7 @@
 
 	var cache = [],
 	    segments = 0,
-
-	// shortcut functions
-	getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]),
-	    flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype)),
+	    flatten = _util.R.compose(_util.R.flatten, Array.prototype.concat.bind(Array.prototype)),
 	    cacheSegments = function cacheSegments(segments) {
 		var _cache = new Float32Array((segments + 2) * 4),
 		    cachePtr = 4;
@@ -12531,7 +12646,7 @@
 	},
 
 	//TODO : transform into functional style
-	parse = _ramda2.default.curry(function (options, _points) {
+	parse = _util.R.curry(function (options, _points) {
 
 		// if(!points || !points.length)
 		// 	return points;
@@ -12539,7 +12654,7 @@
 		var segments = options.segments,
 		    tension = options.tension,
 		    closed = options.closed,
-		    points = _ramda2.default.compose(flatten, _ramda2.default.map(getPoint))(_points),
+		    points = _util.R.compose(flatten, _util.R.map(_util.getPoint))(_points),
 		    res = [];
 
 		// for (var i = 0; i < points.length; i++) {
@@ -12611,41 +12726,7 @@
 	;
 
 /***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = Point;
-
-	var _ramda = __webpack_require__(2);
-
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function Point(x, y) {
-		return {
-			x: x,
-			y: y,
-			map: function map(transform) {
-				var p = new Float32Array([this.x, this.y]),
-				    _x = transform(p[0]),
-				    _y = transform(p[1]);
-
-				return new Point(_x, _y);
-			},
-			get: function get() {
-				return [this.x, this.y];
-			}
-		};
-	};
-
-/***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12654,119 +12735,40 @@
 		value: true
 	});
 
-	var _ramda = __webpack_require__(2);
+	var _util = __webpack_require__(3);
 
-	var _ramda2 = _interopRequireDefault(_ramda);
+	var _elements = __webpack_require__(12);
 
-	var _Bacon = __webpack_require__(3);
-
-	var _Bacon2 = _interopRequireDefault(_Bacon);
-
-	var _point = __webpack_require__(8);
-
-	var _point2 = _interopRequireDefault(_point);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	exports.default = {
-		//updateLabels :: [HTMLDivElement] -> undefined
-		updateLabels: function updateLabels(components) {
-			return _ramda2.default.map(this.updateLabel, components);
-		},
-		//displays label above slider handle
-		//updateLabel :: HTMLDivElement -> undefined
-		updateLabel: function updateLabel(component) {
-			//get markup tags
-			var slider = component.getElementsByTagName('input')[0],
-			    label = component.getElementsByTagName('label')[0],
-			    value = label.getElementsByClassName('value')[0],
-
-			//get tag attributes
-			data_min = slider.getAttribute('min'),
-			    data_max = slider.getAttribute('max'),
-			    data_frac = slider.getAttribute('data-fractional'),
-			    data_value = Number(_ramda2.default.clone(slider.value)),
-			    label_value = data_frac ? data_value / 100 : data_value;
-			//update display values first
-			value.innerHTML = label_value;
-
-			//calculating base values
-			var slider_box = slider.getBoundingClientRect(),
-			    label_box = label.getBoundingClientRect(),
-			    base_unit = slider_box.width / Math.abs(data_max - data_min),
-			    base_value = data_value + Math.abs(data_min) * (data_frac ? 1 : -1),
-			    label_unit = label_box.width / Math.abs(data_max - data_min),
-
-			//the offset in pixels the handle of the slider will be, from left
-			left_offset = Math.round(base_value * (base_unit - label_unit) * 100) / 100,
-
-			//slider handle is about 15px width, offset margin by half the width (7)
-			left_margin = Math.round((data_max - base_value) * 7 / Math.abs(data_max - data_min));
-			//update offset values
-			label.style.left = left_offset + 'px';
-			value.style.paddingLeft = left_margin + 'px';
-		}
-	};
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _ramda = __webpack_require__(2);
-
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	var _Bacon = __webpack_require__(3);
-
-	var _Bacon2 = _interopRequireDefault(_Bacon);
-
-	var _menu = __webpack_require__(9);
-
-	var _menu2 = _interopRequireDefault(_menu);
-
-	var _index = __webpack_require__(11);
-
-	var elements = _interopRequireWildcard(_index);
+	var elements = _interopRequireWildcard(_elements);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 	exports.default = {
 		//save context state and options
-		init: function init() {
-			var $sliders = document.getElementsByClassName('slider');
+		init: function init(sliders) {
 			//initialize UI controllers
-			_menu2.default.updateLabels($sliders);
-			//TODO: needs to be called twice to avoid offset?
-			_menu2.default.updateLabels($sliders);
+			elements.slider.init(sliders);
 			//bind all events to all elements
-			return _ramda2.default.mapObjIndexed(this.bindElements.bind(this), elements);
+			return _util.R.mapObjIndexed(this.bindElements.bind(this), elements);
 		},
 		//bind an element to a Bacon Events
-		bindElement: _ramda2.default.curry(function (events, element) {
+		bindElement: _util.R.curry(function (events, element) {
 			var mapEvent = function mapEvent(handler, event) {
 				//only bind if handler is a function
-				return typeof handler === 'function' && _Bacon2.default.fromEvent(element, event).onValue(handler.bind(events));
+				if (typeof handler === 'function') return _util.B.fromEvent(element, event).onValue(handler.bind(events));
 			};
-			return _ramda2.default.mapObjIndexed(mapEvent, events);
+			return _util.R.mapObjIndexed(mapEvent, events);
 		}),
 		//bind an array of elements to Bacon events
 		bindElements: function bindElements(events, className) {
 			var elements = document.getElementsByClassName(className),
 			    bindEvents = this.bindElement(events);
-			return _ramda2.default.map(bindEvents, elements);
+			return _util.R.map(bindEvents, elements);
 		}
 	};
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12775,7 +12777,7 @@
 	  value: true
 	});
 
-	var _slider = __webpack_require__(12);
+	var _slider = __webpack_require__(13);
 
 	Object.defineProperty(exports, 'slider', {
 	  enumerable: true,
@@ -12805,7 +12807,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12814,21 +12816,17 @@
 		value: true
 	});
 
-	var _ramda = __webpack_require__(2);
+	var _util = __webpack_require__(3);
 
-	var _ramda2 = _interopRequireDefault(_ramda);
+	var _view = __webpack_require__(2);
 
-	var _view = __webpack_require__(1);
+	var _point = __webpack_require__(9);
 
-	var _view2 = _interopRequireDefault(_view);
+	var _point2 = _interopRequireDefault(_point);
 
-	var _menu = __webpack_require__(9);
+	var _data = __webpack_require__(1);
 
-	var _menu2 = _interopRequireDefault(_menu);
-
-	var _closures = __webpack_require__(13);
-
-	var _closures2 = _interopRequireDefault(_closures);
+	var _data2 = _interopRequireDefault(_data);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12836,6 +12834,10 @@
 		//local closure var
 		//for state keeping
 		slider: null,
+
+		init: function init(sliders) {
+			return this.updateLabels(sliders);
+		},
 		//clear slider selection on mouseup
 		mouseup: function mouseup(event) {
 			this.slider = null;
@@ -12847,9 +12849,9 @@
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
 		mousemove: function mousemove(event) {
-			var mouse = _view2.default.getMouse(_closures2.default.context, event);
+			var mouse = (0, _util.getMouse)(_data2.default.context, event);
 			if (this.slider) {
-				_menu2.default.updateLabel(this.slider);
+				this.updateLabel(this.slider);
 
 				var sliderInput = this.slider.getElementsByTagName('input')[0],
 				    fractional = sliderInput.getAttribute('data-fractional'),
@@ -12860,28 +12862,49 @@
 
 				_options.curve[sliderName] = sliderVal;
 
-				_options.curve = _ramda2.default.merge(_closures2.default.options.curve, _options.curve);
-				_closures2.default.options = _ramda2.default.merge(_closures2.default.options, _options);
+				_options.curve = _util.R.merge(_data2.default.options.curve, _options.curve);
+				_data2.default.options = _util.R.merge(_data2.default.options, _options);
 
-				return _view2.default.render(_closures2.default.context, _closures2.default.options, _closures2.default.points);
+				return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
 			}
+		},
+		//updateLabels :: [HTMLDivElement] -> undefined
+		updateLabels: function updateLabels(components) {
+			return _util.R.map(this.updateLabel, components);
+		},
+		//displays label above slider handle
+		//updateLabel :: HTMLDivElement -> undefined
+		updateLabel: function updateLabel(component) {
+			//get markup tags
+			var slider = component.getElementsByTagName('input')[0],
+			    label = component.getElementsByTagName('label')[0],
+			    value = label.getElementsByClassName('value')[0],
+
+			//get tag attributes
+			data_min = slider.getAttribute('min'),
+			    data_max = slider.getAttribute('max'),
+			    data_frac = slider.getAttribute('data-fractional'),
+			    data_value = Number(_util.R.clone(slider.value)),
+			    label_value = data_frac ? data_value / 100 : data_value;
+			//update display values first
+			value.innerHTML = label_value;
+
+			//calculating base values
+			var slider_box = slider.getBoundingClientRect(),
+			    label_box = label.getBoundingClientRect(),
+			    base_unit = slider_box.width / Math.abs(data_max - data_min),
+			    base_value = data_value + Math.abs(data_min) * (data_frac ? 1 : -1),
+			    label_unit = label_box.width / Math.abs(data_max - data_min),
+
+			//the offset in pixels the handle of the slider will be, from left
+			left_offset = Math.round(base_value * (base_unit - label_unit) * 100) / 100,
+
+			//slider handle is about 15px width, offset margin by half the width (7)
+			left_margin = Math.round((data_max - base_value) * 7 / Math.abs(data_max - data_min));
+			//update offset values
+			label.style.left = left_offset + 'px';
+			value.style.paddingLeft = left_margin + 'px';
 		}
-	};
-
-/***/ },
-/* 13 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = {
-		context: {},
-		options: {},
-		points: [],
-		selected: []
 	};
 
 /***/ },
@@ -12894,13 +12917,13 @@
 		value: true
 	});
 
-	var _view = __webpack_require__(1);
+	var _util = __webpack_require__(3);
 
-	var _view2 = _interopRequireDefault(_view);
+	var _view = __webpack_require__(2);
 
-	var _closures = __webpack_require__(13);
+	var _data = __webpack_require__(1);
 
-	var _closures2 = _interopRequireDefault(_closures);
+	var _data2 = _interopRequireDefault(_data);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12908,31 +12931,31 @@
 		//new point on double click
 		dblclick: function dblclick(event) {
 			//closure the user clicked point
-			_closures2.default.points.push(_view2.default.getMouse(_closures2.default.context, event));
-			//render new curve from mouse closures.points
-			return _view2.default.render(_closures2.default.context, _closures2.default.options, _closures2.default.points);
+			_data2.default.points.push((0, _util.getMouse)(_data2.default.context, event));
+			//render new curve from mouse data.points
+			return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
 		},
-		//check if point closures.selected on mousedown
+		//check if point data.selected on mousedown
 		mousedown: function mousedown(event) {
 
-			var mouse = _view2.default.getMouse(_closures2.default.context, event),
-			    index = _view2.default.findPoint(mouse)(_closures2.default.points);
+			var mouse = (0, _util.getMouse)(_data2.default.context, event),
+			    index = (0, _util.findPoint)(mouse)(_data2.default.points);
 			//needs to store in closure to communicate
 			//to mousemove event
-			return index > -1 && _closures2.default.selected.push(index);
+			return index > -1 && _data2.default.selected.push(index);
 		},
 		//clear selection on mouseup
 		mouseup: function mouseup(event) {
 			//clear selection
-			_closures2.default.selected = [];
+			_data2.default.selected = [];
 		},
 		//drag move the point if selection exists
 		mousemove: function mousemove(event) {
-			//update closures.points, if one is selected
-			if (_closures2.default.selected.length) {
-				_closures2.default.points.splice(_closures2.default.selected[0], 1, _view2.default.getMouse(_closures2.default.context, event));
+			//update data.points, if one is selected
+			if (_data2.default.selected.length) {
+				_data2.default.points.splice(_data2.default.selected[0], 1, (0, _util.getMouse)(_data2.default.context, event));
 
-				return _view2.default.render(_closures2.default.context, _closures2.default.options, _closures2.default.points);
+				return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
 			}
 		}
 	};
@@ -12947,17 +12970,13 @@
 		value: true
 	});
 
-	var _ramda = __webpack_require__(2);
+	var _util = __webpack_require__(3);
 
-	var _ramda2 = _interopRequireDefault(_ramda);
+	var _view = __webpack_require__(2);
 
-	var _view = __webpack_require__(1);
+	var _data = __webpack_require__(1);
 
-	var _view2 = _interopRequireDefault(_view);
-
-	var _closures = __webpack_require__(13);
-
-	var _closures2 = _interopRequireDefault(_closures);
+	var _data2 = _interopRequireDefault(_data);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12969,10 +12988,10 @@
 
 			_options.curve[opt] = val;
 
-			_options.curve = _ramda2.default.merge(_closures2.default.options.curve, _options.curve);
-			_closures2.default.options = _ramda2.default.merge(_closures2.default.options, _options);
+			_options.curve = _util.R.merge(_data2.default.options.curve, _options.curve);
+			_data2.default.options = _util.R.merge(_data2.default.options, _options);
 
-			return _view2.default.render(_closures2.default.context, _closures2.default.options, _closures2.default.points);
+			return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
 		}
 	};
 
@@ -13002,6 +13021,9 @@
 			verts: {
 				'strokeStyle': '#aa0000',
 				'lineWidth': 1
+			},
+			bgtext: {
+				'font': '24px sans-serif'
 			}
 		}
 	};
