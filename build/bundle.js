@@ -80,7 +80,7 @@
 		//initialize events
 		_events2.default.init(sliders);
 		//first render
-		_view2.default.init(context, _options2.default);
+		return _view2.default.init(context, _options2.default);
 	}
 
 	document.addEventListener('DOMContentLoaded', start, false);
@@ -123,22 +123,51 @@
 	var view = {
 		//local closure
 		curve: [],
-		context: {},
+
 		init: function init(context, options) {
-			//save context to closure
-			this.context = context;
-
-			_util.R.mapObjIndexed(this.load.bind(this), this.loaders);
-
+			//load prop functions for rendering
+			_util.R.mapObjIndexed(function (loader, prop) {
+				this[prop] = loader.bind(this)(context);
+			}.bind(this), this.props);
 			//render default text
 			return this.render(context, options);
 		},
 
-		load: function load(loader, prop) {
-			this[prop] = loader.bind(this)(this.context);
+		render: function render(context, options, points) {
+
+			var w = context.canvas.width,
+			    h = context.canvas.height,
+			    draw = this.draw(options);
+
+			context.clearRect(0, 0, w, h);
+			//render points into curve
+			if (points && points.length >= 2) {
+				//save curve points for select drag render
+				this.curve = (0, _curve2.default)(points, options['curve']);
+				//render curve
+				draw('curve')(this.curve);
+				//fill curve
+				if (options.curve.fill) this.canvas('fill')();
+				//no points to render
+			} else {
+					//render default text
+					return draw('bgtext')(options.helpText);
+				}
+			//draw vertex points
+			if (options.curve.showPoints) draw('verts')(points);
 		},
 
-		loaders: {
+		paint: _util.R.curry(function (drawer, view, options, data) {
+			view.config(options);
+
+			if (typeof data !== 'string') view.canvas('beginPath')();
+
+			view.comp[drawer](data, view);
+
+			if (typeof data !== 'string') view.canvas('stroke')();
+		}),
+
+		props: {
 
 			config: function config(context) {
 				//setting context properties has to change context state
@@ -150,7 +179,6 @@
 			},
 
 			canvas: function canvas(context) {
-				// return R.converge(R.compose, [R.flip(R.bind), R.flip(R.prop)])(context);
 				return _util.R.compose(_util.R.flip(_util.R.bind)(context), _util.R.flip(_util.R.prop)(context));
 			},
 
@@ -162,13 +190,12 @@
 				return _util.R.compose(_util.R.converge(this.paint), buildParams, _util.R.of, getOptions);
 			},
 
-			drawComp: function drawComp() {
-				var comp = {
+			comp: function comp(context) {
+				return {
 					curve: function curve(points, view) {
-						var lineTo = _util.R.apply(view.canvas('lineTo')),
-						    _draw = _util.R.compose(_util.R.map(lineTo), _util.R.map(_util.getPoint));
+						var lineTo = _util.R.apply(view.canvas('lineTo'));
 
-						return _draw(points);
+						return _util.R.compose(_util.R.map(lineTo), _util.R.map(_util.getPoint))(points);
 					},
 					verts: function verts(points, view) {
 						var w = 6,
@@ -176,14 +203,13 @@
 						    offset = _util.R.flip(_util.R.subtract)(w / 2),
 						    dimens = _util.R.flip(_util.R.concat)([w, h]),
 						    params = _util.R.compose(dimens, _util.getPoint, _util.R.map(offset)),
-						    rect = _util.R.apply(view.canvas('rect')),
-						    _draw = _util.R.compose(_util.R.map(rect), _util.R.map(params));
+						    rect = _util.R.apply(view.canvas('rect'));
 
-						return _draw(points);
+						return _util.R.compose(_util.R.map(rect), _util.R.map(params))(points);
 					},
 					bgtext: function bgtext(text, view) {
-						var w = view.context.canvas.width,
-						    h = view.context.canvas.height,
+						var w = context.canvas.width,
+						    h = context.canvas.height,
 
 						//center text
 						x = w / 2 - text.length * 10 / 2,
@@ -192,73 +218,8 @@
 						return view.canvas('fillText')(text, x, y);
 					}
 				};
-
-				return comp;
 			}
-		},
-
-		render: function render(context, options, points) {
-
-			var w = context.canvas.width,
-			    h = context.canvas.height;
-
-			context.clearRect(0, 0, w, h);
-
-			//render points
-			if (points && points.length >= 2) {
-				//save curve points for select drag render
-				this.curve = (0, _curve2.default)(points, options['curve']);
-				//render curve
-				this.draw(options)('curve')(this.curve);
-				//fill curve
-				if (options.curve.fill) this.canvas('fill')();
-				//no points to render
-			} else if (!points || points.length < 1) {
-					//render default text
-					return this.draw(options)('bgtext')(options.helpText);
-				}
-
-			//draw vertex points
-			if (options.curve.showPoints) this.draw(options)('verts')(points);
-		},
-
-		paint: _util.R.curry(function (drawer, view, options, data) {
-			view.config(options);
-
-			if (typeof data !== 'string') view.canvas('beginPath')();
-
-			view.drawComp[drawer](data, view);
-
-			if (typeof data !== 'string') view.canvas('stroke')();
-		})
-
-		// drawCurve : function(points, view){
-		// 	var lineTo = R.apply(this.canvas('lineTo')),
-		// 		_draw = R.compose(R.map(lineTo), R.map(getPoint));
-
-		// 	return _draw(points);
-		// },
-
-		// drawVerts : function(points, view){
-		// 	var w = 6, h = 6,
-		// 		offset = R.flip(R.subtract)(w/2),
-		// 		dimens = R.flip(R.concat)([w, h]),
-		// 		params = R.compose(dimens, getPoint, R.map(offset)),
-		// 		rect = R.apply(this.canvas('rect')),
-		// 		_draw = R.compose(R.map(rect), R.map(params));
-
-		// 	return _draw(points);
-		// },
-
-		// drawBgText : function(text, view){
-		// 	var w = view.context.canvas.width,
-		// 		h = view.context.canvas.height,
-		// 		//center text
-		// 		x = w/2 - (text.length*10)/2,
-		// 		y = h/2;
-
-		// 	return view.canvas('fillText')(text, x, y);
-		// }
+		}
 	};
 
 	exports.default = { init: view.init.bind(view) };
@@ -12648,46 +12609,11 @@
 	//TODO : transform into functional style
 	parse = _util.R.curry(function (options, _points) {
 
-		// if(!points || !points.length)
-		// 	return points;
-
 		var segments = options.segments,
 		    tension = options.tension,
 		    closed = options.closed,
 		    points = _util.R.compose(flatten, _util.R.map(_util.getPoint))(_points),
 		    res = [];
-
-		// for (var i = 0; i < points.length; i++) {
-
-		// 	var p = points[i],
-		// 		p1 = points[i+1] || { x : 0, y : 0 },
-		// 		p_1 = points[i-1] || { x : 0, y : 0 },
-		// 		p2 = points[i+2] || { x : 0, y : 0 },
-		// 		pt1 = p.x,
-		// 		pt2 = p.y,
-		// 		pt3 = p1.x,
-		// 		pt4 = p1.y,
-
-		// 		t1x = (pt3 - p_1.x) * tension,
-		// 		t1y = (pt4 - p_1.y) * tension,
-		// 		t2x = (p2.x - pt1) * tension,
-		// 		t2y = (p2.y - pt2) * tension,
-		// 		c = 0, c1, c2, c3, c4;
-
-		// 	for (var t = 0; t < segments; t++) {
-
-		// 		c1 = cache[c++];
-		// 		c2 = cache[c++];
-		// 		c3 = cache[c++];
-		// 		c4 = cache[c++];
-
-		// 		var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-		// 		// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-		// 		var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-		// 		// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-		// 		res.push(new point(_x, _y));
-		// 	}
-		// }
 
 		for (var i = 2; i < points.length; i += 2) {
 

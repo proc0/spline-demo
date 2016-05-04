@@ -5,44 +5,40 @@ import curve from './curve';
 var view = {
 	//local closure
 	curve : [],
-	context : {},
+	
 	init : function(context, options){
-		//save context to closure
-		this.context = context;
 		//load prop functions for rendering
-		R.mapObjIndexed(this.load.bind(this), this.loaders);
+		R.mapObjIndexed(function(loader, prop){
+			this[prop] = loader.bind(this)(context);
+		}.bind(this), this.props);
 		//render default text
 		return this.render(context, options);
-	},
-
-	load : function(loader, prop){
-		this[prop] = loader.bind(this)(this.context);
 	},
 
 	render : function(context, options, points){
 
 		var w = context.canvas.width,
-			h = context.canvas.height;
+			h = context.canvas.height,
+			draw = this.draw(options);
 
 		context.clearRect(0, 0, w, h);
-
-		//render points
+		//render points into curve
 		if(points && points.length >= 2){
 			//save curve points for select drag render
-			this.curve = curve( points, options['curve'] );
+			this.curve = curve(points, options['curve']);
 			//render curve
-			this.draw(options)('curve')(this.curve);
+			draw('curve')(this.curve);
 			//fill curve
-			if(options.curve.fill) this.canvas('fill')();
+			if(options.curve.fill) 
+				this.canvas('fill')();
 		//no points to render
-		} else if(!points || points.length < 1){
+		} else {
 			//render default text
-			return this.draw(options)('bgtext')(options.helpText);
+			return draw('bgtext')(options.helpText);
 		}
-
 		//draw vertex points
 		if(options.curve.showPoints) 
-			this.draw(options)('verts')(points);
+			draw('verts')(points);
 	},
 
 	paint : R.curry(function(drawer, view, options, data){
@@ -51,26 +47,25 @@ var view = {
 		if(typeof data !== 'string')
 			view.canvas('beginPath')();
 
-		view.drawComp[drawer]( data, view );
+		view.comp[drawer](data, view);
 		
 		if(typeof data !== 'string')
 			view.canvas('stroke')();		
 		
 	}),
 
-	loaders : {
+	props : {
 
 		config : function(context){
 				//setting context properties has to change context state
 				//so wrapping it in a function
 			var setContext = function(val, key, obj){
-					return R.prop(key, context) ? context[key] = val : null;
+					return R.prop(key, context) ? (context[key] = val) : null;
 				};
 			return R.mapObjIndexed(setContext);
 		},
 
 		canvas : function(context){
-			// return R.converge(R.compose, [R.flip(R.bind), R.flip(R.prop)])(context);
 			return R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
 		},
 
@@ -82,36 +77,32 @@ var view = {
 			return R.compose(R.converge(this.paint), buildParams, R.of, getOptions);
 		},
 
-		drawComp : function(){
-			var comp = {
-					curve 	: function(points, view){
-								var lineTo = R.apply(view.canvas('lineTo')),
-									_draw = R.compose(R.map(lineTo), R.map(getPoint));
-								
-								return _draw(points);
-							},
-					verts 	: function(points, view){
-								var w = 6, h = 6,
-									offset = R.flip(R.subtract)(w/2),
-									dimens = R.flip(R.concat)([w, h]),
-									params = R.compose(dimens, getPoint, R.map(offset)),
-									rect = R.apply(view.canvas('rect')),
-									_draw = R.compose(R.map(rect), R.map(params));
+		comp : function(context){
+			return {
+				curve 	: function(points, view){
+					var lineTo = R.apply(view.canvas('lineTo'));
+					
+					return R.compose(R.map(lineTo), R.map(getPoint))(points);
+				},
+				verts 	: function(points, view){
+					var w = 6, h = 6,
+						offset = R.flip(R.subtract)(w/2),
+						dimens = R.flip(R.concat)([w, h]),
+						params = R.compose(dimens, getPoint, R.map(offset)),
+						rect = R.apply(view.canvas('rect'));
 
-								return _draw(points);
-							},
-					bgtext 	: function(text, view){
-								var w = view.context.canvas.width,
-									h = view.context.canvas.height,
-									//center text
-									x = w/2 - (text.length*10)/2,
-									y = h/2;
+					return R.compose(R.map(rect), R.map(params))(points);
+				},
+				bgtext 	: function(text, view){
+					var w = context.canvas.width,
+						h = context.canvas.height,
+						//center text
+						x = w/2 - (text.length*10)/2,
+						y = h/2;
 
-								return view.canvas('fillText')(text, x, y);
-							}
-				};
-
-			return comp;
+					return view.canvas('fillText')(text, x, y);
+				}
+			};
 		}
 	}
 };

@@ -33,46 +33,11 @@ import point from './point';
 		//TODO : transform into functional style
 		parse = R.curry(function(options, _points) {
 
-			// if(!points || !points.length)
-			// 	return points;
-
 			var segments = options.segments,
 				tension = options.tension,
 				closed = options.closed,
 				points = R.compose(flatten, R.map(getPoint))(_points),
 				res = [];
-
-			// for (var i = 0; i < points.length; i++) {
-
-			// 	var p = points[i],
-			// 		p1 = points[i+1] || { x : 0, y : 0 },
-			// 		p_1 = points[i-1] || { x : 0, y : 0 },
-			// 		p2 = points[i+2] || { x : 0, y : 0 },
-			// 		pt1 = p.x,
-			// 		pt2 = p.y,
-			// 		pt3 = p1.x,
-			// 		pt4 = p1.y,
-
-			// 		t1x = (pt3 - p_1.x) * tension,
-			// 		t1y = (pt4 - p_1.y) * tension,
-			// 		t2x = (p2.x - pt1) * tension,
-			// 		t2y = (p2.y - pt2) * tension,
-			// 		c = 0, c1, c2, c3, c4;
-
-			// 	for (var t = 0; t < segments; t++) {
-
-			// 		c1 = cache[c++];
-			// 		c2 = cache[c++];
-			// 		c3 = cache[c++];
-			// 		c4 = cache[c++];
-
-			// 		var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-			// 		// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-			// 		var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-			// 		// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-			// 		res.push(new point(_x, _y));
-			// 	}
-			// }
 
 			for (var i = 2; i < points.length; i += 2) {
 

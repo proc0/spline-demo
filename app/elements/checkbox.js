@@ -13,6 +13,6 @@ export default {
 			_options.curve = R.merge(data.options.curve, _options.curve);
 			data.options = R.merge(data.options, _options);
 
-			return render(data.context, data.options, data.points);
+		return render(data.context, data.options, data.points);
 	}
 };

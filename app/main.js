@@ -19,7 +19,7 @@ function start(){
 	//initialize events
 	events.init(sliders);
 	//first render
-	view.init(context, options);
+	return view.init(context, options);
 }
 
 document.addEventListener('DOMContentLoaded', start, false);
