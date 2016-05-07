@@ -1,9 +1,11 @@
 'use strict';
-import R from '../node_modules/ramda/dist/ramda';
-import point from './point';
+import R from '../../node_modules/ramda/dist/ramda';
+import point from '../data/point';
 
 //get the Point class [x,y] by calling its method
 export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
+
+export var getPoints = R.map(getPoint);
 //calculate mouse X Y
 export var getMouse = function(context, event){
 	var client = context.canvas.getBoundingClientRect(),
@@ -47,5 +49,8 @@ export var chunk = R.curry(function(amount, list){
 	// check input and start recursion
 	return (list && list.length > amount) ? init(list) : (list.length === amount) ? [list] : list;
 });
-export { default as R } from '../node_modules/ramda/dist/ramda';
-export { default as B } from '../node_modules/baconjs/dist/Bacon';
+
+export var flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype));
+
+export { default as R } from '../../node_modules/ramda/dist/ramda';
+export { default as B } from '../../node_modules/baconjs/dist/Bacon';

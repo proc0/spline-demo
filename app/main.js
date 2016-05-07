@@ -1,6 +1,5 @@
-import data 	from './data';
-import view 	from './view';
-import events 	from './events';
+import model 	from './data/model';
+import state 	from './state';
 import options 	from '../options';
 
 var canvas = document.getElementsByTagName('canvas')[0],
@@ -12,14 +11,12 @@ var canvas = document.getElementsByTagName('canvas')[0],
 options.helpText = canvas.innerHTML;
 
 //assign closures
-data.context = context;
-data.options = options;
+model.context = context;
+model.options = options;
 
 function start(){
-	//initialize events
-	events.init(sliders);
-	//first render
-	return view.init(context, options);
+	//initialize state
+	state.init(context, options, sliders);
 }
 
 document.addEventListener('DOMContentLoaded', start, false);

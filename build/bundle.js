@@ -46,17 +46,13 @@
 
 	'use strict';
 
-	var _data = __webpack_require__(1);
+	var _model = __webpack_require__(1);
 
-	var _data2 = _interopRequireDefault(_data);
+	var _model2 = _interopRequireDefault(_model);
 
-	var _view = __webpack_require__(2);
+	var _state = __webpack_require__(2);
 
-	var _view2 = _interopRequireDefault(_view);
-
-	var _events = __webpack_require__(11);
-
-	var _events2 = _interopRequireDefault(_events);
+	var _state2 = _interopRequireDefault(_state);
 
 	var _options = __webpack_require__(16);
 
@@ -73,14 +69,12 @@
 	_options2.default.helpText = canvas.innerHTML;
 
 	//assign closures
-	_data2.default.context = context;
-	_data2.default.options = _options2.default;
+	_model2.default.context = context;
+	_model2.default.options = _options2.default;
 
 	function start() {
-		//initialize events
-		_events2.default.init(sliders);
-		//first render
-		return _view2.default.init(context, _options2.default);
+		//initialize state
+		_state2.default.init(context, _options2.default, sliders);
 	}
 
 	document.addEventListener('DOMContentLoaded', start, false);
@@ -110,120 +104,46 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.render = undefined;
 
 	var _util = __webpack_require__(3);
 
-	var _curve = __webpack_require__(10);
+	var _view = __webpack_require__(10);
 
-	var _curve2 = _interopRequireDefault(_curve);
+	var _view2 = _interopRequireDefault(_view);
+
+	var _actions = __webpack_require__(12);
+
+	var actions = _interopRequireWildcard(_actions);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var view = {
-		//local closure
-		curve: [],
-
-		init: function init(context, options) {
-			//load prop functions for rendering
-			_util.R.mapObjIndexed(function (loader, prop) {
-				this[prop] = loader.bind(this)(context);
-			}.bind(this), this.props);
-			//render default text
-			return this.render(context, options);
+	exports.default = {
+		//save context state and options
+		init: function init(context, options, sliders) {
+			//initialize UI controllers
+			actions.slider.updateLabels(sliders);
+			//bind all elements and their events to all actions
+			_util.R.mapObjIndexed(this.bindElements.bind(this), actions);
+			//initialize view
+			return _view2.default.init(context, options);
 		},
-
-		render: function render(context, options, points) {
-
-			var w = context.canvas.width,
-			    h = context.canvas.height,
-			    draw = this.draw(options);
-
-			context.clearRect(0, 0, w, h);
-			//render points into curve
-			if (points && points.length >= 2) {
-				//save curve points for select drag render
-				this.curve = (0, _curve2.default)(points, options['curve']);
-				//render curve
-				draw('curve')(this.curve);
-				//fill curve
-				if (options.curve.fill) this.canvas('fill')();
-				//no points to render
-			} else {
-					//render default text
-					return draw('bgtext')(options.helpText);
-				}
-			//draw vertex points
-			if (options.curve.showPoints) draw('verts')(points);
-		},
-
-		paint: _util.R.curry(function (drawer, view, options, data) {
-			view.config(options);
-
-			if (typeof data !== 'string') view.canvas('beginPath')();
-
-			view.comp[drawer](data, view);
-
-			if (typeof data !== 'string') view.canvas('stroke')();
+		//bind an element to a Bacon Events
+		bindElement: _util.R.curry(function (events, element) {
+			var mapEvent = function mapEvent(handler, event) {
+				//only bind if handler is a function
+				if (typeof handler === 'function') return _util.B.fromEvent(element, event).onValue(handler.bind(events));
+			};
+			return _util.R.mapObjIndexed(mapEvent, events);
 		}),
-
-		props: {
-
-			config: function config(context) {
-				//setting context properties has to change context state
-				//so wrapping it in a function
-				var setContext = function setContext(val, key, obj) {
-					return _util.R.prop(key, context) ? context[key] = val : null;
-				};
-				return _util.R.mapObjIndexed(setContext);
-			},
-
-			canvas: function canvas(context) {
-				return _util.R.compose(_util.R.flip(_util.R.bind)(context), _util.R.flip(_util.R.prop)(context));
-			},
-
-			draw: function draw() {
-				//extract style options
-				var getOptions = _util.R.compose(_util.R.flip(_util.R.prop), _util.R.prop('style')),
-				    buildParams = _util.R.compose(_util.R.prepend(_util.R.identity), _util.R.prepend(_util.R.always(this)));
-
-				return _util.R.compose(_util.R.converge(this.paint), buildParams, _util.R.of, getOptions);
-			},
-
-			comp: function comp(context) {
-				return {
-					curve: function curve(points, view) {
-						var lineTo = _util.R.apply(view.canvas('lineTo'));
-
-						return _util.R.compose(_util.R.map(lineTo), _util.R.map(_util.getPoint))(points);
-					},
-					verts: function verts(points, view) {
-						var w = 6,
-						    h = 6,
-						    offset = _util.R.flip(_util.R.subtract)(w / 2),
-						    dimens = _util.R.flip(_util.R.concat)([w, h]),
-						    params = _util.R.compose(dimens, _util.getPoint, _util.R.map(offset)),
-						    rect = _util.R.apply(view.canvas('rect'));
-
-						return _util.R.compose(_util.R.map(rect), _util.R.map(params))(points);
-					},
-					bgtext: function bgtext(text, view) {
-						var w = context.canvas.width,
-						    h = context.canvas.height,
-
-						//center text
-						x = w / 2 - text.length * 10 / 2,
-						    y = h / 2;
-
-						return view.canvas('fillText')(text, x, y);
-					}
-				};
-			}
+		//bind an array of elements to Bacon events
+		bindElements: function bindElements(events, className) {
+			var elements = document.getElementsByClassName(className),
+			    bindEvents = this.bindElement(events);
+			return _util.R.map(bindEvents, elements);
 		}
 	};
-
-	exports.default = { init: view.init.bind(view) };
-	var render = exports.render = view.render.bind(view);
 
 /***/ },
 /* 3 */
@@ -234,7 +154,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.B = exports.R = exports.chunk = exports.findPoint = exports.getMouse = exports.getPoint = undefined;
+	exports.B = exports.R = exports.flatten = exports.chunk = exports.findPoint = exports.getMouse = exports.getPoints = exports.getPoint = undefined;
 
 	var _ramda = __webpack_require__(4);
 
@@ -264,6 +184,8 @@
 
 	//get the Point class [x,y] by calling its method
 	var getPoint = exports.getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]);
+
+	var getPoints = exports.getPoints = _ramda2.default.map(getPoint);
 	//calculate mouse X Y
 	var getMouse = exports.getMouse = function getMouse(context, event) {
 		var client = context.canvas.getBoundingClientRect(),
@@ -303,6 +225,8 @@
 		// check input and start recursion
 		return list && list.length > amount ? init(list) : list.length === amount ? [list] : list;
 	});
+
+	var flatten = exports.flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype));
 
 /***/ },
 /* 4 */
@@ -12537,6 +12461,160 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.render = undefined;
+
+	var _util = __webpack_require__(3);
+
+	var _curve = __webpack_require__(11);
+
+	var _curve2 = _interopRequireDefault(_curve);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var view = {
+		//local closure
+		curve: [],
+		/**
+	  * @type init :: Context -> Options -> IO
+	  */
+		init: function init(context, options) {
+			//load prop functions for rendering
+			_util.R.mapObjIndexed(function (loader, prop) {
+				this[prop] = loader.bind(this)(context);
+			}.bind(this), this.props);
+			//render default text
+			return this.render(context, options);
+		},
+		/**
+	  * @type render :: Context -> Options -> [Point] -> IO
+	  */
+		render: function render(context, options, points) {
+
+			var w = context.canvas.width,
+			    h = context.canvas.height,
+			    draw = this.draw(options);
+
+			context.clearRect(0, 0, w, h);
+
+			//no points to render
+			if (!points || points.length < 1) {
+				//render default text
+				return draw('bgtext')(options.helpText || "");
+			}
+			//render points into curve
+			if (points && points.length >= 2) {
+				//save curve points for select drag render
+				this.curve = (0, _curve2.default)(points, options['curve']);
+				//render curve
+				draw('curve')(this.curve);
+				//fill curve
+				if (options.curve.fill) this.canvas('fill')();
+			}
+			//draw vertex points if > 1 point
+			if (options.curve.showPoints) draw('verts')(points);
+		},
+		/**
+	  * @type paint :: String -> View -> Options -> Data -> IO
+	  */
+		paint: _util.R.curry(function (drawer, view, options, data) {
+			view.config(options);
+
+			if (typeof data !== 'string') view.canvas('beginPath')();
+
+			view.comp[drawer](data, view);
+
+			if (typeof data !== 'string') view.canvas('stroke')();
+		}),
+		/**
+	  *	@member props {Object}
+	  *	@desc	contains key/value where value is a high order function
+	  *	@type 	prop :: Context -> (* -> IO)
+	  */
+		props: {
+			/**
+	   *	@type config :: Context -> (Object -> IO)
+	   *	@desc returns a function that will set a property on
+	   *        the canvas context object. Needs to be imperative.
+	   */
+			config: function config(context) {
+				//setting context cannot be functional style?
+				var setContext = function setContext(val, key, obj) {
+					return _util.R.prop(key, context) ? context[key] = val : null;
+				};
+				return _util.R.mapObjIndexed(setContext);
+			},
+			/**
+	   *
+	   */
+			canvas: function canvas(context) {
+				return _util.R.compose(_util.R.flip(_util.R.bind)(context), _util.R.flip(_util.R.prop)(context));
+			},
+			/**
+	   *
+	   */
+			draw: function draw(context) {
+				//extract style options
+				var getOptions = _util.R.compose(_util.R.flip(_util.R.prop), _util.R.prop('style')),
+				    buildParams = _util.R.compose(_util.R.prepend(_util.R.identity), _util.R.prepend(_util.R.always(this)));
+
+				return _util.R.compose(_util.R.converge(this.paint), buildParams, _util.R.of, getOptions);
+			},
+			/**
+	   *
+	   */
+			comp: function comp(context) {
+				return {
+					/**
+	     *
+	     */
+					curve: function curve(points, view) {
+						var lineTo = _util.R.apply(view.canvas('lineTo'));
+
+						return _util.R.compose(_util.R.map(lineTo), _util.getPoints)(points);
+					},
+					/**
+	     *
+	     */
+					verts: function verts(points, view) {
+						var w = 6,
+						    h = 6,
+						    offset = _util.R.flip(_util.R.subtract)(w / 2),
+						    dimens = _util.R.flip(_util.R.concat)([w, h]),
+						    params = _util.R.compose(dimens, _util.getPoint, _util.R.map(offset)),
+						    rect = _util.R.apply(view.canvas('rect'));
+
+						return _util.R.compose(_util.R.map(rect), _util.R.map(params))(points);
+					},
+					/**
+	     *
+	     */
+					bgtext: function bgtext(text, view) {
+						var w = context.canvas.width,
+						    h = context.canvas.height,
+
+						//center text
+						x = w / 2 - text.length * 10 / 2,
+						    y = h / 2;
+
+						return view.canvas('fillText')(text, x, y);
+					}
+				};
+			}
+		}
+	};
+
+	exports.default = { init: view.init.bind(view) };
+	var render = exports.render = view.render.bind(view);
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
 
 	exports.default = function (curvePoints, curveOptions) {
 
@@ -12555,7 +12633,7 @@
 		    p2 = p[1],
 		    p_2 = p[l - 2],
 		    p_1 = p[l - 1],
-		    render = _util.R.compose(parse(options), flatten);
+		    render = _util.R.compose(parse(options), _util.flatten);
 
 		if (segments !== options.segments) {
 			cache = cacheSegments(options.segments);
@@ -12566,7 +12644,7 @@
 		// -------------------->  [ mainCurve, closingCurve, closingPoint ]
 		var points = options.closed ? [render(p_1, p, p1), render(p_2, p_1, p1, p2), p1] : [render(p1, p, p_1), p_1];
 
-		return flatten(points);
+		return (0, _util.flatten)(points);
 	};
 
 	var _util = __webpack_require__(3);
@@ -12579,17 +12657,16 @@
 
 	var cache = [],
 	    segments = 0,
-	    flatten = _util.R.compose(_util.R.flatten, Array.prototype.concat.bind(Array.prototype)),
-	    cacheSegments = function cacheSegments(segments) {
-		var _cache = new Float32Array((segments + 2) * 4),
+	    cacheSegments = function cacheSegments(numSegments) {
+		var _cache = new Float32Array((numSegments + 2) * 4),
 		    cachePtr = 4;
 
 		// cache inner-loop calculations as they are based on t alone
 		_cache[0] = 1; // 1,0,0,0
 
-		for (var i = 1; i < segments; i++) {
+		for (var i = 1; i < numSegments; i++) {
 
-			var st = i / segments,
+			var st = i / numSegments,
 			    st2 = st * st,
 			    st3 = st2 * st,
 			    st23 = st3 * 2,
@@ -12612,7 +12689,7 @@
 		var segments = options.segments,
 		    tension = options.tension,
 		    closed = options.closed,
-		    points = _util.R.compose(flatten, _util.R.map(_util.getPoint))(_points),
+		    points = _util.R.compose(_util.flatten, _util.getPoints)(_points),
 		    res = [];
 
 		for (var i = 2; i < points.length; i += 2) {
@@ -12650,48 +12727,6 @@
 	});
 
 	;
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _util = __webpack_require__(3);
-
-	var _elements = __webpack_require__(12);
-
-	var elements = _interopRequireWildcard(_elements);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	exports.default = {
-		//save context state and options
-		init: function init(sliders) {
-			//initialize UI controllers
-			elements.slider.init(sliders);
-			//bind all events to all elements
-			return _util.R.mapObjIndexed(this.bindElements.bind(this), elements);
-		},
-		//bind an element to a Bacon Events
-		bindElement: _util.R.curry(function (events, element) {
-			var mapEvent = function mapEvent(handler, event) {
-				//only bind if handler is a function
-				if (typeof handler === 'function') return _util.B.fromEvent(element, event).onValue(handler.bind(events));
-			};
-			return _util.R.mapObjIndexed(mapEvent, events);
-		}),
-		//bind an array of elements to Bacon events
-		bindElements: function bindElements(events, className) {
-			var elements = document.getElementsByClassName(className),
-			    bindEvents = this.bindElement(events);
-			return _util.R.map(bindEvents, elements);
-		}
-	};
 
 /***/ },
 /* 12 */
@@ -12744,15 +12779,15 @@
 
 	var _util = __webpack_require__(3);
 
-	var _view = __webpack_require__(2);
+	var _view = __webpack_require__(10);
 
 	var _point = __webpack_require__(9);
 
 	var _point2 = _interopRequireDefault(_point);
 
-	var _data = __webpack_require__(1);
+	var _model = __webpack_require__(1);
 
-	var _data2 = _interopRequireDefault(_data);
+	var _model2 = _interopRequireDefault(_model);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12761,9 +12796,6 @@
 		//for state keeping
 		slider: null,
 
-		init: function init(sliders) {
-			return this.updateLabels(sliders);
-		},
 		//clear slider selection on mouseup
 		mouseup: function mouseup(event) {
 			this.slider = null;
@@ -12775,12 +12807,12 @@
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
 		mousemove: function mousemove(event) {
-			var mouse = (0, _util.getMouse)(_data2.default.context, event);
+			var mouse = (0, _util.getMouse)(_model2.default.context, event);
 			if (this.slider) {
 				this.updateLabel(this.slider);
 
 				var sliderInput = this.slider.getElementsByTagName('input')[0],
-				    fractional = sliderInput.getAttribute('data-fractional'),
+				    fractional = sliderInput.getAttribute('model-fractional'),
 				    sliderName = sliderInput.getAttribute('id'),
 				    value = this.slider.getElementsByTagName('input')[0].value,
 				    sliderVal = fractional ? value / 100 : value,
@@ -12788,10 +12820,10 @@
 
 				_options.curve[sliderName] = sliderVal;
 
-				_options.curve = _util.R.merge(_data2.default.options.curve, _options.curve);
-				_data2.default.options = _util.R.merge(_data2.default.options, _options);
+				_options.curve = _util.R.merge(_model2.default.options.curve, _options.curve);
+				_model2.default.options = _util.R.merge(_model2.default.options, _options);
 
-				return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
+				return (0, _view.render)(_model2.default.context, _model2.default.options, _model2.default.points);
 			}
 		},
 		//updateLabels :: [HTMLDivElement] -> undefined
@@ -12845,11 +12877,11 @@
 
 	var _util = __webpack_require__(3);
 
-	var _view = __webpack_require__(2);
+	var _view = __webpack_require__(10);
 
-	var _data = __webpack_require__(1);
+	var _model = __webpack_require__(1);
 
-	var _data2 = _interopRequireDefault(_data);
+	var _model2 = _interopRequireDefault(_model);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12857,31 +12889,31 @@
 		//new point on double click
 		dblclick: function dblclick(event) {
 			//closure the user clicked point
-			_data2.default.points.push((0, _util.getMouse)(_data2.default.context, event));
-			//render new curve from mouse data.points
-			return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
+			_model2.default.points.push((0, _util.getMouse)(_model2.default.context, event));
+			//render new curve from mouse model.points
+			return (0, _view.render)(_model2.default.context, _model2.default.options, _model2.default.points);
 		},
-		//check if point data.selected on mousedown
+		//check if point model.selected on mousedown
 		mousedown: function mousedown(event) {
 
-			var mouse = (0, _util.getMouse)(_data2.default.context, event),
-			    index = (0, _util.findPoint)(mouse)(_data2.default.points);
+			var mouse = (0, _util.getMouse)(_model2.default.context, event),
+			    index = (0, _util.findPoint)(mouse)(_model2.default.points);
 			//needs to store in closure to communicate
 			//to mousemove event
-			return index > -1 && _data2.default.selected.push(index);
+			return index > -1 && _model2.default.selected.push(index);
 		},
 		//clear selection on mouseup
 		mouseup: function mouseup(event) {
 			//clear selection
-			_data2.default.selected = [];
+			_model2.default.selected = [];
 		},
 		//drag move the point if selection exists
 		mousemove: function mousemove(event) {
-			//update data.points, if one is selected
-			if (_data2.default.selected.length) {
-				_data2.default.points.splice(_data2.default.selected[0], 1, (0, _util.getMouse)(_data2.default.context, event));
+			//update model.points, if one is selected
+			if (_model2.default.selected.length) {
+				_model2.default.points.splice(_model2.default.selected[0], 1, (0, _util.getMouse)(_model2.default.context, event));
 
-				return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
+				return (0, _view.render)(_model2.default.context, _model2.default.options, _model2.default.points);
 			}
 		}
 	};
@@ -12898,11 +12930,11 @@
 
 	var _util = __webpack_require__(3);
 
-	var _view = __webpack_require__(2);
+	var _view = __webpack_require__(10);
 
-	var _data = __webpack_require__(1);
+	var _model = __webpack_require__(1);
 
-	var _data2 = _interopRequireDefault(_data);
+	var _model2 = _interopRequireDefault(_model);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12914,10 +12946,10 @@
 
 			_options.curve[opt] = val;
 
-			_options.curve = _util.R.merge(_data2.default.options.curve, _options.curve);
-			_data2.default.options = _util.R.merge(_data2.default.options, _options);
+			_options.curve = _util.R.merge(_model2.default.options.curve, _options.curve);
+			_model2.default.options = _util.R.merge(_model2.default.options, _options);
 
-			return (0, _view.render)(_data2.default.context, _data2.default.options, _data2.default.points);
+			return (0, _view.render)(_model2.default.context, _model2.default.options, _model2.default.points);
 		}
 	};
 

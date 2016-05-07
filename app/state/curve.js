@@ -1,20 +1,19 @@
 'use strict';
-import { R, getPoint } from './util';
-import point from './point';
+import { R, getPoints, flatten } from '../util';
+import point from '../data/point';
 
 	var cache = [],
 		segments = 0,
-		flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype)),
-		cacheSegments = function(segments){
-			var _cache = new Float32Array((segments + 2) * 4),
+		cacheSegments = function(numSegments){
+			var _cache = new Float32Array((numSegments + 2) * 4),
 				cachePtr = 4;
 
 			// cache inner-loop calculations as they are based on t alone
 			_cache[0] = 1;														// 1,0,0,0
 
-			for (var i = 1; i < segments; i++) {
+			for (var i = 1; i < numSegments; i++) {
 
-				var st = i / segments,
+				var st = i / numSegments,
 					st2 = st * st,
 					st3 = st2 * st,
 					st23 = st3 * 2,
@@ -36,7 +35,7 @@ import point from './point';
 			var segments = options.segments,
 				tension = options.tension,
 				closed = options.closed,
-				points = R.compose(flatten, R.map(getPoint))(_points),
+				points = R.compose(flatten, getPoints)(_points),
 				res = [];
 
 			for (var i = 2; i < points.length; i += 2) {
