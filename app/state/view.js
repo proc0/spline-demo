@@ -80,13 +80,15 @@ var view = {
 			return R.mapObjIndexed(setContext);
 		},
 		/**
-		 *
+		 * @type canvas :: Context -> (String -> (* -> IO))
+		 * @desc returns a function that will return a canvas API method
+		 * 		 ready to be invoked with whatever params it needs
 		 */
 		canvas : function(context){
 			return R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
 		},
 		/**
-		 *
+		 *	@type draw :: Context -> ()
 		 */		
 		draw : function(context){
 				//extract style options
@@ -96,7 +98,7 @@ var view = {
 			return R.compose(R.converge(this.paint), buildParams, R.of, getOptions);
 		},
 		/**
-		 *
+		 * @type comp :: Context -> Assigneable
 		 */
 		comp : function(context){
 			return {
