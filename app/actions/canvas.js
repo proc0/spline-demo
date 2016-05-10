@@ -1,6 +1,5 @@
 import { getMouse, findPoint } from '../util';
-import { render } from '../state/view';
-import model from '../data/model';
+import model from '../model';
 
 export default {
 	//new point on double click
@@ -8,7 +7,7 @@ export default {
 		//closure the user clicked point
 		model.points.push(getMouse(model.context, event));
 		//render new curve from mouse model.points
-		return render(model.context, model.options, model.points);
+		return model;
 	},
 	//check if point model.selected on mousedown
 	mousedown : function(event){
@@ -17,7 +16,8 @@ export default {
 			index = findPoint(mouse)(model.points);
 		//needs to store in closure to communicate 
 		//to mousemove event
-		return index > -1 && model.selected.push(index);
+		if(index > -1)
+			model.selected.push(index);
 	},
 	//clear selection on mouseup
 	mouseup : function(event){
@@ -29,8 +29,7 @@ export default {
 		//update model.points, if one is selected
 		if(model.selected.length){
 			model.points.splice(model.selected[0], 1, getMouse(model.context, event));
-
-			return render(model.context, model.options, model.points);
+			return model;
 		}
 	}
 };

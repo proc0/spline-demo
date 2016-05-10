@@ -1,6 +1,6 @@
 'use strict';
 import { R, getPoints, flatten } from '../util';
-import point from '../data/point';
+import { point } from '../model';
 
 	var cache = [],
 		segments = 0,

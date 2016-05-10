@@ -1,8 +1,6 @@
 'use strict';
 import { R, getMouse } from '../util';
-import { render } from '../state/view';
-import point from '../data/point';
-import model from '../data/model';
+import model from '../model';
 
 export default {
 	//local closure var 
@@ -26,7 +24,7 @@ export default {
 			this.updateLabel(this.slider);
 
 			var sliderInput = this.slider.getElementsByTagName('input')[0],
-				fractional = sliderInput.getAttribute('model-fractional'),
+				fractional = sliderInput.getAttribute('data-fractional'),
 				sliderName = sliderInput.getAttribute('id'),
 				value = this.slider.getElementsByTagName('input')[0].value,
 				sliderVal = fractional ? value/100 : value,
@@ -37,7 +35,7 @@ export default {
 			_options.curve = R.merge(model.options.curve, _options.curve);
 			model.options = R.merge(model.options, _options);
 
-			return render(model.context, model.options, model.points);
+			return model;
 		}
 	},
 	//updateLabels :: [HTMLDivElement] -> undefined
