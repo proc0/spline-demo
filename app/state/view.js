@@ -21,10 +21,10 @@ function init(model){
 	return render(model);
 }
 /**
- * @type render :: Context -> Options -> [Point] -> IO
+ * @type render :: Model -> IO
  */
 function render(model){
-
+	
 	var context = model.context,
 		options = model.options,
 		points 	= model.points,
@@ -37,7 +37,7 @@ function render(model){
 	//no points to render
 	if(!points || points.length < 1){
 		//render default text
-		return draw('bgtext')(options.helpText || "");
+		return draw('bgtext')(options.helpText);
 	}
 
 	//render points into curve

@@ -46,15 +46,21 @@
 
 	'use strict';
 
-	var _model = __webpack_require__(1);
+	var _util = __webpack_require__(1);
+
+	var _view = __webpack_require__(10);
+
+	var _view2 = _interopRequireDefault(_view);
+
+	var _model = __webpack_require__(7);
 
 	var _model2 = _interopRequireDefault(_model);
 
-	var _state = __webpack_require__(3);
+	var _state = __webpack_require__(13);
 
 	var _state2 = _interopRequireDefault(_state);
 
-	var _options = __webpack_require__(17);
+	var _options = __webpack_require__(18);
 
 	var _options2 = _interopRequireDefault(_options);
 
@@ -68,14 +74,13 @@
 	//set default text from the template
 	_options2.default.helpText = canvas.innerHTML;
 
-	//assign closures
-	_model2.default.context = context;
-	_model2.default.options = _options2.default;
-	_model2.default.sliders = sliders;
+	// model.sliders = sliders;
 
 	function start() {
-		//initialize state
-		_state2.default.init(_model2.default);
+		var init = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.map(_util.R.prop('init')));
+
+		return init([_view2.default, _state2.default, _model2.default])(context, _options2.default);
+		// return R.compose(view.init, state.init, model.init)(context, options);
 	}
 
 	document.addEventListener('DOMContentLoaded', start, false);
@@ -85,133 +90,13 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	//type classes
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _point = __webpack_require__(2);
-
-	Object.defineProperty(exports, 'point', {
-		enumerable: true,
-		get: function get() {
-			return _interopRequireDefault(_point).default;
-		}
-	});
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	//closures for state
-	exports.default = {
-		context: {},
-		options: {},
-		points: [],
-		selected: []
-	};
-
-/***/ },
-/* 2 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = Point;
-	function Point(x, y) {
-		return {
-			x: x,
-			y: y,
-			map: function map(transform) {
-				var p = new Float32Array([this.x, this.y]),
-				    _x = transform(p[0]),
-				    _y = transform(p[1]);
-
-				return new Point(_x, _y);
-			},
-			get: function get() {
-				return [this.x, this.y];
-			}
-		};
-	};
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _util = __webpack_require__(4);
-
-	var _view = __webpack_require__(10);
-
-	var _view2 = _interopRequireDefault(_view);
-
-	var _actions = __webpack_require__(13);
-
-	var actions = _interopRequireWildcard(_actions);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	exports.default = { init: init };
-
-	//save context state and options
-
-	function init(model) {
-		//initialize UI controllers
-		actions.slider.updateLabels(model.sliders);
-		//bind all elements and their events to all actions
-		_util.R.mapObjIndexed(bindElements, actions);
-		//initialize view
-		return _view2.default.init(model);
-	}
-
-	//bind an element to a Bacon Events
-	function bindElement(events, element) {
-		//closure arguments to map on events
-		var mapEvent = function mapEvent(handler, eventName) {
-			var metaHandler = function metaHandler(event) {
-				//if handler returns a model, render it
-				var model = handler.bind(events)(event);
-				return model && _view2.default.render(model);
-			};
-			//only bind if handler is a function
-			if ('function' === typeof handler)
-				//Bacon stream event from HTMLElement
-				_util.B.fromEvent(element, eventName).onValue(metaHandler);
-		};
-		//map element events by using the object
-		//property name as the event name
-		return _util.R.mapObjIndexed(mapEvent, events);
-	}
-
-	//bind an array of elements to Bacon events
-	function bindElements(events, className) {
-		var elements = document.getElementsByClassName(className);
-		//use bindElement to bind to HTMLElement
-		return _util.R.map(_util.R.curry(bindElement)(events), elements);
-	}
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
 	exports.B = exports.R = exports.flatten = exports.chunk = exports.findPoint = exports.getMouse = exports.getPoints = exports.getPoint = undefined;
 
-	var _ramda = __webpack_require__(5);
+	var _ramda = __webpack_require__(2);
 
 	Object.defineProperty(exports, 'R', {
 		enumerable: true,
@@ -220,7 +105,7 @@
 		}
 	});
 
-	var _Bacon = __webpack_require__(6);
+	var _Bacon = __webpack_require__(3);
 
 	Object.defineProperty(exports, 'B', {
 		enumerable: true,
@@ -231,7 +116,7 @@
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
-	var _model = __webpack_require__(1);
+	var _model = __webpack_require__(7);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -282,7 +167,7 @@
 	var flatten = exports.flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype));
 
 /***/ },
-/* 5 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//  Ramda v0.20.1
@@ -9044,7 +8929,7 @@
 
 
 /***/ },
-/* 6 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {(function() {
@@ -12430,7 +12315,7 @@
 	  return withDesc(new Bacon.Desc(this, "zip", [other]), Bacon.zipWith([this, other], f || Array));
 	};
 
-	if ("function" !== "undefined" && __webpack_require__(8) !== null && __webpack_require__(9) != null) {
+	if ("function" !== "undefined" && __webpack_require__(5) !== null && __webpack_require__(6) != null) {
 	  !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 	    return Bacon;
 	  }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -12445,10 +12330,10 @@
 	  }
 	}).call(this);
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(7)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4)(module)))
 
 /***/ },
-/* 7 */
+/* 4 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -12464,19 +12349,185 @@
 
 
 /***/ },
-/* 8 */
+/* 5 */
 /***/ function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
 
 /***/ },
-/* 9 */
+/* 6 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
 
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.action = exports.point = undefined;
+
+	var _point = __webpack_require__(8);
+
+	Object.defineProperty(exports, 'point', {
+		enumerable: true,
+		get: function get() {
+			return _interopRequireDefault(_point).default;
+		}
+	});
+
+	var _action = __webpack_require__(9);
+
+	Object.defineProperty(exports, 'action', {
+		enumerable: true,
+		get: function get() {
+			return _interopRequireDefault(_action).default;
+		}
+	});
+
+	var _util = __webpack_require__(1);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	//closures for state
+	var model = new Model();
+
+	function Model(attrs) {
+		this.context = {};
+		this.options = {};
+		this.points = [];
+		this.selects = [];
+	};
+
+	exports.default = {
+		init: function init(context, options) {
+			//assign closures
+			model.context = context;
+			model.options = options;
+			return model;
+		},
+		state: function state(action) {
+			switch (action.type) {
+				case 'NEW_POINT':
+					return points(action.data);
+				case 'SELECT':
+					return selects(action.data);
+				case 'DESELECT':
+					return model.selects = [];
+				case 'EDIT':
+					return points(action.data, true);
+				case 'OPTION':
+					return options(action.data);
+				case 'NOTHING':
+					return null;
+				default:
+					return model;
+			}
+		},
+		getState: function getState() {
+			return model;
+		},
+		getInstance: function getInstance() {
+			return Model;
+		}
+	};
+
+
+	function points(point, splice) {
+
+		if (splice) model.points.splice(model.selects[0], 1, point);else model.points.push(point);
+
+		return model;
+	}
+
+	function selects(index) {
+
+		if (index > -1) {
+			model.selects.push(index);
+			return model;
+		} else {
+			model.selects = [];
+			return null;
+		}
+	}
+
+	function options(option) {
+		var _name = option.name.split('.');
+
+		if (_name.length > 1) {
+			var localName = _name.splice(1)[0],
+			    _options = getProp(_name[0], model.options);
+
+			_options[localName] = option.value;
+		} else if (_name.length) {
+			model.options[localName] = option.value;
+		} else {
+			return null;
+		}
+
+		return model;
+	}
+
+	function getProp(str, obj) {
+		// reduce a list of functions that return properties w/ obj
+		return _util.R.reduce(_util.R.flip(_util.R.call), obj, _util.R.map(_util.R.prop, str.split('.')));
+	}
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = Point;
+	function Point(x, y) {
+		return {
+			x: x,
+			y: y,
+			map: function map(transform) {
+				var p = new Float32Array([this.x, this.y]),
+				    _x = transform(p[0]),
+				    _y = transform(p[1]);
+
+				return new Point(_x, _y);
+			},
+			get: function get() {
+				return [this.x, this.y];
+			}
+		};
+	};
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	exports.default = function (type, data) {
+		return new Action(type, data);
+	};
+
+	function Action(type, data) {
+
+		return {
+			type: type,
+			data: data
+		};
+	}
 
 /***/ },
 /* 10 */
@@ -12488,7 +12539,7 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(4);
+	var _util = __webpack_require__(1);
 
 	var _curve = __webpack_require__(11);
 
@@ -12519,7 +12570,7 @@
 		return render(model);
 	}
 	/**
-	 * @type render :: Context -> Options -> [Point] -> IO
+	 * @type render :: Model -> IO
 	 */
 	function render(model) {
 
@@ -12535,7 +12586,7 @@
 		//no points to render
 		if (!points || points.length < 1) {
 			//render default text
-			return draw('bgtext')(options.helpText || "");
+			return draw('bgtext')(options.helpText);
 		}
 
 		//render points into curve
@@ -12592,9 +12643,9 @@
 		return (0, _util.flatten)(points);
 	};
 
-	var _util = __webpack_require__(4);
+	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(1);
+	var _model = __webpack_require__(7);
 
 	var cache = [],
 	    segments = 0,
@@ -12679,10 +12730,10 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(4);
+	var _util = __webpack_require__(1);
 
 	/**
-	 *	@member props {Object}
+	 *	@member props {Assignable}
 	 *	@desc	contains key/value where value is a high order function
 	 *	@type 	prop :: Context -> (* -> IO)
 	 */
@@ -12734,7 +12785,7 @@
 		},
 
 		/**
-	  * @type comp :: Context -> Assigneable
+	  * @type { optionName : comp :: Context -> Assignable }
 	  */
 		comp: function comp(context) {
 			return {
@@ -12783,10 +12834,85 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _util = __webpack_require__(1);
+
+	var _view = __webpack_require__(10);
+
+	var _view2 = _interopRequireDefault(_view);
+
+	var _model = __webpack_require__(7);
+
+	var _model2 = _interopRequireDefault(_model);
+
+	var _actions = __webpack_require__(14);
+
+	var actions = _interopRequireWildcard(_actions);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = { init: init };
+
+	//save context state and options
+
+	function init(model) {
+		//initialize UI controllers
+		actions.slider.updateLabels(document.getElementsByClassName('slider'));
+		//bind all elements and their events to all actions
+		_util.R.mapObjIndexed(bindElements, actions);
+
+		return model;
+	}
+
+	//bind an element to a Bacon Events
+	function bindElement(events, element) {
+		//closure arguments to map on events
+		var mapEvent = function mapEvent(handler, eventName) {
+			var metaHandler = function metaHandler(event) {
+				var state = _model2.default.getState(),
+				    Model = _model2.default.getInstance(),
+				    reduce = _model2.default.state.bind(state),
+				    translate = handler.bind(events),
+
+				//render if model returns state
+				render = function render(viewModel) {
+					if (viewModel && viewModel instanceof Model) return _view2.default.render.bind(_view2.default)(viewModel);
+				};
+
+				return _util.R.compose(render, reduce, translate)(event, state);
+			};
+			//only bind if handler is a function
+			if ('function' === typeof handler)
+				//Bacon stream event from HTMLElement
+				_util.B.fromEvent(element, eventName).onValue(metaHandler);
+		};
+		//map element events by using the object
+		//property name as the event name
+		return _util.R.mapObjIndexed(mapEvent, events);
+	}
+
+	//bind an array of elements to Bacon events
+	function bindElements(events, className) {
+		var elements = document.getElementsByClassName(className);
+		//use bindElement to bind to HTMLElement
+		return _util.R.map(_util.R.curry(bindElement)(events), elements);
+	}
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
 
-	var _slider = __webpack_require__(14);
+	var _slider = __webpack_require__(15);
 
 	Object.defineProperty(exports, 'slider', {
 	  enumerable: true,
@@ -12795,7 +12921,7 @@
 	  }
 	});
 
-	var _canvas = __webpack_require__(15);
+	var _canvas = __webpack_require__(16);
 
 	Object.defineProperty(exports, 'canvas', {
 	  enumerable: true,
@@ -12804,7 +12930,7 @@
 	  }
 	});
 
-	var _checkbox = __webpack_require__(16);
+	var _checkbox = __webpack_require__(17);
 
 	Object.defineProperty(exports, 'checkbox', {
 	  enumerable: true,
@@ -12816,7 +12942,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12825,31 +12951,32 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(4);
+	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(1);
+	var _model = __webpack_require__(7);
 
-	var _model2 = _interopRequireDefault(_model);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+	/**
+	 * @type { eventName : handler :: Event -> Maybe Model }
+	 */
 	exports.default = {
 		//local closure var
 		//for state keeping
 		slider: null,
 
 		//clear slider selection on mouseup
-		mouseup: function mouseup(event) {
+		mouseup: function mouseup(event, model) {
 			this.slider = null;
+			return (0, _model.action)('NOTHING');
 		},
 		//save slider in closure for next event
-		mousedown: function mousedown(event) {
+		mousedown: function mousedown(event, model) {
 			if (event.target.tagName === 'INPUT') this.slider = event.target.parentElement.parentElement;
+			return (0, _model.action)('NOTHING');
 		},
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
-		mousemove: function mousemove(event) {
-			var mouse = (0, _util.getMouse)(_model2.default.context, event);
+		mousemove: function mousemove(event, model) {
+			var mouse = (0, _util.getMouse)(model.context, event);
 			if (this.slider) {
 				this.updateLabel(this.slider);
 
@@ -12857,16 +12984,11 @@
 				    fractional = sliderInput.getAttribute('data-fractional'),
 				    sliderName = sliderInput.getAttribute('id'),
 				    value = this.slider.getElementsByTagName('input')[0].value,
-				    sliderVal = fractional ? value / 100 : value,
-				    _options = { curve: {} };
+				    sliderVal = fractional ? value / 100 : value;
 
-				_options.curve[sliderName] = sliderVal;
-
-				_options.curve = _util.R.merge(_model2.default.options.curve, _options.curve);
-				_model2.default.options = _util.R.merge(_model2.default.options, _options);
-
-				return _model2.default;
+				return (0, _model.action)('OPTION', { name: 'curve.' + sliderName, value: sliderVal });
 			}
+			return (0, _model.action)('NOTHING');
 		},
 		//updateLabels :: [HTMLDivElement] -> undefined
 		updateLabels: function updateLabels(components) {
@@ -12908,56 +13030,6 @@
 	};
 
 /***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _util = __webpack_require__(4);
-
-	var _model = __webpack_require__(1);
-
-	var _model2 = _interopRequireDefault(_model);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	exports.default = {
-		//new point on double click
-		dblclick: function dblclick(event) {
-			//closure the user clicked point
-			_model2.default.points.push((0, _util.getMouse)(_model2.default.context, event));
-			//render new curve from mouse model.points
-			return _model2.default;
-		},
-		//check if point model.selected on mousedown
-		mousedown: function mousedown(event) {
-
-			var mouse = (0, _util.getMouse)(_model2.default.context, event),
-			    index = (0, _util.findPoint)(mouse)(_model2.default.points);
-			//needs to store in closure to communicate
-			//to mousemove event
-			if (index > -1) _model2.default.selected.push(index);
-		},
-		//clear selection on mouseup
-		mouseup: function mouseup(event) {
-			//clear selection
-			_model2.default.selected = [];
-		},
-		//drag move the point if selection exists
-		mousemove: function mousemove(event) {
-			//update model.points, if one is selected
-			if (_model2.default.selected.length) {
-				_model2.default.points.splice(_model2.default.selected[0], 1, (0, _util.getMouse)(_model2.default.context, event));
-				return _model2.default;
-			}
-		}
-	};
-
-/***/ },
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -12967,31 +13039,73 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(4);
+	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(1);
+	var _model = __webpack_require__(7);
 
-	var _model2 = _interopRequireDefault(_model);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+	/**
+	 * @type { eventName : handler :: Event -> Action }
+	 */
 	exports.default = {
-		change: function change(event) {
-			var opt = event.target.getAttribute('id'),
-			    val = event.target.checked,
-			    _options = { curve: {} };
+		/**
+	  * @desc new point on double click
+	  */
+		dblclick: function dblclick(event, model) {
+			return (0, _model.action)('NEW_POINT', (0, _util.getMouse)(model.context, event));
+		},
+		/**
+	  * @desc check if point model.selected on mousedown
+	  */
+		mousedown: function mousedown(event, model) {
 
-			_options.curve[opt] = val;
+			var mouse = (0, _util.getMouse)(model.context, event),
+			    index = (0, _util.findPoint)(mouse)(model.points);
 
-			_options.curve = _util.R.merge(_model2.default.options.curve, _options.curve);
-			_model2.default.options = _util.R.merge(_model2.default.options, _options);
-
-			return _model2.default;
+			return (0, _model.action)(index > -1 ? 'SELECT' : 'DESELECT', index);
+		},
+		/*
+	  * @desc clear selection on mouseup
+	  */
+		mouseup: function mouseup(event, model) {
+			return (0, _model.action)('DESELECT');
+		},
+		/*
+	  * @desc drag move the point if selection exists
+	  */
+		mousemove: function mousemove(event, model) {
+			var type = model.selects.length ? 'EDIT' : 'NOTHING';
+			return (0, _model.action)(type, (0, _util.getMouse)(model.context, event));
 		}
 	};
 
 /***/ },
 /* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _util = __webpack_require__(1);
+
+	var _model = __webpack_require__(7);
+
+	/**
+	 * @type { eventName : handler :: Event -> Maybe Model }
+	 */
+	exports.default = {
+		change: function change(event) {
+			var option = event.target.getAttribute('id'),
+			    value = event.target.checked;
+
+			return (0, _model.action)('OPTION', { name: 'curve.' + option, value: value });
+		}
+	};
+
+/***/ },
+/* 18 */
 /***/ function(module, exports) {
 
 	'use strict';

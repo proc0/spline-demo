@@ -4,7 +4,7 @@ import {
 	getPoints 
 } from '../util';
 /**
- *	@member props {Object}
+ *	@member props {Assignable}
  *	@desc	contains key/value where value is a high order function
  *	@type 	prop :: Context -> (* -> IO)
  */
@@ -58,7 +58,7 @@ export default {
 	},
 
 	/**
-	 * @type comp :: Context -> Assigneable
+	 * @type { optionName : comp :: Context -> Assignable }
 	 */
 	comp : function(context){
 		return {

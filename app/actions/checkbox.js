@@ -1,17 +1,13 @@
 import { R } from '../util';
-import model from '../model';
-
+import { action } from '../model';
+/**
+ * @type { eventName : handler :: Event -> Maybe Model }
+ */
 export default {
 	change : function(event){
-		var opt = event.target.getAttribute('id'),
-			val = event.target.checked,
-			_options = { curve : {} };
+		var option = event.target.getAttribute('id'),
+			value = event.target.checked;
 
-			_options.curve[opt] = val;
-
-			_options.curve = R.merge(model.options.curve, _options.curve);
-			model.options = R.merge(model.options, _options);
-
-		return model;
+		return action('OPTION', { name : 'curve.' + option, value : value });
 	}
 };

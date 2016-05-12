@@ -1,24 +1,28 @@
 'use strict';
 import { R, getMouse } from '../util';
-import model from '../model';
-
+import { action } from '../model';
+/**
+ * @type { eventName : handler :: Event -> Maybe Model }
+ */
 export default {
 	//local closure var 
 	//for state keeping
 	slider : null,
 
 	//clear slider selection on mouseup
-	mouseup   : function(event){
+	mouseup   : function(event, model){
 		this.slider = null;
+		return action('NOTHING');
 	},
 	//save slider in closure for next event
-	mousedown : function(event){
+	mousedown : function(event, model){
 		if(event.target.tagName === 'INPUT')
 			this.slider = event.target.parentElement.parentElement;
+		return action('NOTHING');
 	},
 	//if slider is selected, update its label 
 	//on mousemove (dragging handler)
-	mousemove : function(event){
+	mousemove : function(event, model){
 		var mouse = getMouse(model.context, event);
 		if(this.slider){
 			this.updateLabel(this.slider);
@@ -27,16 +31,11 @@ export default {
 				fractional = sliderInput.getAttribute('data-fractional'),
 				sliderName = sliderInput.getAttribute('id'),
 				value = this.slider.getElementsByTagName('input')[0].value,
-				sliderVal = fractional ? value/100 : value,
-				_options = { curve : {} };
+				sliderVal = fractional ? value/100 : value;
 
-			_options.curve[sliderName] = sliderVal;
-			
-			_options.curve = R.merge(model.options.curve, _options.curve);
-			model.options = R.merge(model.options, _options);
-
-			return model;
+			return action('OPTION', { name : 'curve.' + sliderName, value : sliderVal });
 		}
+		return action('NOTHING');
 	},
 	//updateLabels :: [HTMLDivElement] -> undefined
 	updateLabels : function(components){
