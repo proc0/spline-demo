@@ -33,6 +33,10 @@ export default {
 				return state.selects = [];
 			case 'EDIT' :
 				return points(action.data, true);
+			case 'BLUR_SLIDER' :
+				return state.ui.state.slider = null;
+			case 'FOCUS_SLIDER' :
+				return state.ui.state.slider = action.data;
 			case 'OPTION' : 
 				return options(action.data);
 			case 'NOTHING' : 

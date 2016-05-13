@@ -66,18 +66,27 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var context = document.getElementsByTagName('canvas')[0].getContext('2d'),
-	    initialize = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.map(_util.R.prop('init'))),
-	    start = function start() {
-		var initModel = {
-			context: context,
+	/**
+	 * @type initialize :: [Component] -> (State -> IO)
+	 */
+	var initialize = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.map(_util.R.prop('init'))),
+
+	/**
+	 * @type start :: () -> IO
+	 */
+	start = function start() {
+		//attach canvas context
+		//and options to state
+		var state = {
+			context: document.getElementsByTagName('canvas')[0].getContext('2d'),
 			options: _options2.default
 		},
-		    init = initialize([{ init: _event2.default }, _view2.default, _model2.default]);
-		//initialize state through model first, then initialize
-		//view and bind events once the view loaded the
-		//HTMLElements in state
-		return init(initModel);
+
+		//initialize with initial state starting with model
+		//then view loads its props, then events bind actions
+		init = initialize([{ init: _event2.default }, _view2.default, _model2.default]);
+		//initialize app
+		return init(state);
 	};
 	//start on DOM loaded
 	document.addEventListener('DOMContentLoaded', start, false);
@@ -12434,17 +12443,23 @@
 
 	function init(state) {
 		var extract = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.prepend(_util.R.values), _util.R.of, _util.R.mapObjIndexed),
-		    getElements = extract(function (handlers, className) {
+
+		//get elements by searching the handler function name
+		//as the element's class name
+		//TODO: abstract this further
+		getElements = extract(function (handlers, className) {
 			return document.getElementsByClassName(className);
 		}),
 		    loadProps = _util.R.mapObjIndexed(function (loader, prop) {
 			return this[prop] = loader.bind(this)(state.context);
 		}.bind(state.ui.view), _props2.default);
 
+		//attach UI elements to state
 		state.ui.elements = getElements(actions);
 
 		//render default state
 		render(state);
+
 		return state;
 	}
 	/**
@@ -12772,6 +12787,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var update = _util.R.compose((0, _action2.default)('OPTION'), getOption, updateLabel);
 	/**
 	 * @type { eventName : handler :: Event -> Maybe Model }
 	 */
@@ -12787,13 +12803,12 @@
 		},
 		//clear slider selection on mouseup
 		mouseup: function mouseup(event, state) {
-			state.ui.state.slider = null;
-			return (0, _action2.default)('NOTHING');
+			return (0, _action2.default)('BLUR_SLIDER');
 		},
 		//save slider in closure for next event
 		mousedown: function mousedown(event, state) {
-			if (event.target.tagName === 'INPUT') state.ui.state.slider = event.target.parentElement.parentElement;
-			return (0, _action2.default)('NOTHING');
+			var type = event.target.tagName === 'INPUT' ? 'FOCUS_SLIDER' : 'NOTHING';
+			return (0, _action2.default)(type, event.target.parentElement.parentElement);
 		},
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
@@ -12801,28 +12816,27 @@
 			var mouse = (0, _util.getMouse)(state.context, event),
 			    slider = state.ui.state.slider;
 
-			if (slider) {
-
-				updateLabel(slider);
-
-				var sliderInput = slider.getElementsByTagName('input')[0],
-				    fractional = sliderInput.getAttribute('data-fractional'),
-				    sliderName = sliderInput.getAttribute('id'),
-				    value = slider.getElementsByTagName('input')[0].value,
-				    sliderVal = fractional ? value / 100 : value,
-				    options = {
-					name: 'curve.' + sliderName,
-					value: sliderVal
-				};
-
-				return (0, _action2.default)('OPTION', option);
-			}
-			return (0, _action2.default)('NOTHING');
+			return slider ? update(slider) : (0, _action2.default)('NOTHING');
 		}
 	};
 
-	//updateLabels :: [HTMLDivElement] -> undefined
 
+	function getOption(slider) {
+
+		var sliderInput = slider.getElementsByTagName('input')[0],
+		    fractional = sliderInput.getAttribute('data-fractional'),
+		    sliderName = sliderInput.getAttribute('id'),
+		    value = slider.getElementsByTagName('input')[0].value,
+		    sliderVal = fractional ? value / 100 : value,
+		    option = {
+			name: 'curve.' + sliderName,
+			value: sliderVal
+		};
+
+		return option;
+	}
+
+	//updateLabels :: [HTMLDivElement] -> undefined
 	function updateLabels(components) {
 		return _util.R.map(updateLabel, components);
 	}
@@ -12859,22 +12873,27 @@
 		//update offset values
 		label.style.left = left_offset + 'px';
 		value.style.paddingLeft = left_margin + 'px';
+
+		return component;
 	}
 
 /***/ },
 /* 13 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	//shortcut instantiation
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
 
-	exports.default = function (type, data) {
+	var _util = __webpack_require__(1);
+
+	//shortcut instantiation
+	exports.default = _util.R.curry(function (type, data) {
 		return new Action(type, data);
-	};
+	});
+
 
 	function Action(type, data) {
 		return {
@@ -12996,11 +13015,8 @@
 	};
 
 	exports.default = {
-		init: function init(context, options) {
-			return _state = new State({
-				context: context,
-				options: options
-			});
+		init: function init(initState) {
+			return _state = new State(initState);
 		},
 		state: function state(action) {
 			switch (action.type) {
@@ -13012,6 +13028,10 @@
 					return _state.selects = [];
 				case 'EDIT':
 					return points(action.data, true);
+				case 'BLUR_SLIDER':
+					return _state.ui.state.slider = null;
+				case 'FOCUS_SLIDER':
+					return _state.ui.state.slider = action.data;
 				case 'OPTION':
 					return options(action.data);
 				case 'NOTHING':

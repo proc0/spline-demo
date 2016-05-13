@@ -2,6 +2,7 @@
 import { R, getMouse } from '../../util';
 import action from '../../data/action';
 
+var update = R.compose(action('OPTION'), getOption, updateLabel);
 /**
  * @type { eventName : handler :: Event -> Maybe Model }
  */
@@ -17,40 +18,35 @@ export default {
 	},
 	//clear slider selection on mouseup
 	mouseup   : function(event, state){
-		state.ui.state.slider = null;
-		return action('NOTHING');
+		return action('BLUR_SLIDER');
 	},
 	//save slider in closure for next event
 	mousedown : function(event, state){
-		if(event.target.tagName === 'INPUT')
-			state.ui.state.slider = event.target.parentElement.parentElement;
-		return action('NOTHING');
+		var type = event.target.tagName === 'INPUT' ? 'FOCUS_SLIDER' : 'NOTHING';
+		return action(type, event.target.parentElement.parentElement);
 	},
 	//if slider is selected, update its label 
 	//on mousemove (dragging handler)
 	mousemove : function(event, state){
-		var mouse = getMouse(state.context, event),
-			slider = state.ui.state.slider;
-		
-		if(slider){
-			
-			updateLabel(slider);
-
-			var sliderInput = slider.getElementsByTagName('input')[0],
-				fractional = sliderInput.getAttribute('data-fractional'),
-				sliderName = sliderInput.getAttribute('id'),
-				value = slider.getElementsByTagName('input')[0].value,
-				sliderVal = fractional ? value/100 : value,
-				options = { 
-					name : 'curve.' + sliderName, 
-					value : sliderVal 
-				};
-
-			return action('OPTION', option);
-		}
-		return action('NOTHING');
+		var slider = state.ui.state.slider;
+		return slider ? update(slider) : action('NOTHING');
 	}
 };
+
+function getOption(slider){
+
+	var sliderInput = slider.getElementsByTagName('input')[0],
+		fractional = sliderInput.getAttribute('data-fractional'),
+		sliderName = sliderInput.getAttribute('id'),
+		value = slider.getElementsByTagName('input')[0].value,
+		sliderVal = fractional ? value/100 : value,
+		option = { 
+			name : 'curve.' + sliderName, 
+			value : sliderVal 
+		};
+
+	return option;
+}
 
 //updateLabels :: [HTMLDivElement] -> undefined
 function updateLabels(components){
@@ -86,4 +82,6 @@ function updateLabel(component){
 	//update offset values
 	label.style.left = left_offset + 'px';
 	value.style.paddingLeft = left_margin + 'px';
+
+	return component;
 }

@@ -5,9 +5,12 @@ import action from '../../data/action';
  */
 export default {
 	change : function(event){
-		var option = event.target.getAttribute('id'),
-			value = event.target.checked;
+		var optionName = event.target.getAttribute('id'),
+			option = { 
+				name : 'curve.' + optionName, 
+				value : event.target.checked 
+			};
 
-		return action('OPTION', { name : 'curve.' + option, value : value });
+		return action('OPTION', option);
 	}
 };

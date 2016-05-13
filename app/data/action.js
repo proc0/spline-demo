@@ -1,8 +1,10 @@
 'use strict';
+import { R } from '../util';
+
 //shortcut instantiation
-export default function(type, data){
+export default R.curry(function(type, data){
 	return new Action(type, data);
-}
+});
 
 function Action(type, data){
 	return { 
