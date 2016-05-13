@@ -1,6 +1,6 @@
 'use strict';
 import { R, getPoints, flatten } from '../util';
-import { point } from '../model';
+import point from '../data/point';
 
 	var cache = [],
 		segments = 0,
@@ -61,7 +61,7 @@ import { point } from '../model';
 					// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
 					var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
 					// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-					res.push(new point(_x, _y));
+					res.push(point(_x, _y));
 				}
 			}
 

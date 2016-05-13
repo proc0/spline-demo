@@ -1,8 +1,8 @@
 import { 
 	getMouse, 
 	findPoint 
-} from '../util';
-import { action } from '../model';
+} from '../../util';
+import action from '../../data/action';
 
 /**
  * @type { eventName : handler :: Event -> Action }

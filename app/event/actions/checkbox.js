@@ -1,5 +1,5 @@
-import { R } from '../util';
-import { action } from '../model';
+import { R } from '../../util';
+import action from '../../data/action';
 /**
  * @type { eventName : handler :: Event -> Maybe Model }
  */

@@ -2,42 +2,59 @@
 import { R } from '../util';
 import curve from './curve';
 import props from './props';
+import * as actions from '../event/actions';
 
 export default { 
 	init   : init, 
 	render : render 
 };
 
-var view = { curve : [] };
 /**
  * @type init :: Context -> Options -> IO
  */
-function init(model){
-	//load prop functions for rendering
-	R.mapObjIndexed(function(loader, prop){
-		this[prop] = loader.bind(this)(model.context);
-	}.bind(view), props);
-	//render default text
-	return render(model);
+function init(state){
+	var extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
+		//get elements by searching the handler function name
+		//as the element's class name
+		//TODO: abstract this further
+		getElements = extract(function(handlers, className){ 
+			return document.getElementsByClassName(className); 
+		}),
+		loadProps = R.mapObjIndexed(function(loader, prop){ 
+			return this[prop] = loader.bind(this)(state.context); 
+		}.bind(state.ui.view), props);
+
+	//attach UI elements to state
+	state.ui.elements = getElements(actions);
+	
+	//render default state
+	render(state);
+	
+	return state;
 }
 /**
- * @type render :: Model -> IO
+ * @type render :: State -> IO
  */
-function render(model){
+function render(state){
 	
-	var context = model.context,
-		options = model.options,
-		points 	= model.points,
+	if(!state) 
+		throw Error('Nothing to render.');
+
+	//shortcuts
+	var context = state.context,
+		options = state.options,
+		points 	= state.points,
+		view	= state.ui.view,
 		width	= context.canvas.width,
 		height	= context.canvas.height,
 		draw 	= view.draw.bind(view)(options);
 
+	//clear canvas
 	context.clearRect(0, 0, width, height);
-
 	//no points to render
 	if(!points || points.length < 1){
-		//render default text
-		return draw('bgtext')(options.helpText);
+		//render default text (from HTML)
+		return draw('bgtext')(context.canvas.innerHTML);
 	}
 
 	//render points into curve
@@ -53,4 +70,6 @@ function render(model){
 	//draw vertex points if > 1 point
 	if(options.curve.showPoints) 
 		draw('verts')(points);
+
+	return state;
 }

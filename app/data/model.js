@@ -2,26 +2,26 @@
 
 import { R } from '../util';
 
-//type classes
-export { default as point } from './point';
-export { default as action } from './action';
+//closure
+var state;
 
-//closures for state
-var model = new Model();
-
-function Model(attrs){
-	this.context = {};
-	this.options = {};
+function State(attrs){
+	this.context = attrs.context || {};
+	this.options = attrs.options || {};
 	this.points  = [];
 	this.selects = [];
+	this.ui = {
+		elements : [],
+		view : { curve : [] },
+		state : {
+			slider : {}
+		}
+	};
 };
 
 export default { 
-	init : function(context, options){
-		//assign closures
-		model.context = context;
-		model.options = options;
-		return model;
+	init : function(initState){
+		return state = new State(initState);
 	},
 	state : function(action){
 		switch(action.type){
@@ -30,7 +30,7 @@ export default {
 			case 'SELECT' :
 				return selects(action.data);
 			case 'DESELECT' :
-				return model.selects = [];
+				return state.selects = [];
 			case 'EDIT' :
 				return points(action.data, true);
 			case 'OPTION' : 
@@ -38,34 +38,34 @@ export default {
 			case 'NOTHING' : 
 				return null;
 			default : 
-				return model;
+				return state;
 		}
 	},
 	getState : function(){
-		return model;
+		return state;
 	},
 	getInstance : function(){
-		return Model;
+		return State;
 	}
 };
 
 function points(point, splice){
 
 	if(splice)
-		model.points.splice(model.selects[0], 1, point);
+		state.points.splice(state.selects[0], 1, point);
 	else
-		model.points.push(point);
+		state.points.push(point);
 
-	return model;
+	return state;
 }
 
 function selects(index){
 
 	if(index > -1){
-		model.selects.push(index);
-		return model;
+		state.selects.push(index);
+		return state;
 	} else {
-		model.selects = [];
+		state.selects = [];
 		return null;
 	}
 }
@@ -76,17 +76,17 @@ function options(option){
 	if(_name.length > 1){
 		var localName = _name.splice(1)[0],
 
-			_options = getProp(_name[0], model.options);
+			_options = getProp(_name[0], state.options);
 
 		_options[localName] = option.value;
 
 	} else if(_name.length){
-		model.options[localName] = option.value;
+		state.options[localName] = option.value;
 	} else {
 		return null;
 	}
 
-	return model;
+	return state;
 }
 
 function getProp(str, obj){

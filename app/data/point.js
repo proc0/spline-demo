@@ -1,4 +1,8 @@
 'use strict';
+//shortcut instantiation
+export default function point(x, y){
+	return new Point(x, y);
+}
 
 export default function Point(x, y){
 	return {

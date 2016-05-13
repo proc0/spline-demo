@@ -48,17 +48,17 @@
 
 	var _util = __webpack_require__(1);
 
-	var _view = __webpack_require__(10);
+	var _view = __webpack_require__(8);
 
 	var _view2 = _interopRequireDefault(_view);
 
-	var _model = __webpack_require__(7);
+	var _model = __webpack_require__(16);
 
 	var _model2 = _interopRequireDefault(_model);
 
-	var _state = __webpack_require__(13);
+	var _event = __webpack_require__(17);
 
-	var _state2 = _interopRequireDefault(_state);
+	var _event2 = _interopRequireDefault(_event);
 
 	var _options = __webpack_require__(18);
 
@@ -66,23 +66,20 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var canvas = document.getElementsByTagName('canvas')[0],
-	    sliders = document.getElementsByClassName('slider'),
-	    context = canvas.getContext('2d');
-
-	//load options
-	//set default text from the template
-	_options2.default.helpText = canvas.innerHTML;
-
-	// model.sliders = sliders;
-
-	function start() {
-		var init = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.map(_util.R.prop('init')));
-
-		return init([_view2.default, _state2.default, _model2.default])(context, _options2.default);
-		// return R.compose(view.init, state.init, model.init)(context, options);
-	}
-
+	var context = document.getElementsByTagName('canvas')[0].getContext('2d'),
+	    initialize = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.map(_util.R.prop('init'))),
+	    start = function start() {
+		var initModel = {
+			context: context,
+			options: _options2.default
+		},
+		    init = initialize([{ init: _event2.default }, _view2.default, _model2.default]);
+		//initialize state through model first, then initialize
+		//view and bind events once the view loaded the
+		//HTMLElements in state
+		return init(initModel);
+	};
+	//start on DOM loaded
 	document.addEventListener('DOMContentLoaded', start, false);
 
 /***/ },
@@ -116,7 +113,9 @@
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
-	var _model = __webpack_require__(7);
+	var _point = __webpack_require__(7);
+
+	var _point2 = _interopRequireDefault(_point);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -129,7 +128,7 @@
 		var client = context.canvas.getBoundingClientRect(),
 		    x = event.x - client.left,
 		    y = event.y - client.top;
-		return new _model.point(x, y);
+		return new _point2.default(x, y);
 	};
 	var findPoint = exports.findPoint = _ramda2.default.curry(function (mouse, points) {
 		var x = mouse.x,
@@ -12365,131 +12364,20 @@
 
 /***/ },
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.action = exports.point = undefined;
-
-	var _point = __webpack_require__(8);
-
-	Object.defineProperty(exports, 'point', {
-		enumerable: true,
-		get: function get() {
-			return _interopRequireDefault(_point).default;
-		}
-	});
-
-	var _action = __webpack_require__(9);
-
-	Object.defineProperty(exports, 'action', {
-		enumerable: true,
-		get: function get() {
-			return _interopRequireDefault(_action).default;
-		}
-	});
-
-	var _util = __webpack_require__(1);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	//closures for state
-	var model = new Model();
-
-	function Model(attrs) {
-		this.context = {};
-		this.options = {};
-		this.points = [];
-		this.selects = [];
-	};
-
-	exports.default = {
-		init: function init(context, options) {
-			//assign closures
-			model.context = context;
-			model.options = options;
-			return model;
-		},
-		state: function state(action) {
-			switch (action.type) {
-				case 'NEW_POINT':
-					return points(action.data);
-				case 'SELECT':
-					return selects(action.data);
-				case 'DESELECT':
-					return model.selects = [];
-				case 'EDIT':
-					return points(action.data, true);
-				case 'OPTION':
-					return options(action.data);
-				case 'NOTHING':
-					return null;
-				default:
-					return model;
-			}
-		},
-		getState: function getState() {
-			return model;
-		},
-		getInstance: function getInstance() {
-			return Model;
-		}
-	};
-
-
-	function points(point, splice) {
-
-		if (splice) model.points.splice(model.selects[0], 1, point);else model.points.push(point);
-
-		return model;
-	}
-
-	function selects(index) {
-
-		if (index > -1) {
-			model.selects.push(index);
-			return model;
-		} else {
-			model.selects = [];
-			return null;
-		}
-	}
-
-	function options(option) {
-		var _name = option.name.split('.');
-
-		if (_name.length > 1) {
-			var localName = _name.splice(1)[0],
-			    _options = getProp(_name[0], model.options);
-
-			_options[localName] = option.value;
-		} else if (_name.length) {
-			model.options[localName] = option.value;
-		} else {
-			return null;
-		}
-
-		return model;
-	}
-
-	function getProp(str, obj) {
-		// reduce a list of functions that return properties w/ obj
-		return _util.R.reduce(_util.R.flip(_util.R.call), obj, _util.R.map(_util.R.prop, str.split('.')));
-	}
-
-/***/ },
-/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
+	//shortcut instantiation
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.default = point;
 	exports.default = Point;
+	function point(x, y) {
+		return new Point(x, y);
+	}
+
 	function Point(x, y) {
 		return {
 			x: x,
@@ -12508,29 +12396,7 @@
 	};
 
 /***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	exports.default = function (type, data) {
-		return new Action(type, data);
-	};
-
-	function Action(type, data) {
-
-		return {
-			type: type,
-			data: data
-		};
-	}
-
-/***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12541,13 +12407,19 @@
 
 	var _util = __webpack_require__(1);
 
-	var _curve = __webpack_require__(11);
+	var _curve = __webpack_require__(9);
 
 	var _curve2 = _interopRequireDefault(_curve);
 
-	var _props = __webpack_require__(12);
+	var _props = __webpack_require__(10);
 
 	var _props2 = _interopRequireDefault(_props);
+
+	var _actions = __webpack_require__(11);
+
+	var actions = _interopRequireWildcard(_actions);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -12556,37 +12428,47 @@
 		render: render
 	};
 
-
-	var view = { curve: [] };
 	/**
 	 * @type init :: Context -> Options -> IO
 	 */
-	function init(model) {
-		//load prop functions for rendering
-		_util.R.mapObjIndexed(function (loader, prop) {
-			this[prop] = loader.bind(this)(model.context);
-		}.bind(view), _props2.default);
-		//render default text
-		return render(model);
+
+	function init(state) {
+		var extract = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.prepend(_util.R.values), _util.R.of, _util.R.mapObjIndexed),
+		    getElements = extract(function (handlers, className) {
+			return document.getElementsByClassName(className);
+		}),
+		    loadProps = _util.R.mapObjIndexed(function (loader, prop) {
+			return this[prop] = loader.bind(this)(state.context);
+		}.bind(state.ui.view), _props2.default);
+
+		state.ui.elements = getElements(actions);
+
+		//render default state
+		render(state);
+		return state;
 	}
 	/**
-	 * @type render :: Model -> IO
+	 * @type render :: State -> IO
 	 */
-	function render(model) {
+	function render(state) {
 
-		var context = model.context,
-		    options = model.options,
-		    points = model.points,
+		if (!state) throw Error('Nothing to render.');
+
+		//shortcuts
+		var context = state.context,
+		    options = state.options,
+		    points = state.points,
+		    view = state.ui.view,
 		    width = context.canvas.width,
 		    height = context.canvas.height,
 		    draw = view.draw.bind(view)(options);
 
+		//clear canvas
 		context.clearRect(0, 0, width, height);
-
 		//no points to render
 		if (!points || points.length < 1) {
-			//render default text
-			return draw('bgtext')(options.helpText);
+			//render default text (from HTML)
+			return draw('bgtext')(context.canvas.innerHTML);
 		}
 
 		//render points into curve
@@ -12600,10 +12482,12 @@
 		}
 		//draw vertex points if > 1 point
 		if (options.curve.showPoints) draw('verts')(points);
+
+		return state;
 	}
 
 /***/ },
-/* 11 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12645,7 +12529,11 @@
 
 	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(7);
+	var _point = __webpack_require__(7);
+
+	var _point2 = _interopRequireDefault(_point);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var cache = [],
 	    segments = 0,
@@ -12711,7 +12599,7 @@
 				// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
 				var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
 				// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-				res.push(new _model.point(_x, _y));
+				res.push((0, _point2.default)(_x, _y));
 			}
 		}
 
@@ -12721,7 +12609,7 @@
 	;
 
 /***/ },
-/* 12 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12828,7 +12716,46 @@
 	};
 
 /***/ },
-/* 13 */
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _slider = __webpack_require__(12);
+
+	Object.defineProperty(exports, 'slider', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_slider).default;
+	  }
+	});
+
+	var _canvas = __webpack_require__(14);
+
+	Object.defineProperty(exports, 'canvas', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_canvas).default;
+	  }
+	});
+
+	var _checkbox = __webpack_require__(15);
+
+	Object.defineProperty(exports, 'checkbox', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_checkbox).default;
+	  }
+	});
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/***/ },
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12839,67 +12766,121 @@
 
 	var _util = __webpack_require__(1);
 
-	var _view = __webpack_require__(10);
+	var _action = __webpack_require__(13);
 
-	var _view2 = _interopRequireDefault(_view);
-
-	var _model = __webpack_require__(7);
-
-	var _model2 = _interopRequireDefault(_model);
-
-	var _actions = __webpack_require__(14);
-
-	var actions = _interopRequireWildcard(_actions);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	var _action2 = _interopRequireDefault(_action);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = { init: init };
+	/**
+	 * @type { eventName : handler :: Event -> Maybe Model }
+	 */
+	exports.default = {
+		init: function init(state) {
 
-	//save context state and options
+			var checkSlider = _util.R.compose(_util.R.equals('slider'), _util.R.prop('className')),
+			    findSliders = _util.R.map(_util.R.filter(checkSlider)),
+			    getSliders = _util.R.filter(_util.R.compose(_util.R.flip(_util.R.gt)(0), _util.R.length)),
+			    updateSliders = _util.R.compose(updateLabels, _util.R.head, getSliders, findSliders);
 
-	function init(model) {
-		//initialize UI controllers
-		actions.slider.updateLabels(document.getElementsByClassName('slider'));
-		//bind all elements and their events to all actions
-		_util.R.mapObjIndexed(bindElements, actions);
+			return updateSliders(state.ui.elements);
+		},
+		//clear slider selection on mouseup
+		mouseup: function mouseup(event, state) {
+			state.ui.state.slider = null;
+			return (0, _action2.default)('NOTHING');
+		},
+		//save slider in closure for next event
+		mousedown: function mousedown(event, state) {
+			if (event.target.tagName === 'INPUT') state.ui.state.slider = event.target.parentElement.parentElement;
+			return (0, _action2.default)('NOTHING');
+		},
+		//if slider is selected, update its label
+		//on mousemove (dragging handler)
+		mousemove: function mousemove(event, state) {
+			var mouse = (0, _util.getMouse)(state.context, event),
+			    slider = state.ui.state.slider;
 
-		return model;
-	}
+			if (slider) {
 
-	//bind an element to a Bacon Events
-	function bindElement(events, element) {
-		//closure arguments to map on events
-		var mapEvent = function mapEvent(handler, eventName) {
-			var metaHandler = function metaHandler(event) {
-				var state = _model2.default.getState(),
-				    Model = _model2.default.getInstance(),
-				    reduce = _model2.default.state.bind(state),
-				    translate = handler.bind(events),
+				updateLabel(slider);
 
-				//render if model returns state
-				render = function render(viewModel) {
-					if (viewModel && viewModel instanceof Model) return _view2.default.render.bind(_view2.default)(viewModel);
+				var sliderInput = slider.getElementsByTagName('input')[0],
+				    fractional = sliderInput.getAttribute('data-fractional'),
+				    sliderName = sliderInput.getAttribute('id'),
+				    value = slider.getElementsByTagName('input')[0].value,
+				    sliderVal = fractional ? value / 100 : value,
+				    options = {
+					name: 'curve.' + sliderName,
+					value: sliderVal
 				};
 
-				return _util.R.compose(render, reduce, translate)(event, state);
-			};
-			//only bind if handler is a function
-			if ('function' === typeof handler)
-				//Bacon stream event from HTMLElement
-				_util.B.fromEvent(element, eventName).onValue(metaHandler);
-		};
-		//map element events by using the object
-		//property name as the event name
-		return _util.R.mapObjIndexed(mapEvent, events);
+				return (0, _action2.default)('OPTION', option);
+			}
+			return (0, _action2.default)('NOTHING');
+		}
+	};
+
+	//updateLabels :: [HTMLDivElement] -> undefined
+
+	function updateLabels(components) {
+		return _util.R.map(updateLabel, components);
 	}
 
-	//bind an array of elements to Bacon events
-	function bindElements(events, className) {
-		var elements = document.getElementsByClassName(className);
-		//use bindElement to bind to HTMLElement
-		return _util.R.map(_util.R.curry(bindElement)(events), elements);
+	//displays label above slider handle
+	//updateLabel :: HTMLDivElement -> undefined
+	function updateLabel(component) {
+		//get markup tags
+		var slider = component.getElementsByTagName('input')[0],
+		    label = component.getElementsByTagName('label')[0],
+		    value = label.getElementsByClassName('value')[0],
+
+		//get tag attributes
+		data_min = slider.getAttribute('min'),
+		    data_max = slider.getAttribute('max'),
+		    data_frac = slider.getAttribute('data-fractional'),
+		    data_value = Number(_util.R.clone(slider.value)),
+		    label_value = data_frac ? data_value / 100 : data_value;
+		//update display values first
+		value.innerHTML = label_value;
+
+		//calculating base values
+		var slider_box = slider.getBoundingClientRect(),
+		    label_box = label.getBoundingClientRect(),
+		    base_unit = slider_box.width / Math.abs(data_max - data_min),
+		    base_value = data_value + Math.abs(data_min) * (data_frac ? 1 : -1),
+		    label_unit = label_box.width / Math.abs(data_max - data_min),
+
+		//the offset in pixels the handle of the slider will be, from left
+		left_offset = Math.round(base_value * (base_unit - label_unit) * 100) / 100,
+
+		//slider handle is about 15px width, offset margin by half the width (7)
+		left_margin = Math.round((data_max - base_value) * 7 / Math.abs(data_max - data_min));
+		//update offset values
+		label.style.left = left_offset + 'px';
+		value.style.paddingLeft = left_margin + 'px';
+	}
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	'use strict';
+	//shortcut instantiation
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	exports.default = function (type, data) {
+		return new Action(type, data);
+	};
+
+	function Action(type, data) {
+		return {
+			type: type,
+			data: data
+		};
 	}
 
 /***/ },
@@ -12909,37 +12890,51 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
 
-	var _slider = __webpack_require__(15);
+	var _util = __webpack_require__(1);
 
-	Object.defineProperty(exports, 'slider', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_slider).default;
-	  }
-	});
+	var _action = __webpack_require__(13);
 
-	var _canvas = __webpack_require__(16);
-
-	Object.defineProperty(exports, 'canvas', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_canvas).default;
-	  }
-	});
-
-	var _checkbox = __webpack_require__(17);
-
-	Object.defineProperty(exports, 'checkbox', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_checkbox).default;
-	  }
-	});
+	var _action2 = _interopRequireDefault(_action);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/**
+	 * @type { eventName : handler :: Event -> Action }
+	 */
+	exports.default = {
+		/**
+	  * @desc new point on double click
+	  */
+		dblclick: function dblclick(event, model) {
+			return (0, _action2.default)('NEW_POINT', (0, _util.getMouse)(model.context, event));
+		},
+		/**
+	  * @desc check if point model.selected on mousedown
+	  */
+		mousedown: function mousedown(event, model) {
+
+			var mouse = (0, _util.getMouse)(model.context, event),
+			    index = (0, _util.findPoint)(mouse)(model.points);
+
+			return (0, _action2.default)(index > -1 ? 'SELECT' : 'DESELECT', index);
+		},
+		/*
+	  * @desc clear selection on mouseup
+	  */
+		mouseup: function mouseup(event, model) {
+			return (0, _action2.default)('DESELECT');
+		},
+		/*
+	  * @desc drag move the point if selection exists
+	  */
+		mousemove: function mousemove(event, model) {
+			var type = model.selects.length ? 'EDIT' : 'NOTHING';
+			return (0, _action2.default)(type, (0, _util.getMouse)(model.context, event));
+		}
+	};
 
 /***/ },
 /* 15 */
@@ -12953,79 +12948,21 @@
 
 	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(7);
+	var _action = __webpack_require__(13);
+
+	var _action2 = _interopRequireDefault(_action);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	/**
 	 * @type { eventName : handler :: Event -> Maybe Model }
 	 */
 	exports.default = {
-		//local closure var
-		//for state keeping
-		slider: null,
+		change: function change(event) {
+			var option = event.target.getAttribute('id'),
+			    value = event.target.checked;
 
-		//clear slider selection on mouseup
-		mouseup: function mouseup(event, model) {
-			this.slider = null;
-			return (0, _model.action)('NOTHING');
-		},
-		//save slider in closure for next event
-		mousedown: function mousedown(event, model) {
-			if (event.target.tagName === 'INPUT') this.slider = event.target.parentElement.parentElement;
-			return (0, _model.action)('NOTHING');
-		},
-		//if slider is selected, update its label
-		//on mousemove (dragging handler)
-		mousemove: function mousemove(event, model) {
-			var mouse = (0, _util.getMouse)(model.context, event);
-			if (this.slider) {
-				this.updateLabel(this.slider);
-
-				var sliderInput = this.slider.getElementsByTagName('input')[0],
-				    fractional = sliderInput.getAttribute('data-fractional'),
-				    sliderName = sliderInput.getAttribute('id'),
-				    value = this.slider.getElementsByTagName('input')[0].value,
-				    sliderVal = fractional ? value / 100 : value;
-
-				return (0, _model.action)('OPTION', { name: 'curve.' + sliderName, value: sliderVal });
-			}
-			return (0, _model.action)('NOTHING');
-		},
-		//updateLabels :: [HTMLDivElement] -> undefined
-		updateLabels: function updateLabels(components) {
-			return _util.R.map(this.updateLabel, components);
-		},
-		//displays label above slider handle
-		//updateLabel :: HTMLDivElement -> undefined
-		updateLabel: function updateLabel(component) {
-			//get markup tags
-			var slider = component.getElementsByTagName('input')[0],
-			    label = component.getElementsByTagName('label')[0],
-			    value = label.getElementsByClassName('value')[0],
-
-			//get tag attributes
-			data_min = slider.getAttribute('min'),
-			    data_max = slider.getAttribute('max'),
-			    data_frac = slider.getAttribute('data-fractional'),
-			    data_value = Number(_util.R.clone(slider.value)),
-			    label_value = data_frac ? data_value / 100 : data_value;
-			//update display values first
-			value.innerHTML = label_value;
-
-			//calculating base values
-			var slider_box = slider.getBoundingClientRect(),
-			    label_box = label.getBoundingClientRect(),
-			    base_unit = slider_box.width / Math.abs(data_max - data_min),
-			    base_value = data_value + Math.abs(data_min) * (data_frac ? 1 : -1),
-			    label_unit = label_box.width / Math.abs(data_max - data_min),
-
-			//the offset in pixels the handle of the slider will be, from left
-			left_offset = Math.round(base_value * (base_unit - label_unit) * 100) / 100,
-
-			//slider handle is about 15px width, offset margin by half the width (7)
-			left_margin = Math.round((data_max - base_value) * 7 / Math.abs(data_max - data_min));
-			//update offset values
-			label.style.left = left_offset + 'px';
-			value.style.paddingLeft = left_margin + 'px';
+			return (0, _action2.default)('OPTION', { name: 'curve.' + option, value: value });
 		}
 	};
 
@@ -13041,42 +12978,96 @@
 
 	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(7);
+	//closure
+	var _state;
 
-	/**
-	 * @type { eventName : handler :: Event -> Action }
-	 */
+	function State(attrs) {
+		this.context = attrs.context || {};
+		this.options = attrs.options || {};
+		this.points = [];
+		this.selects = [];
+		this.ui = {
+			elements: [],
+			view: { curve: [] },
+			state: {
+				slider: {}
+			}
+		};
+	};
+
 	exports.default = {
-		/**
-	  * @desc new point on double click
-	  */
-		dblclick: function dblclick(event, model) {
-			return (0, _model.action)('NEW_POINT', (0, _util.getMouse)(model.context, event));
+		init: function init(context, options) {
+			return _state = new State({
+				context: context,
+				options: options
+			});
 		},
-		/**
-	  * @desc check if point model.selected on mousedown
-	  */
-		mousedown: function mousedown(event, model) {
-
-			var mouse = (0, _util.getMouse)(model.context, event),
-			    index = (0, _util.findPoint)(mouse)(model.points);
-
-			return (0, _model.action)(index > -1 ? 'SELECT' : 'DESELECT', index);
+		state: function state(action) {
+			switch (action.type) {
+				case 'NEW_POINT':
+					return points(action.data);
+				case 'SELECT':
+					return selects(action.data);
+				case 'DESELECT':
+					return _state.selects = [];
+				case 'EDIT':
+					return points(action.data, true);
+				case 'OPTION':
+					return options(action.data);
+				case 'NOTHING':
+					return null;
+				default:
+					return _state;
+			}
 		},
-		/*
-	  * @desc clear selection on mouseup
-	  */
-		mouseup: function mouseup(event, model) {
-			return (0, _model.action)('DESELECT');
+		getState: function getState() {
+			return _state;
 		},
-		/*
-	  * @desc drag move the point if selection exists
-	  */
-		mousemove: function mousemove(event, model) {
-			var type = model.selects.length ? 'EDIT' : 'NOTHING';
-			return (0, _model.action)(type, (0, _util.getMouse)(model.context, event));
+		getInstance: function getInstance() {
+			return State;
 		}
 	};
+
+
+	function points(point, splice) {
+
+		if (splice) _state.points.splice(_state.selects[0], 1, point);else _state.points.push(point);
+
+		return _state;
+	}
+
+	function selects(index) {
+
+		if (index > -1) {
+			_state.selects.push(index);
+			return _state;
+		} else {
+			_state.selects = [];
+			return null;
+		}
+	}
+
+	function options(option) {
+		var _name = option.name.split('.');
+
+		if (_name.length > 1) {
+			var localName = _name.splice(1)[0],
+			    _options = getProp(_name[0], _state.options);
+
+			_options[localName] = option.value;
+		} else if (_name.length) {
+			_state.options[localName] = option.value;
+		} else {
+			return null;
+		}
+
+		return _state;
+	}
+
+	function getProp(str, obj) {
+		// reduce a list of functions that return properties w/ obj
+		return _util.R.reduce(_util.R.flip(_util.R.call), obj, _util.R.map(_util.R.prop, str.split('.')));
+	}
 
 /***/ },
 /* 17 */
@@ -13087,22 +13078,72 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.default = init;
 
 	var _util = __webpack_require__(1);
 
-	var _model = __webpack_require__(7);
+	var _view = __webpack_require__(8);
 
-	/**
-	 * @type { eventName : handler :: Event -> Maybe Model }
-	 */
-	exports.default = {
-		change: function change(event) {
-			var option = event.target.getAttribute('id'),
-			    value = event.target.checked;
+	var _view2 = _interopRequireDefault(_view);
 
-			return (0, _model.action)('OPTION', { name: 'curve.' + option, value: value });
-		}
-	};
+	var _model = __webpack_require__(16);
+
+	var _model2 = _interopRequireDefault(_model);
+
+	var _actions = __webpack_require__(11);
+
+	var actions = _interopRequireWildcard(_actions);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function init(state) {
+		var combine = _util.R.compose(_util.R.map(_util.R.apply(_util.R.call)), _util.R.zip),
+		    extract = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.prepend(_util.R.values), _util.R.of, _util.R.mapObjIndexed),
+
+		//bind an array of elements to Bacon events
+		bindElements = _util.R.curry(function (events, elements) {
+			//use bindElement to bind to HTMLElement
+			return _util.R.map(_util.R.curry(bindElement)(events), elements);
+		}),
+		    bindEvents = extract(_util.R.compose(bindElements, _util.R.identity)),
+		    bindActions = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)]);
+
+		bindActions(actions);
+
+		//initialize UI controllers
+		actions.slider.init(state);
+
+		return state;
+	}
+
+	//bind an element to a Bacon Events
+	function bindElement(events, element) {
+		//closure arguments to map on events
+		var mapEvent = function mapEvent(handler, eventName) {
+			var metaHandler = function metaHandler(event) {
+				var state = _model2.default.getState(),
+				    State = _model2.default.getInstance(),
+				    reduce = _model2.default.state.bind(state),
+				    translate = handler.bind(events),
+
+				//render if model returns state
+				render = function render(viewState) {
+					if (viewState && viewState instanceof State) return _view2.default.render.bind(_view2.default)(viewState);
+				};
+
+				return _util.R.compose(render, reduce, translate)(event, state);
+			};
+			//only bind if handler is a function
+			if ('function' === typeof handler)
+				//Bacon stream event from HTMLElement
+				_util.B.fromEvent(element, eventName).onValue(metaHandler);
+		};
+		//map element events by using the object
+		//property name as the event name
+		return _util.R.mapObjIndexed(mapEvent, events);
+	}
 
 /***/ },
 /* 18 */
