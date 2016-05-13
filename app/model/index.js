@@ -33,12 +33,12 @@ export default {
 
 		console.log(action.type);
 		switch(action.type){
+			case 'DESELECT' :
+				return selects(0);
 			case 'NEW_POINT' :
 				return points(action.data);
 			case 'SELECT' :
 				return selects(action.data);
-			case 'DESELECT' :
-				return selects(0);
 			case 'EDIT' :
 				return points(action.data, true);
 			case 'BLUR_SLIDER' :

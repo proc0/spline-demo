@@ -1,6 +1,6 @@
 'use strict';
 import { R, getMouse } from '../../util';
-import action from '../../data/action';
+import action from '../../model/action';
 
 var update = R.compose(action('OPTION'), getOption, updateLabel);
 /**

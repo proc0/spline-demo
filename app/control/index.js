@@ -1,8 +1,8 @@
 'use strict';
 import { R, B } from '../util';
-import view 	from '../state/view';
-import model 	from '../data/model';
-import * as actions from './actions';
+import view 	from '../view';
+import model 	from '../model';
+import * as events from './events';
 
 export default function init(state){
 	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
@@ -13,12 +13,11 @@ export default function init(state){
 			return R.map(R.curry(bindElement)(events), elements);
 		}),
 		bindEvents = extract(R.compose(bindElements, R.identity)),
-		bindActions = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
-
-	bindActions(actions);
+		//bind all action creators to events
+		_bind = R.converge(combine, [bindEvents, R.always(state.ui.elements)])(events);
 
 	//initialize UI controllers
-	actions.slider.init(state);
+	events.slider.init(state);
 
 	return state;
 }
@@ -36,8 +35,6 @@ function bindElement(events, element){
 						render = function(viewState){
 							if(viewState && viewState instanceof State)
 								return view.render.bind(view)(viewState);
-							else
-								return false;
 						};
 
 					return R.compose(render, reduce, translate)(event, state);

@@ -56,9 +56,9 @@
 
 	var _model2 = _interopRequireDefault(_model);
 
-	var _event = __webpack_require__(17);
+	var _control = __webpack_require__(17);
 
-	var _event2 = _interopRequireDefault(_event);
+	var _control2 = _interopRequireDefault(_control);
 
 	var _options = __webpack_require__(18);
 
@@ -82,7 +82,7 @@
 
 		//initialize with initial state starting with model
 		//then view loads its props, then events bind actions
-		init = initialize([{ init: _event2.default }, _view2.default, _model2.default]);
+		init = initialize([{ init: _control2.default }, _view2.default, _model2.default]);
 		//initialize app
 		return init(state);
 	};
@@ -12421,9 +12421,9 @@
 
 	var _props2 = _interopRequireDefault(_props);
 
-	var _actions = __webpack_require__(11);
+	var _events = __webpack_require__(11);
 
-	var actions = _interopRequireWildcard(_actions);
+	var events = _interopRequireWildcard(_events);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -12447,13 +12447,15 @@
 		getElements = extract(function (handlers, className) {
 			return document.getElementsByClassName(className);
 		}),
-		    loadProps = _util.R.mapObjIndexed(function (loader, prop) {
+
+		//load view properties to be used when rendering
+		//and other view tasks, uses Assignable convention
+		loadProps = _util.R.mapObjIndexed(function (loader, prop) {
 			return this[prop] = loader.bind(this)(state.context);
 		}.bind(state.ui.view), _props2.default);
 
 		//attach UI elements to state
-		state.ui.elements = getElements(actions);
-
+		state.ui.elements = getElements(events);
 		//render default state
 		render(state);
 
@@ -12464,13 +12466,13 @@
 	 */
 	function render(state) {
 
-		if (!state) throw Error('Nothing to render.');
+		if (!state) throw Error('No state to render.');
 
 		//shortcuts
-		var context = state.context,
-		    options = state.options,
+		var view = state.ui.view,
 		    points = state.points,
-		    view = state.ui.view,
+		    context = state.context,
+		    options = state.options,
 		    width = context.canvas.width,
 		    height = context.canvas.height,
 		    draw = view.draw.bind(view)(options);
@@ -13025,12 +13027,12 @@
 
 			console.log(action.type);
 			switch (action.type) {
+				case 'DESELECT':
+					return selects(0);
 				case 'NEW_POINT':
 					return points(action.data);
 				case 'SELECT':
 					return selects(action.data);
-				case 'DESELECT':
-					return selects(0);
 				case 'EDIT':
 					return points(action.data, true);
 				case 'BLUR_SLIDER':
@@ -13115,9 +13117,9 @@
 
 	var _model2 = _interopRequireDefault(_model);
 
-	var _actions = __webpack_require__(11);
+	var _events = __webpack_require__(11);
 
-	var actions = _interopRequireWildcard(_actions);
+	var events = _interopRequireWildcard(_events);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -13133,12 +13135,12 @@
 			return _util.R.map(_util.R.curry(bindElement)(events), elements);
 		}),
 		    bindEvents = extract(_util.R.compose(bindElements, _util.R.identity)),
-		    bindActions = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)]);
 
-		bindActions(actions);
+		//bind all action creators to events
+		_bind = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)])(events);
 
 		//initialize UI controllers
-		actions.slider.init(state);
+		events.slider.init(state);
 
 		return state;
 	}
@@ -13155,7 +13157,7 @@
 
 				//render if model returns state
 				render = function render(viewState) {
-					if (viewState && viewState instanceof State) return _view2.default.render.bind(_view2.default)(viewState);else return false;
+					if (viewState && viewState instanceof State) return _view2.default.render.bind(_view2.default)(viewState);
 				};
 
 				return _util.R.compose(render, reduce, translate)(event, state);

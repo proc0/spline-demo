@@ -1,6 +1,6 @@
 'use strict';
 import R from '../../node_modules/ramda/dist/ramda';
-import point from '../data/point';
+import point from '../model/point';
 
 //get the Point class [x,y] by calling its method
 export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);

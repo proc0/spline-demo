@@ -2,7 +2,7 @@
 import { R } from '../util';
 import curve from './curve';
 import props from './props';
-import * as actions from '../event/actions';
+import * as events from '../control/events';
 
 export default { 
 	init   : init, 
@@ -20,13 +20,14 @@ function init(state){
 		getElements = extract(function(handlers, className){ 
 			return document.getElementsByClassName(className); 
 		}),
+		//load view properties to be used when rendering 
+		//and other view tasks, uses Assignable convention
 		loadProps = R.mapObjIndexed(function(loader, prop){ 
 			return this[prop] = loader.bind(this)(state.context); 
 		}.bind(state.ui.view), props);
 
 	//attach UI elements to state
-	state.ui.elements = getElements(actions);
-	
+	state.ui.elements = getElements(events);
 	//render default state
 	render(state);
 	
@@ -38,13 +39,13 @@ function init(state){
 function render(state){
 	
 	if(!state) 
-		throw Error('Nothing to render.');
+		throw Error('No state to render.');
 
 	//shortcuts
-	var context = state.context,
-		options = state.options,
+	var view	= state.ui.view,
 		points 	= state.points,
-		view	= state.ui.view,
+		context = state.context,
+		options = state.options,
 		width	= context.canvas.width,
 		height	= context.canvas.height,
 		draw 	= view.draw.bind(view)(options);
