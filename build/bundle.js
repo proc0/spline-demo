@@ -75,8 +75,6 @@
 	 * @type start :: () -> IO
 	 */
 	start = function start() {
-		//attach canvas context
-		//and options to state
 		var state = {
 			context: document.getElementsByTagName('canvas')[0].getContext('2d'),
 			options: _options2.default
@@ -12395,7 +12393,6 @@
 				var p = new Float32Array([this.x, this.y]),
 				    _x = transform(p[0]),
 				    _y = transform(p[1]);
-
 				return new Point(_x, _y);
 			},
 			get: function get() {
@@ -12481,10 +12478,9 @@
 		//clear canvas
 		context.clearRect(0, 0, width, height);
 		//no points to render
-		if (!points || points.length < 1) {
+		if (!points || points.length < 1)
 			//render default text (from HTML)
 			return draw('bgtext')(context.canvas.innerHTML);
-		}
 
 		//render points into curve
 		if (points && points.length >= 2) {
@@ -12495,6 +12491,7 @@
 			//fill curve
 			if (options.curve.fill) view.canvas('fill')();
 		}
+
 		//draw vertex points if > 1 point
 		if (options.curve.showPoints) draw('verts')(points);
 
@@ -12789,7 +12786,7 @@
 
 	var update = _util.R.compose((0, _action2.default)('OPTION'), getOption, updateLabel);
 	/**
-	 * @type { eventName : handler :: Event -> Maybe Model }
+	 * @type { eventName : handler :: Event -> Action }
 	 */
 	exports.default = {
 		init: function init(state) {
@@ -12813,9 +12810,7 @@
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
 		mousemove: function mousemove(event, state) {
-			var mouse = (0, _util.getMouse)(state.context, event),
-			    slider = state.ui.state.slider;
-
+			var slider = state.ui.state.slider;
 			return slider ? update(slider) : (0, _action2.default)('NOTHING');
 		}
 	};
@@ -12927,31 +12922,31 @@
 		/**
 	  * @desc new point on double click
 	  */
-		dblclick: function dblclick(event, model) {
-			return (0, _action2.default)('NEW_POINT', (0, _util.getMouse)(model.context, event));
+		dblclick: function dblclick(event, state) {
+			return (0, _action2.default)('NEW_POINT', (0, _util.getMouse)(state.context, event));
 		},
 		/**
-	  * @desc check if point model.selected on mousedown
+	  * @desc check if point state.selected on mousedown
 	  */
-		mousedown: function mousedown(event, model) {
+		mousedown: function mousedown(event, state) {
 
-			var mouse = (0, _util.getMouse)(model.context, event),
-			    index = (0, _util.findPoint)(mouse)(model.points);
+			var mouse = (0, _util.getMouse)(state.context, event),
+			    index = (0, _util.findPoint)(mouse)(state.points);
 
-			return (0, _action2.default)(index > -1 ? 'SELECT' : 'DESELECT', index);
+			return (0, _action2.default)(index > -1 ? 'SELECT' : 'NOTHING', index);
 		},
 		/*
 	  * @desc clear selection on mouseup
 	  */
-		mouseup: function mouseup(event, model) {
-			return (0, _action2.default)('DESELECT');
+		mouseup: function mouseup(event, state) {
+			return (0, _action2.default)('DESELECT', null);
 		},
 		/*
 	  * @desc drag move the point if selection exists
 	  */
-		mousemove: function mousemove(event, model) {
-			var type = model.selects.length ? 'EDIT' : 'NOTHING';
-			return (0, _action2.default)(type, (0, _util.getMouse)(model.context, event));
+		mousemove: function mousemove(event, state) {
+			var type = state.selects.length ? 'EDIT' : 'NOTHING';
+			return (0, _action2.default)(type, (0, _util.getMouse)(state.context, event));
 		}
 	};
 
@@ -12978,10 +12973,13 @@
 	 */
 	exports.default = {
 		change: function change(event) {
-			var option = event.target.getAttribute('id'),
-			    value = event.target.checked;
+			var optionName = event.target.getAttribute('id'),
+			    option = {
+				name: 'curve.' + optionName,
+				value: event.target.checked
+			};
 
-			return (0, _action2.default)('OPTION', { name: 'curve.' + option, value: value });
+			return (0, _action2.default)('OPTION', option);
 		}
 	};
 
@@ -13007,25 +13005,32 @@
 		this.selects = [];
 		this.ui = {
 			elements: [],
-			view: { curve: [] },
+			view: {
+				curve: []
+			},
 			state: {
 				slider: {}
 			}
 		};
-	};
+	}
 
 	exports.default = {
 		init: function init(initState) {
 			return _state = new State(initState);
 		},
 		state: function state(action) {
+
+			if (!action || !action.type) throw Error('No action to process.');
+			// return null;
+
+			console.log(action.type);
 			switch (action.type) {
 				case 'NEW_POINT':
 					return points(action.data);
 				case 'SELECT':
 					return selects(action.data);
 				case 'DESELECT':
-					return _state.selects = [];
+					return selects(0);
 				case 'EDIT':
 					return points(action.data, true);
 				case 'BLUR_SLIDER':
@@ -13037,7 +13042,7 @@
 				case 'NOTHING':
 					return null;
 				default:
-					return _state;
+					return null;
 			}
 		},
 		getState: function getState() {
@@ -13150,7 +13155,7 @@
 
 				//render if model returns state
 				render = function render(viewState) {
-					if (viewState && viewState instanceof State) return _view2.default.render.bind(_view2.default)(viewState);
+					if (viewState && viewState instanceof State) return _view2.default.render.bind(_view2.default)(viewState);else return false;
 				};
 
 				return _util.R.compose(render, reduce, translate)(event, state);

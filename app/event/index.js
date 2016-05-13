@@ -36,6 +36,8 @@ function bindElement(events, element){
 						render = function(viewState){
 							if(viewState && viewState instanceof State)
 								return view.render.bind(view)(viewState);
+							else
+								return false;
 						};
 
 					return R.compose(render, reduce, translate)(event, state);

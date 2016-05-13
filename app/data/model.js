@@ -12,25 +12,33 @@ function State(attrs){
 	this.selects = [];
 	this.ui = {
 		elements : [],
-		view : { curve : [] },
+		view : {
+			curve : [] 
+		},
 		state : {
 			slider : {}
 		}
 	};
-};
+}
 
 export default { 
 	init : function(initState){
 		return state = new State(initState);
 	},
 	state : function(action){
+		
+		if(!action || !action.type)
+			throw Error('No action to process.');
+			// return null;
+
+		console.log(action.type);
 		switch(action.type){
 			case 'NEW_POINT' :
 				return points(action.data);
 			case 'SELECT' :
 				return selects(action.data);
 			case 'DESELECT' :
-				return state.selects = [];
+				return selects(0);
 			case 'EDIT' :
 				return points(action.data, true);
 			case 'BLUR_SLIDER' :
@@ -42,7 +50,7 @@ export default {
 			case 'NOTHING' : 
 				return null;
 			default : 
-				return state;
+				return null;
 		}
 	},
 	getState : function(){
@@ -51,7 +59,7 @@ export default {
 	getInstance : function(){
 		return State;
 	}
-};
+}
 
 function points(point, splice){
 
@@ -79,7 +87,6 @@ function options(option){
 
 	if(_name.length > 1){
 		var localName = _name.splice(1)[0],
-
 			_options = getProp(_name[0], state.options);
 
 		_options[localName] = option.value;

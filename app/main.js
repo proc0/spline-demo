@@ -12,8 +12,6 @@ var initialize = R.compose(R.apply(R.compose), R.map(R.prop('init'))),
 	 * @type start :: () -> IO
 	 */
 	start = function(){
-		//attach canvas context
-		//and options to state
 		var state = {
 				context : document.getElementsByTagName('canvas')[0].getContext('2d'),
 				options : options

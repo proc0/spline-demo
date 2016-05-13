@@ -12,7 +12,6 @@ export default function Point(x, y){
 			var p = new Float32Array([this.x, this.y]),
 				_x = transform(p[0]),
 				_y = transform(p[1]);
-
 			return new Point(_x, _y);
 		},
 		get : function(){

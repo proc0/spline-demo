@@ -11,30 +11,30 @@ export default {
 	/**
 	 * @desc new point on double click
 	 */
-	dblclick : function(event, model){
-		return action('NEW_POINT', getMouse(model.context, event));
+	dblclick : function(event, state){
+		return action('NEW_POINT', getMouse(state.context, event));
 	},
 	/**
-	 * @desc check if point model.selected on mousedown
+	 * @desc check if point state.selected on mousedown
 	 */	
-	mousedown : function(event, model){
+	mousedown : function(event, state){
 	
-		var mouse = getMouse(model.context, event),
-			index = findPoint(mouse)(model.points);
+		var mouse = getMouse(state.context, event),
+			index = findPoint(mouse)(state.points);
 
-		return action(index > -1 ? 'SELECT' : 'DESELECT', index);
+		return action(index > -1 ? 'SELECT' : 'NOTHING', index);
 	},
 	/*
 	 * @desc clear selection on mouseup
 	 */
-	mouseup : function(event, model){
-		return action('DESELECT');
+	mouseup : function(event, state){
+		return action('DESELECT', null);
 	},
 	/*
 	 * @desc drag move the point if selection exists
 	 */
-	mousemove : function(event, model){
-		var type = model.selects.length ? 'EDIT' : 'NOTHING';
-		return action(type, getMouse(model.context, event));
+	mousemove : function(event, state){
+		var type = state.selects.length ? 'EDIT' : 'NOTHING';
+		return action(type, getMouse(state.context, event));
 	}
 };

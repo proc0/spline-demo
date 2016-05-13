@@ -52,10 +52,9 @@ function render(state){
 	//clear canvas
 	context.clearRect(0, 0, width, height);
 	//no points to render
-	if(!points || points.length < 1){
+	if(!points || points.length < 1)
 		//render default text (from HTML)
 		return draw('bgtext')(context.canvas.innerHTML);
-	}
 
 	//render points into curve
 	if(points && points.length >= 2){
@@ -67,6 +66,7 @@ function render(state){
 		if(options.curve.fill)
 			view.canvas('fill')();
 	}
+	
 	//draw vertex points if > 1 point
 	if(options.curve.showPoints) 
 		draw('verts')(points);

@@ -4,7 +4,7 @@ import action from '../../data/action';
 
 var update = R.compose(action('OPTION'), getOption, updateLabel);
 /**
- * @type { eventName : handler :: Event -> Maybe Model }
+ * @type { eventName : handler :: Event -> Action }
  */
 export default {
 	init : function(state){
