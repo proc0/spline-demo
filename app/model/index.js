@@ -1,106 +1,38 @@
 'use strict';
-
 import { R } from '../util';
+import actions from './actions';
+/**
+ * @type model :: Action -> State -> State
+ * @desc takes an action and a previous State,
+ *		 and returns a next State. If action
+ *		 is initial action, create a new Model
+ */
+export default function model(action, state){
 
-//closure
-var state;
+	if(!action || !action.type)
+		throw Error('No action to process.');
 
-function State(attrs){
-	this.context = attrs.context || {};
-	this.options = attrs.options || {};
-	this.points  = [];
-	this.selects = [];
-	this.ui = {
-		elements : [],
-		view : {
-			curve : [] 
-		},
-		state : {
-			slider : {}
-		}
-	};
-}
-
-export default { 
-	init : function(initState){
-		return state = new State(initState);
-	},
-	state : function(action){
-		
-		if(!action || !action.type)
-			throw Error('No action to process.');
-			// return null;
-
-		console.log(action.type);
-		switch(action.type){
-			case 'DESELECT' :
-				return selects(0);
-			case 'NEW_POINT' :
-				return points(action.data);
-			case 'SELECT' :
-				return selects(action.data);
-			case 'EDIT' :
-				return points(action.data, true);
-			case 'BLUR_SLIDER' :
-				return state.ui.state.slider = null;
-			case 'FOCUS_SLIDER' :
-				return state.ui.state.slider = action.data;
-			case 'OPTION' : 
-				return options(action.data);
-			case 'NOTHING' : 
-				return null;
-			default : 
-				return null;
-		}
-	},
-	getState : function(){
-		return state;
-	},
-	getInstance : function(){
-		return State;
-	}
-}
-
-function points(point, splice){
-
-	if(splice)
-		state.points.splice(state.selects[0], 1, point);
-	else
-		state.points.push(point);
-
-	return state;
-}
-
-function selects(index){
-
-	if(index > -1){
-		state.selects.push(index);
-		return state;
-	} else {
-		state.selects = [];
+	if(action.type === 'NOTHING')
 		return null;
-	}
-}
 
-function options(option){
-	var _name = option.name.split('.');
+	var nextState,
+		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(action.type)));
 
-	if(_name.length > 1){
-		var localName = _name.splice(1)[0],
-			_options = getProp(_name[0], state.options);
+	if(state)
+		R.mapObjIndexed(function(actionList, handlerName){
+			//if model has handler
+			//get action handler
+			if( getHandler(actionList) )
+				try { 
+					// console.log(action.type); 
+					nextState = actions[handlerName](action, state); 
+				} catch(err){ 
+					console.log(err) 
+				}
+		}, actions.eventMap);
+	
+	if(!nextState)
+		throw Error('No state was processed!');
 
-		_options[localName] = option.value;
-
-	} else if(_name.length){
-		state.options[localName] = option.value;
-	} else {
-		return null;
-	}
-
-	return state;
-}
-
-function getProp(str, obj){
-	// reduce a list of functions that return properties w/ obj
-	return R.reduce(R.flip(R.call), obj, R.map(R.prop, str.split('.'))); 
+	return nextState;
 }

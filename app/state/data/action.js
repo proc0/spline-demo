@@ -1,5 +1,5 @@
 'use strict';
-import { R } from '../util';
+import { R } from '../../util';
 
 //shortcut instantiation
 export default R.curry(function(type, data){

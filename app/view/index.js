@@ -1,38 +1,24 @@
 'use strict';
-import { R } from '../util';
-import curve from './curve';
+import { R, B } from '../util';
+import curve from '../util/curve';
 import props from './props';
-import * as events from '../control/events';
-
-export default { 
-	init   : init, 
-	render : render 
-};
+import * as events from './events';
 
 /**
- * @type init :: Context -> Options -> IO
+ * @type init :: State -> IO
  */
-function init(state){
-	var extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
-		//get elements by searching the handler function name
-		//as the element's class name
-		//TODO: abstract this further
-		getElements = extract(function(handlers, className){ 
-			return document.getElementsByClassName(className); 
-		}),
+export default function init(state){
 		//load view properties to be used when rendering 
 		//and other view tasks, uses Assignable convention
-		loadProps = R.mapObjIndexed(function(loader, prop){ 
+	var load = R.mapObjIndexed(function(loader, prop){ 
 			return this[prop] = loader.bind(this)(state.context); 
-		}.bind(state.ui.view), props);
+		}.bind(state.ui.view)),
+		//render default state		
+		initView = R.compose(render, initEvents, initElements);
 
-	//attach UI elements to state
-	state.ui.elements = getElements(events);
-	//render default state
-	render(state);
-	
-	return state;
+	return load(props) && initView(state);
 }
+
 /**
  * @type render :: State -> IO
  */
@@ -71,6 +57,69 @@ function render(state){
 	//draw vertex points if > 1 point
 	if(options.curve.showPoints) 
 		draw('verts')(points);
+}
+
+//attach UI elements to state
+function initElements(state){
+	var extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
+		getElements = extract(function(handlers, className){ 
+			return document.getElementsByClassName(className); 
+		});
+
+	state.ui.elements = getElements(events);
 
 	return state;
+}
+
+//initialize events
+function initEvents(state){
+	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
+		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
+		//bind an array of elements to Bacon events
+		bindElements = R.curry(function(handlers, elements){
+			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
+			return R.map(R.curry(bindElement)(handlers).bind(state.data.meta), elements);
+		}),
+		bindEvents = extract(R.compose(bindElements, R.identity)),
+		//bind all action creators to events
+		initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
+
+	initialize(events);
+
+	//initialize UI controllers
+	//TODO: propagate and properly abstract
+	//init function to all event handlers
+	events.slider.init(state);
+
+	return state;
+}
+
+//bind an element to a Bacon Events
+function bindElement(handlers, element){
+	//bound to state
+	var state = this,
+		_bind = function(handler, eventName){
+			//meta handler uses handler closure
+			var trigger = function(event){
+					var prev 	= state.get(),
+						State 	= state.State,
+						next 	= state.set.bind(state),
+						handle 	= handler.bind(handlers),
+						noop 	= function(){ return; },
+						isState = function(s){ return s instanceof State },
+						//only render if model returns State
+						IO  	= R.ifElse(isState, render, noop),
+						process = R.compose(IO, next, handle);
+					//process = handle next IO 
+					//w/ current event and prev state
+					return process(event, prev);
+				};
+			//only bind if handler is a function
+			if('function' === typeof handler)
+				//Bacon stream event from HTMLElement
+				B.fromEvent(element, eventName).onValue(trigger);
+		};
+	//map element handlers by using the object
+	//property name as the event name
+	return R.mapObjIndexed(_bind, handlers);
 }

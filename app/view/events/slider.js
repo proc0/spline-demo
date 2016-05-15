@@ -1,24 +1,24 @@
 'use strict';
 import { R, getMouse } from '../../util';
-import action from '../../model/action';
+import action from '../../state/data/action';
 
-var update = R.compose(action('OPTION'), getOption, updateLabel);
+var updateSlider = R.compose(getOption, updateLabel),
+	checkSlider = R.compose(R.equals('slider'), R.prop('className')),
+	findSliders = R.map(R.filter(checkSlider)),
+	getSliders  = R.filter(R.compose(R.flip(R.gt)(0), R.length)),
+	updateSliders = R.compose(updateLabels, R.head, getSliders, findSliders);
+
 /**
  * @type { eventName : handler :: Event -> Action }
  */
 export default {
 	init : function(state){
-
-		var checkSlider = R.compose(R.equals('slider'), R.prop('className')),
-			findSliders = R.map(R.filter(checkSlider)),
-			getSliders  = R.filter(R.compose(R.flip(R.gt)(0), R.length)),
-			updateSliders = R.compose(updateLabels, R.head, getSliders, findSliders);
-
-		return updateSliders(state.ui.elements);
+		updateSliders(state.ui.elements);
+		return state;
 	},
 	//clear slider selection on mouseup
 	mouseup   : function(event, state){
-		return action('BLUR_SLIDER');
+		return action('BLUR_SLIDER', null);
 	},
 	//save slider in closure for next event
 	mousedown : function(event, state){
@@ -28,8 +28,12 @@ export default {
 	//if slider is selected, update its label 
 	//on mousemove (dragging handler)
 	mousemove : function(event, state){
-		var slider = state.ui.state.slider;
-		return slider ? update(slider) : action('NOTHING');
+		var slider = state.ui.state.slider,
+			update = slider && slider instanceof HTMLElement,
+			type = update ? 'OPTION' : 'NOTHING',
+			data = update ? updateSlider(slider) : null;
+
+		return state.data.action(type, data);
 	}
 };
 

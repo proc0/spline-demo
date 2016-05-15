@@ -1,6 +1,6 @@
 'use strict';
 import R from '../../node_modules/ramda/dist/ramda';
-import point from '../model/point';
+import point from '../state/data/point';
 
 //get the Point class [x,y] by calling its method
 export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
@@ -13,6 +13,12 @@ export var getMouse = function(context, event){
 		y = event.y - client.top;
 	return new point(x, y);
 };
+
+export var getProp = function (str, obj){
+	// reduce a list of functions that return properties w/ obj
+	return R.reduce(R.flip(R.call), obj, R.map(R.prop, str.split('.'))); 
+};
+
 export var findPoint = R.curry(function(mouse, points){
 	var x = mouse.x,
 		y = mouse.y,
@@ -51,6 +57,10 @@ export var chunk = R.curry(function(amount, list){
 });
 
 export var flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prototype));
+
+export var cloneObj = function cloneObj(obj){
+	return R.converge(R.zipObj, [R.keys, R.converge(R.chain, [R.compose(R.apply(R.flip(R.prop)), Array), R.keys])])(obj);
+}
 
 export { default as R } from '../../node_modules/ramda/dist/ramda';
 export { default as B } from '../../node_modules/baconjs/dist/Bacon';

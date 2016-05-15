@@ -10,23 +10,6 @@ import {
  */
 export default {
 	/**
-	 * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
-	 */
-	paint : function(context){
-
-		return R.curry(function(drawer, view, options, data){
-			view.config( options );
-			
-			if(typeof data !== 'string')
-				view.canvas('beginPath')();
-
-			view.comp[drawer](data, view);
-			
-			if(typeof data !== 'string')
-				view.canvas('stroke')();		
-		});
-	},		
-	/**
 	 *	@type config :: Context -> (Object -> IO)
 	 *	@desc returns a function that will set a property on
 	 *        the canvas context object. Needs to be imperative.
@@ -47,23 +30,12 @@ export default {
 		return R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
 	},
 	/**
-	 *	@type draw :: Context -> String 
-	 */		
-	draw : function(context){
-			//extract style options
-		var getOptions = R.compose(R.flip(R.prop), R.prop('style')),
-			buildParams = R.compose(R.prepend(R.identity), R.prepend(R.always(this)));
-
-		return R.compose(R.converge(this.paint), buildParams, R.of, getOptions);
-	},
-
-	/**
-	 * @type { optionName : comp :: Context -> Assignable }
+	 * @type { optionName : comp :: Context -> Drawer }
 	 */
 	comp : function(context){
 		return {
 			/**
-			 *
+			 * @type curve :: [Point] -> View -> IO
 			 */				
 			curve 	: function(points, view){
 				var lineTo = R.apply(view.canvas('lineTo'));
@@ -71,7 +43,7 @@ export default {
 				return R.compose(R.map(lineTo), getPoints)(points);
 			},
 			/**
-			 *
+			 * @type verts :: [Point] -> View -> IO
 			 */
 			verts 	: function(points, view){
 				var w = 6, h = 6,
@@ -83,7 +55,7 @@ export default {
 				return R.compose(R.map(rect), R.map(params))(points);
 			},
 			/**
-			 *
+			 * @type bgtext :: String -> View -> IO
 			 */				
 			bgtext 	: function(text, view){
 				var w = context.canvas.width,
@@ -95,5 +67,33 @@ export default {
 				return view.canvas('fillText')(text, x, y);
 			}
 		};
+	},
+	/**
+	 * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
+	 */
+	paint : function(context){
+
+		return R.curry(function(drawer, view, options, data){
+			view.config( options );
+			
+			if(typeof data !== 'string')
+				view.canvas('beginPath')();
+
+			view.comp[drawer](data, view);
+			
+			if(typeof data !== 'string')
+				view.canvas('stroke')();		
+		});
+	},		
+	/**
+	 *	@type draw :: Context -> IO 
+	 */		
+	draw : function(context){
+			//extract style options
+		var getOptions = R.compose(R.flip(R.prop), R.prop('style')),
+			buildParams = R.compose(R.prepend(R.identity), R.prepend(R.always(this)));
+
+		return R.compose(R.converge(this.paint), buildParams, R.of, getOptions);
 	}
+
 };

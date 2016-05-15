@@ -1,6 +1,10 @@
 'use strict';
-import { R, getPoints, flatten } from '../util';
-import point from '../model/point';
+import { 
+	R, 
+	flatten,
+	getPoints
+} from './index';
+import point from '../state/data/point';
 
 	var cache = [],
 		segments = 0,
