@@ -12511,9 +12511,13 @@
 		    bindEvents = extract(_util.R.compose(bindElements, _util.R.identity)),
 
 		//bind all action creators to events
-		_bind = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)])(events);
+		initialize = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)]);
+
+		initialize(events);
 
 		//initialize UI controllers
+		//TODO: propagate and properly abstract
+		//init function to all event handlers
 		events.slider.init(state);
 
 		return state;
@@ -12523,9 +12527,9 @@
 	function bindElement(handlers, element) {
 		//bound to state
 		var state = this,
-		    mapEvent = function mapEvent(handler, eventName) {
+		    _bind = function _bind(handler, eventName) {
 			//meta handler uses handler closure
-			var metaHandler = function metaHandler(event) {
+			var trigger = function trigger(event) {
 				var prev = state.get(),
 				    State = state.State,
 				    next = state.set.bind(state),
@@ -12547,11 +12551,11 @@
 			//only bind if handler is a function
 			if ('function' === typeof handler)
 				//Bacon stream event from HTMLElement
-				_util.B.fromEvent(element, eventName).onValue(metaHandler);
+				_util.B.fromEvent(element, eventName).onValue(trigger);
 		};
 		//map element handlers by using the object
 		//property name as the event name
-		return _util.R.mapObjIndexed(mapEvent, handlers);
+		return _util.R.mapObjIndexed(_bind, handlers);
 	}
 
 /***/ },

@@ -3,8 +3,8 @@ import { R, getProp } from '../../util';
 export default {
 	eventMap : {
 		selects : ['SELECT', 'DESELECT'],
-		points : ['NEW_POINT', 'EDIT'],
-		slider : ['BLUR_SLIDER', 'FOCUS_SLIDER'],
+		points 	: ['NEW_POINT', 'EDIT'],
+		slider 	: ['BLUR_SLIDER', 'FOCUS_SLIDER'],
 		options : ['OPTION']
 	},
 
@@ -31,7 +31,7 @@ export default {
 		} else {
 			state.selects = [];
 		}
-		
+
 		return state;
 	},
 
