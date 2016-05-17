@@ -22,7 +22,7 @@ export default function model(action, state){
 		R.mapObjIndexed(function(actionList, handlerName){
 			//if model has handler
 			//get action handler
-			if( getHandler(actionList) )
+			if(getHandler(actionList))
 				try { 
 					// console.log(action.type); 
 					nextState = actions[handlerName](action, state); 
