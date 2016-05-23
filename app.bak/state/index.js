@@ -7,7 +7,6 @@ import Point from './data/point';
 import Action from './data/action';
 
 function State(attrs){
-	// copy(attrs, this);
 	//shallow assign,
 	//TODO: smarter object inheritance from seed
 	R.mapObjIndexed(function(value, label){
