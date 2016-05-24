@@ -4,11 +4,12 @@ import model from './model/core';
 import Action from './data/types/action';
 import State from './data/types/state';
 
+var state;
 /**
- * @type state :: IO -> State
+ * @type state :: IO -> (WorldData -> (InputData -> State))
  */ 
-export default R.curry(function state(world){
-	var currentState = world.state || new State(world),
+export default function state(world){
+	var currentState = state || new State(world),
 		isAction = function(a){ return a instanceof Action; },
 		nextState = R.compose(R.ifElse(isAction, R.flip(model)(currentState), R.identity), R.flip(data)(currentState))(world);
 	
@@ -16,7 +17,7 @@ export default R.curry(function state(world){
 		return world.state = nextState;
 	else
 		return nextState;
-});
+};
 
 // export default function (world){
 // 	return {
