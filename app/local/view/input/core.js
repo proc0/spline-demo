@@ -42,12 +42,12 @@ var eventTypes = {
 };
 
 /**
- * @type :: data :: World -> Data
+ * @type :: data :: IO -> State -> Data
  */
-export default function input(event, state){
+export default function init(inputData){
 
-	var inputData,
-		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(event.type)));
+	var modelData,
+		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(inputData.input.type)));
 
 	if(state)
 		R.mapObjIndexed(function(dataList, handlerName){
@@ -56,12 +56,12 @@ export default function input(event, state){
 			if( getHandler(dataList) ){
 				try { 
 					// console.log(data.type); 
-					inputData = eventTypes[handlerName](event, state);
+					modelData = eventTypes[handlerName](inputData);
 				} catch(err){ 
 					console.log(err) 
 				}
 			}
-		}, eventTypes.eventMap);
+		}, events);
 
-	return inputData;
+	return modelData;
 }

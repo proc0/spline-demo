@@ -8,7 +8,7 @@ export default function init(state){
 		//and other view tasks, uses Assignable convention
 	var load = R.mapObjIndexed(function(loader, prop){ 
 			return this[prop] = loader.bind(this)(state.context); 
-		}.bind(state.ui.view));
+		}.bind(state.view));
 		//render default state		
 	// 	initView = R.compose(render, initEvents, initElements);
 
@@ -27,7 +27,7 @@ function render(state){
 		throw Error('No state to render.');
 
 	//shortcuts
-	var view	= state.ui.view,
+	var view	= state.view,
 		points 	= state.points,
 		context = state.context,
 		options = state.options,

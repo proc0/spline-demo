@@ -1,46 +1,59 @@
+'use strict';
 import {
 	R,
 	getMouse, 
 	findPoint 
 } from '../../../tool';
-import * as types from './types';
+import * as data from './types';
 
+var eventTypes = {
+	eventMap : {
+		parseEvent : ['mousedown', 'mouseup', 'mousemove']
+	},
 
-// var eventTypes = {
-// 	eventMap : {
-// 		parseEvent : ['mousedown', 'mouseup', 'mousemove']
-// 	},
+	parseEvent : function(worldData){
+		var event = worldData.input,
+			state = worlData.state;
 
-// 	parseEvent : function(event, state){
+		return {
+			input : {
+				type : event.type,
+				mouse : getMouse(state.context, event),
+				index : state.points.length ? findPoint(mouse)(state.points) : state.points
+			},
+			output : data.action
+		};
+	}
+};
 
-// 		return {
-// 			mouse : getMouse(state.context, event),
-// 			index : state.points.length ? findPoint(mouse)(state.points) : state.points
-// 		};
-// 	}
-// };
+/**
+ * @type :: data :: IO -> State -> Data
+ */
+export default R.curry(function init(event, state){
 
-// /**
-//  * @type :: data :: World -> Data
-//  */
-// export default function data(event, state){
+	if(event){
+		var inputData,
+			worldData = {
+				input : event,
+				state : state
+			},
+			getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(event.type)));
+		
+		R.mapObjIndexed(function(dataList, handlerName){
+			//if model has handler
+			//get data handler
+			if( getHandler(dataList) ){
+				try { 
+					// console.log(data.type); 
+					inputData = eventTypes[handlerName](worldData);
+				} catch(err){ 
+					console.log(err) 
+				}
+			}
+		}, eventTypes.eventMap);
 
-// 	var inputData,
-// 		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(event.type)));
-
-// 	if(state)
-// 		R.mapObjIndexed(function(dataList, handlerName){
-// 			//if model has handler
-// 			//get data handler
-// 			if( getHandler(dataList) ){
-// 				try { 
-// 					// console.log(data.type); 
-// 					inputData = eventTypes[handlerName](event, state);
-// 				} catch(err){ 
-// 					console.log(err) 
-// 				}
-// 			}
-// 		}, eventTypes.eventMap);
-
-// 	return inputData;
-// }
+		return inputData;
+	} else {
+		return state;
+	}
+});

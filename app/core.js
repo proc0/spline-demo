@@ -6,6 +6,6 @@ import options from '../options';
 /**
  * @type app :: IO -> IO
  */
-var app = R.compose(local.core, world.core)(options);
+var app = R.compose(local.core, world.core)({ options : options });
 //start on DOM loaded
 //document.addEventListener('DOMContentLoaded', app, false);
