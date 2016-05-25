@@ -1,11 +1,11 @@
 'use strict';
-import { R, getProp } from '../../util';
+import { R, getProp } from '../../../tool';
 import props from './props';
 
 /**
  * @type model :: Data -> State -> State
  */
-export default function init(data, state){
+export default R.curry(function init(data, state){
 
 	if(!data){
 		if(!data.type)
@@ -37,5 +37,5 @@ export default function init(data, state){
 	} else {
 		return state;
 	}
-}
+});
 

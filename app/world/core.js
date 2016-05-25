@@ -7,4 +7,4 @@ import { R, B } from '../tool';
  */
 // var world = R.compose(view, state);
 
-export default  R.merge({ state : document });
+export default function(options){ return R.merge({ state : document }, options) };

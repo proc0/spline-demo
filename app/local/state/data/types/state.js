@@ -1,5 +1,5 @@
 'use strict';
-import { R } from '../../../tool';
+import { R } from '../../../../tool';
 
 export default function State(seed){
 	//shallow assign,

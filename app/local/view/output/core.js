@@ -1,14 +1,15 @@
-import { R, B } from '../../tool';
+import { R, B } from '../../../tool';
 import props from './canvas';
 /**
  * @type init :: State -> IO
  */
-export default function init(state){
+export default function init(view){
+	// view = _view;
 		//load view properties to be used when rendering 
 		//and other view tasks, uses Assignable convention
 	var load = R.mapObjIndexed(function(loader, prop){ 
-			return this[prop] = loader.bind(this)(state.context); 
-		}.bind(state.view));
+			return this[prop] = loader.bind(this)(view.context); 
+		}.bind(view));
 		//render default state		
 	// 	initView = R.compose(render, initEvents, initElements);
 

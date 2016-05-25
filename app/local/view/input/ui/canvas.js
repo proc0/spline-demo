@@ -1,7 +1,7 @@
 import { 
 	getMouse, 
 	findPoint 
-} from '../../util';
+} from '../../../../tool';
 /**
  * @type { eventName : handler :: Event -> Action }
  */

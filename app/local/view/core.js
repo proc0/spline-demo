@@ -4,33 +4,41 @@ import input from './input/core';
 import output from './output/core';
 import * as events from './input/ui';
 
-export default function init(worldData, state){
+var view = {};
+
+export default function view(state){
 	
-	state = initElements(worldData, state);
+	var currentState = state(),
+		dom = currentState.world.state;
+
+	view.elements = initElements(dom)(events);
+	view.context =dom.getElementsByClassName('canvas')[0].getContext('2d');
 
 	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
 		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
 		//bind an array of elements to Bacon events
 		bindElements = R.curry(function(handlers, elements){
 			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-			return R.map(R.curry(bindElement)(handlers).bind(state), elements);
+			return R.map(R.curry(bindElement)(handlers).bind(state()), elements);
 		}),
 		bindEvents = extract(R.compose(bindElements, R.identity)),
 		//bind all action creators to events
-		initialize = R.converge(combine, [bindEvents, R.always(state.view.elements)]);
+		initialize = R.converge(combine, [bindEvents, R.always(view.elements)]);
 
-	state.output = output(state);
+	view.handle = input;
+	view.render = output(view);
+
+	currentState.view = view;
 
 	initialize(events);
-
 	// view.init(state);
 
 	//initialize UI controllers
 	//TODO: propagate and properly abstract
 	//init function to all event handlers
-	events.slider.init(state);
+	// events.slider.init(state);
 
-	return state;
+	return view;
 }
 
 //bind an element to a Bacon Events
@@ -40,20 +48,14 @@ function bindElement(handlers, element){
 		_bind = function(handler, eventName){
 			//meta handler uses handler closure
 			var trigger = function(event){
-				//todo insert data abstraction layer
-				// //here
-				// 	var prev 	= state.get(),
-				// 		State 	= state.State,
-				// 		next 	= state.set.bind(state),
-				// 		handle 	= handler.bind(handlers),
 					var noop 	= function(){ return; },
 						isState = function(s){ return s instanceof State },
 						//only render if model returns State
-						IO  	= R.ifElse(isState, state.output(state), noop),
-						process = R.compose(IO, state, state.input(state));
-					//process = input -> state -> IO 
+						render  = R.ifElse(isState, view.render(state), noop),
+						process = R.compose(render, R.flip(R.apply)(view.handle), state);
+					//process :: IO -> IO
 					//w/ current event and prev state
-					return process(event, prev);
+					return process(event);
 				};
 			//only bind if handler is a function
 			if('function' === typeof handler)
@@ -66,42 +68,11 @@ function bindElement(handlers, element){
 }
 
 //attach UI elements to state
-function initElements(worldData, state){
-	var dom = worldData.state,
-		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
+function initElements(dom){
+	var extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
 		getElements = extract(function(handlers, className){ 
 			return dom.getElementsByClassName(className); 
 		});
 
-	state.view.elements = getElements(events);
-
-	return state;
+	return getElements;
 }
-
-/**
- * @type init :: State -> IO
-//  */
-// function init(state){
-// 		//load view properties to be used when rendering 
-// 		//and other view tasks, uses Assignable convention
-// 	var load = R.mapObjIndexed(function(loader, prop){ 
-// 			return this[prop] = loader.bind(this)(state.context); 
-// 		}.bind(state.ui.view)),
-// 		//render default state		
-// 		initView = R.compose(render, initEvents, initElements);
-
-// 	return load(props) && initView(state);
-// }
-// var hasInit;
-
-// export default function(state){
-// 	if(!hasInit){
-// 		init(state);
-// 		hasInit = true;
-// 	}
-// 	// if(state instanceof State)
-// 	// 	output(state);
-// 	// else
-// 	// 	input(state);
-// }
-

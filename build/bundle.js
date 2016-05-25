@@ -46,41 +46,26 @@
 
 	'use strict';
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	var _view = __webpack_require__(8);
+	var _core = __webpack_require__(8);
 
-	var _view2 = _interopRequireDefault(_view);
+	var _core2 = __webpack_require__(25);
 
-	var _state = __webpack_require__(16);
+	var _core3 = _interopRequireDefault(_core2);
 
-	var _state2 = _interopRequireDefault(_state);
-
-	var _options = __webpack_require__(20);
+	var _options = __webpack_require__(26);
 
 	var _options2 = _interopRequireDefault(_options);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	/**
-	 * @type init :: Seed -> IO
-	 * desc init state then init view
+	 * @type app :: IO -> IO
 	 */
-	var init = _util.R.compose(_view2.default, _state2.default.init.bind(_state2.default)),
-
-	/**
-	 * @type initialize :: () -> IO
-	 */
-	initialize = function initialize() {
-		var seed = {
-			context: document.getElementsByTagName('canvas')[0].getContext('2d'),
-			options: _options2.default
-		};
-		//initialize app
-		return init(seed);
-	};
+	var app = _tool.R.compose(_core.local, _core3.default)({ options: _options2.default });
 	//start on DOM loaded
-	document.addEventListener('DOMContentLoaded', initialize, false);
+	//document.addEventListener('DOMContentLoaded', app, false);
 
 /***/ },
 /* 1 */
@@ -12411,152 +12396,36 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
-	exports.default = init;
+	exports.local = undefined;
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	var _curve = __webpack_require__(9);
+	var _core = __webpack_require__(9);
 
-	var _curve2 = _interopRequireDefault(_curve);
+	var _core2 = _interopRequireDefault(_core);
 
-	var _props = __webpack_require__(10);
+	var _core3 = __webpack_require__(17);
 
-	var _props2 = _interopRequireDefault(_props);
-
-	var _events = __webpack_require__(11);
-
-	var events = _interopRequireWildcard(_events);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	var _core4 = _interopRequireDefault(_core3);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	// import State from '../state/data/types/state';
+	// import * as events from './input/ui';
 	/**
-	 * @type init :: State -> IO
+	 * @type local :: World -> IO
+	 * @cyto app :: IO -> IO
 	 */
-	function init(state) {
-		//load view properties to be used when rendering
-		//and other view tasks, uses Assignable convention
-		var load = _util.R.mapObjIndexed(function (loader, prop) {
-			return this[prop] = loader.bind(this)(state.context);
-		}.bind(state.ui.view)),
-
-		//render default state		
-		initView = _util.R.compose(render, initEvents, initElements);
-
-		return load(_props2.default) && initView(state);
-	}
-
-	/**
-	 * @type render :: State -> IO
-	 */
-	function render(state) {
-
-		if (!state) throw Error('No state to render.');
-
-		//shortcuts
-		var view = state.ui.view,
-		    points = state.points,
-		    context = state.context,
-		    options = state.options,
-		    width = context.canvas.width,
-		    height = context.canvas.height,
-		    draw = view.draw.bind(view)(options);
-
-		//clear canvas
-		context.clearRect(0, 0, width, height);
-		//no points to render
-		if (!points || points.length < 1)
-			//render default text (from HTML)
-			return draw('bgtext')(context.canvas.innerHTML);
-
-		//render points into curve
-		if (points && points.length >= 2) {
-			//save curve points for select drag render
-			view.curve = (0, _curve2.default)(points, options['curve']);
-			//render curve
-			draw('curve')(view.curve);
-			//fill curve
-			if (options.curve.fill) view.canvas('fill')();
-		}
-
-		//draw vertex points if > 1 point
-		if (options.curve.showPoints) draw('verts')(points);
-	}
-
-	//attach UI elements to state
-	function initElements(state) {
-		var extract = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.prepend(_util.R.values), _util.R.of, _util.R.mapObjIndexed),
-		    getElements = extract(function (handlers, className) {
-			return document.getElementsByClassName(className);
-		});
-
-		state.ui.elements = getElements(events);
-
-		return state;
-	}
-
-	//initialize events
-	function initEvents(state) {
-		var combine = _util.R.compose(_util.R.map(_util.R.apply(_util.R.call)), _util.R.zip),
-		    extract = _util.R.compose(_util.R.apply(_util.R.compose), _util.R.prepend(_util.R.values), _util.R.of, _util.R.mapObjIndexed),
-
-		//bind an array of elements to Bacon events
-		bindElements = _util.R.curry(function (handlers, elements) {
-			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-			return _util.R.map(_util.R.curry(bindElement)(handlers).bind(state.data.meta), elements);
-		}),
-		    bindEvents = extract(_util.R.compose(bindElements, _util.R.identity)),
-
-		//bind all action creators to events
-		initialize = _util.R.converge(combine, [bindEvents, _util.R.always(state.ui.elements)]);
-
-		initialize(events);
-
-		//initialize UI controllers
-		//TODO: propagate and properly abstract
-		//init function to all event handlers
-		events.slider.init(state);
-
-		return state;
-	}
-
-	//bind an element to a Bacon Events
-	function bindElement(handlers, element) {
-		//bound to state
-		var state = this,
-		    _bind = function _bind(handler, eventName) {
-			//meta handler uses handler closure
-			var trigger = function trigger(event) {
-				var prev = state.get(),
-				    State = state.State,
-				    next = state.set.bind(state),
-				    handle = handler.bind(handlers),
-				    noop = function noop() {
-					return;
-				},
-				    isState = function isState(s) {
-					return s instanceof State;
-				},
-
-				//only render if model returns State
-				IO = _util.R.ifElse(isState, render, noop),
-				    process = _util.R.compose(IO, next, handle);
-				//process = handle next IO
-				//w/ current event and prev state
-				return process(event, prev);
-			};
-			//only bind if handler is a function
-			if ('function' === typeof handler)
-				//Bacon stream event from HTMLElement
-				_util.B.fromEvent(element, eventName).onValue(trigger);
-		};
-		//map element handlers by using the object
-		//property name as the event name
-		return _util.R.mapObjIndexed(_bind, handlers);
-	}
+	//world : { options, state }
+	var local = exports.local = _tool.R.converge(_tool.R.call, [_core2.default, _core4.default]);
+	// export default {
+	// 	core : R.compose(view.output, state.model, view.input, state.data),
+	// 	state : state,
+	// 	view : view
+	// }
+	// R.compose( R.flip(state)(view.input));
 
 /***/ },
 /* 9 */
@@ -12567,118 +12436,133 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.default = view;
 
-	exports.default = function (curvePoints, curveOptions) {
+	var _tool = __webpack_require__(1);
 
-		if (!curvePoints || !curvePoints.length) throw new Error('Attempted to draw a pointless curve.');
+	var _core = __webpack_require__(10);
 
-		var options = _index.R.merge({ //defaults
-			tension: 0.5,
-			segments: 25,
-			closed: false
-		}, curveOptions),
+	var _core2 = _interopRequireDefault(_core);
 
-		//define key points
-		p = curvePoints,
-		    l = p.length,
-		    p1 = p[0],
-		    p2 = p[1],
-		    p_2 = p[l - 2],
-		    p_1 = p[l - 1],
-		    render = _index.R.compose(parse(options), _index.flatten);
+	var _core3 = __webpack_require__(15);
 
-		if (segments !== options.segments) {
-			cache = cacheSegments(options.segments);
-			segments = options.segments;
-		}
-		// points are parsed in diff order depending on whether curve is closed
-		// for a closed curve, calculate last segment, and flip endpoints for main curve
-		// -------------------->  [ mainCurve, closingCurve, closingPoint ]
-		var points = options.closed ? [render(p_1, p, p1), render(p_2, p_1, p1, p2), p1] : [render(p1, p, p_1), p_1];
+	var _core4 = _interopRequireDefault(_core3);
 
-		return (0, _index.flatten)(points);
-	};
+	var _ui = __webpack_require__(11);
 
-	var _index = __webpack_require__(1);
+	var events = _interopRequireWildcard(_ui);
 
-	var _point = __webpack_require__(7);
-
-	var _point2 = _interopRequireDefault(_point);
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var cache = [],
-	    segments = 0,
-	    cacheSegments = function cacheSegments(numSegments) {
-		var _cache = new Float32Array((numSegments + 2) * 4),
-		    cachePtr = 4;
+	var view = {};
 
-		// cache inner-loop calculations as they are based on t alone
-		_cache[0] = 1; // 1,0,0,0
+	function view(worldData) {
 
-		for (var i = 1; i < numSegments; i++) {
+		view.elements = initElements(worldData.state)(events);
+		view.context = worldData.state.getElementsByClassName('canvas')[0].getContext('2d');
 
-			var st = i / numSegments,
-			    st2 = st * st,
-			    st3 = st2 * st,
-			    st23 = st3 * 2,
-			    st32 = st2 * 3;
+		var combine = _tool.R.compose(_tool.R.map(_tool.R.apply(_tool.R.call)), _tool.R.zip),
+		    extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
 
-			_cache[cachePtr++] = st23 - st32 + 1; // c1
-			_cache[cachePtr++] = st32 - st23; // c2
-			_cache[cachePtr++] = st3 - 2 * st2 + st; // c3
-			_cache[cachePtr++] = st3 - st2; // c4
-		}
+		//bind an array of elements to Bacon events
+		bindElements = _tool.R.curry(function (handlers, elements) {
+			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
+			return _tool.R.map(_tool.R.curry(bindElement)(handlers).bind(view), elements);
+		}),
+		    bindEvents = extract(_tool.R.compose(bindElements, _tool.R.identity)),
 
-		_cache[++cachePtr] = 1; // 0,1,0,0
+		//bind all action creators to events
+		initialize = _tool.R.converge(combine, [bindEvents, _tool.R.always(view.elements)]);
 
-		return _cache;
-	},
+		// view.output = output(view);
 
-	//TODO : transform into functional style
-	parse = _index.R.curry(function (options, _points) {
+		initialize(events);
 
-		var segments = options.segments,
-		    tension = options.tension,
-		    closed = options.closed,
-		    points = _index.R.compose(_index.flatten, _index.getPoints)(_points),
-		    res = [];
+		// view.init(state);
 
-		for (var i = 2; i < points.length; i += 2) {
+		//initialize UI controllers
+		//TODO: propagate and properly abstract
+		//init function to all event handlers
+		// events.slider.init(state);
 
-			var pt1 = points[i],
-			    pt2 = points[i + 1],
-			    pt3 = points[i + 2],
-			    pt4 = points[i + 3],
-			    t1x = (pt3 - points[i - 2]) * tension,
-			    t1y = (pt4 - points[i - 1]) * tension,
-			    t2x = (points[i + 4] - pt1) * tension,
-			    t2y = (points[i + 5] - pt2) * tension,
-			    c = 0,
-			    c1,
-			    c2,
-			    c3,
-			    c4;
+		return (0, _core4.default)(view);
+	}
 
-			for (var t = 0; t < segments; t++) {
+	//bind an element to a Bacon Events
+	function bindElement(handlers, element) {
+		//bound to state
+		var state = this,
+		    _bind = function _bind(handler, eventName) {
+			//meta handler uses handler closure
+			var trigger = function trigger(event) {
+				//todo insert data abstraction layer
+				// //here
+				// 	var prev 	= state.get(),
+				// 		State 	= state.State,
+				// 		next 	= state.set.bind(state),
+				// 		handle 	= handler.bind(handlers),
+				var noop = function noop() {
+					return;
+				},
+				    isState = function isState(s) {
+					return s instanceof State;
+				},
 
-				c1 = cache[c++];
-				c2 = cache[c++];
-				c3 = cache[c++];
-				c4 = cache[c++];
+				//only render if model returns State
+				IO = _tool.R.ifElse(isState, state.output(state), noop),
+				    process = _tool.R.compose(IO, state, state.input(state));
+				//process = input -> state -> IO
+				//w/ current event and prev state
+				return process(event, prev);
+			};
+			//only bind if handler is a function
+			if ('function' === typeof handler)
+				//Bacon stream event from HTMLElement
+				_tool.B.fromEvent(element, eventName).onValue(trigger);
+		};
+		//map element handlers by using the object
+		//property name as the event name
+		return _tool.R.mapObjIndexed(_bind, handlers);
+	}
 
-				var _x = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-				// res[rPos++] = c1 * pt1 + c2 * pt3 + c3 * t1x + c4 * t2x;
-				var _y = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-				// res[rPos++] = c1 * pt2 + c2 * pt4 + c3 * t1y + c4 * t2y;
-				res.push((0, _point2.default)(_x, _y));
-			}
-		}
+	//attach UI elements to state
+	function initElements(dom) {
+		var extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
+		    getElements = extract(function (handlers, className) {
+			return dom.getElementsByClassName(className);
+		});
 
-		return res;
-	});
+		return getElements;
+	}
 
-	;
+	/**
+	 * @type init :: State -> IO
+	//  */
+	// function init(state){
+	// 		//load view properties to be used when rendering
+	// 		//and other view tasks, uses Assignable convention
+	// 	var load = R.mapObjIndexed(function(loader, prop){
+	// 			return this[prop] = loader.bind(this)(state.context);
+	// 		}.bind(state.ui.view)),
+	// 		//render default state		
+	// 		initView = R.compose(render, initEvents, initElements);
+
+	// 	return load(props) && initView(state);
+	// }
+	// var hasInit;
+
+	// export default function(state){
+	// 	if(!hasInit){
+	// 		init(state);
+	// 		hasInit = true;
+	// 	}
+	// 	// if(state instanceof State)
+	// 	// 	output(state);
+	// 	// else
+	// 	// 	input(state);
+	// }
 
 /***/ },
 /* 10 */
@@ -12689,103 +12573,77 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.default = init;
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
+
+	var _ui = __webpack_require__(11);
+
+	var events = _interopRequireWildcard(_ui);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	//initialize events
+	// export default function initEvents(state){
+
+	// 	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
+	// 		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed),
+	// 		//bind an array of elements to Bacon events
+	// 		bindElements = R.curry(function(handlers, elements){
+	// 			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
+	// 			return R.map(R.curry(bindElement)(handlers).bind(state.data.meta), elements);
+	// 		}),
+	// 		bindEvents = extract(R.compose(bindElements, R.identity)),
+	// 		//bind all action creators to events
+	// 		initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
+
+	// 	initialize(events);
+
+	// 	//initialize UI controllers
+	// 	//TODO: propagate and properly abstract
+	// 	//init function to all event handlers
+	// 	events.slider.init(state);
+
+	// 	return state;
+	// }
+
+	var eventTypes = {
+		eventMap: {
+			parseEvent: ['mousedown', 'mouseup', 'mousemove']
+		},
+
+		parseEvent: function parseEvent(event, state) {
+
+			return {
+				mouse: getMouse(state.context, event),
+				index: state.points.length ? findPoint(mouse)(state.points) : state.points
+			};
+		}
+	};
 
 	/**
-	 *	@member props {Assignable}
-	 *	@desc	contains key/value where value is a high order function
-	 *	@type 	prop :: Context -> (* -> IO)
+	 * @type :: data :: IO -> State -> Data
 	 */
-	exports.default = {
-		/**
-	  *	@type config :: Context -> (Object -> IO)
-	  *	@desc returns a function that will set a property on
-	  *        the canvas context object. Needs to be imperative.
-	  */
-		config: function config(context) {
-			//setting context cannot be functional style?
-			var setContext = function setContext(val, key, obj) {
-				return _util.R.prop(key, context) ? context[key] = val : null;
-			};
-			return _util.R.mapObjIndexed(setContext);
-		},
-		/**
-	  * @type canvas :: Context -> (String -> (* -> IO))
-	  * @desc returns a function that will return a canvas API method
-	  * 		 ready to be invoked with whatever params it needs
-	  */
-		canvas: function canvas(context) {
-			return _util.R.compose(_util.R.flip(_util.R.bind)(context), _util.R.flip(_util.R.prop)(context));
-		},
-		/**
-	  * @type { optionName : comp :: Context -> Drawer }
-	  */
-		comp: function comp(context) {
-			return {
-				/**
-	    * @type curve :: [Point] -> View -> IO
-	    */
-				curve: function curve(points, view) {
-					var lineTo = _util.R.apply(view.canvas('lineTo'));
+	function init(inputData) {
 
-					return _util.R.compose(_util.R.map(lineTo), _util.getPoints)(points);
-				},
-				/**
-	    * @type verts :: [Point] -> View -> IO
-	    */
-				verts: function verts(points, view) {
-					var w = 6,
-					    h = 6,
-					    offset = _util.R.flip(_util.R.subtract)(w / 2),
-					    dimens = _util.R.flip(_util.R.concat)([w, h]),
-					    params = _util.R.compose(dimens, _util.getPoint, _util.R.map(offset)),
-					    rect = _util.R.apply(view.canvas('rect'));
+		var modelData,
+		    getHandler = _tool.R.compose(_tool.R.flip(_tool.R.gt)(0), _tool.R.length, _tool.R.filter(_tool.R.equals(inputData.input.type)));
 
-					return _util.R.compose(_util.R.map(rect), _util.R.map(params))(points);
-				},
-				/**
-	    * @type bgtext :: String -> View -> IO
-	    */
-				bgtext: function bgtext(text, view) {
-					var w = context.canvas.width,
-					    h = context.canvas.height,
-
-					//center text
-					x = w / 2 - text.length * 10 / 2,
-					    y = h / 2;
-
-					return view.canvas('fillText')(text, x, y);
+		if (state) _tool.R.mapObjIndexed(function (dataList, handlerName) {
+			//if model has handler
+			//get data handler
+			if (getHandler(dataList)) {
+				try {
+					// console.log(data.type);
+					modelData = eventTypes[handlerName](inputData);
+				} catch (err) {
+					console.log(err);
 				}
-			};
-		},
-		/**
-	  * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
-	  */
-		paint: function paint(context) {
+			}
+		}, events);
 
-			return _util.R.curry(function (drawer, view, options, data) {
-				view.config(options);
-
-				if (typeof data !== 'string') view.canvas('beginPath')();
-
-				view.comp[drawer](data, view);
-
-				if (typeof data !== 'string') view.canvas('stroke')();
-			});
-		},
-		/**
-	  *	@type draw :: Context -> IO 
-	  */
-		draw: function draw(context) {
-			//extract style options
-			var getOptions = _util.R.compose(_util.R.flip(_util.R.prop), _util.R.prop('style')),
-			    buildParams = _util.R.compose(_util.R.prepend(_util.R.identity), _util.R.prepend(_util.R.always(this)));
-
-			return _util.R.compose(_util.R.converge(this.paint), buildParams, _util.R.of, getOptions);
-		}
-
-	};
+		return modelData;
+	}
 
 /***/ },
 /* 11 */
@@ -12806,7 +12664,7 @@
 	  }
 	});
 
-	var _canvas = __webpack_require__(14);
+	var _canvas = __webpack_require__(13);
 
 	Object.defineProperty(exports, 'canvas', {
 	  enumerable: true,
@@ -12815,7 +12673,7 @@
 	  }
 	});
 
-	var _checkbox = __webpack_require__(15);
+	var _checkbox = __webpack_require__(14);
 
 	Object.defineProperty(exports, 'checkbox', {
 	  enumerable: true,
@@ -12836,46 +12694,46 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	var _action = __webpack_require__(13);
+	// import action from '../../state/data/action';
 
-	var _action2 = _interopRequireDefault(_action);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var updateSlider = _util.R.compose(getOption, updateLabel),
-	    checkSlider = _util.R.compose(_util.R.equals('slider'), _util.R.prop('className')),
-	    findSliders = _util.R.map(_util.R.filter(checkSlider)),
-	    getSliders = _util.R.filter(_util.R.compose(_util.R.flip(_util.R.gt)(0), _util.R.length)),
-	    updateSliders = _util.R.compose(updateLabels, _util.R.head, getSliders, findSliders);
+	var updateSlider = _tool.R.compose(getOption, updateLabel),
+	    checkSlider = _tool.R.compose(_tool.R.equals('slider'), _tool.R.prop('className')),
+	    findSliders = _tool.R.map(_tool.R.filter(checkSlider)),
+	    getSliders = _tool.R.filter(_tool.R.compose(_tool.R.flip(_tool.R.gt)(0), _tool.R.length)),
+	    updateSliders = _tool.R.compose(updateLabels, _tool.R.head, getSliders, findSliders);
 
 	/**
 	 * @type { eventName : handler :: Event -> Action }
 	 */
 	exports.default = {
-		init: function init(state) {
-			updateSliders(state.ui.elements);
-			return state;
-		},
+		// init : function(state){
+		// 	updateSliders(state.ui.elements);
+		// 	return state;
+		// },
 		//clear slider selection on mouseup
-		mouseup: function mouseup(event, state) {
-			return (0, _action2.default)('BLUR_SLIDER', null);
+		mouseup: function mouseup(data) {
+			return data.output('BLUR_SLIDER', null);
 		},
 		//save slider in closure for next event
-		mousedown: function mousedown(event, state) {
-			var type = event.target.tagName === 'INPUT' ? 'FOCUS_SLIDER' : 'NOTHING';
-			return (0, _action2.default)(type, event.target.parentElement.parentElement);
+		mousedown: function mousedown(data) {
+			var event = data.input,
+			    action = data.output,
+			    type = event.target.tagName === 'INPUT' ? 'FOCUS_SLIDER' : 'NOTHING';
+			return action(type, event.target.parentElement.parentElement);
 		},
 		//if slider is selected, update its label
 		//on mousemove (dragging handler)
-		mousemove: function mousemove(event, state) {
-			var slider = state.ui.state.slider,
+		mousemove: function mousemove(data) {
+			var event = data.input,
+			    action = data.output,
+			    slider = event.state.ui.state.slider,
 			    update = slider && slider instanceof HTMLElement,
 			    type = update ? 'OPTION' : 'NOTHING',
-			    data = update ? updateSlider(slider) : null;
+			    out = update ? updateSlider(slider) : null;
 
-			return state.data.action(type, data);
+			return action(type, out);
 		}
 	};
 
@@ -12897,7 +12755,7 @@
 
 	//updateLabels :: [HTMLDivElement] -> undefined
 	function updateLabels(components) {
-		return _util.R.map(updateLabel, components);
+		return _tool.R.map(updateLabel, components);
 	}
 
 	//displays label above slider handle
@@ -12912,7 +12770,7 @@
 		data_min = slider.getAttribute('min'),
 		    data_max = slider.getAttribute('max'),
 		    data_frac = slider.getAttribute('data-fractional'),
-		    data_value = Number(_util.R.clone(slider.value)),
+		    data_value = Number(_tool.R.clone(slider.value)),
 		    label_value = data_frac ? data_value / 100 : data_value;
 		//update display values first
 		value.innerHTML = label_value;
@@ -12946,20 +12804,48 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	//shortcut instantiation
-	exports.default = _util.R.curry(function (type, data) {
-		return new Action(type, data);
-	});
+	/**
+	 * @type { eventName : handler :: Event -> Action }
+	 */
+	exports.default = {
+		/**
+	  * @desc check if point state.selected on mousedown
+	  */
+		mousedown: function mousedown(data) {
 
+			var event = data.input,
+			    action = data.output,
+			    type = event.index > -1 ? 'SELECT' : 'NEW_POINT',
+			    out = {
+				point: event.mouse,
+				index: event.index,
+				splice: false
+			};
 
-	function Action(type, data) {
-		return {
-			type: type,
-			data: data
-		};
-	}
+			return action(type, out);
+		},
+		/*
+	  * @desc clear selection on mouseup
+	  */
+		mouseup: function mouseup(data) {
+			return data.output('DESELECT', { index: null });
+		},
+		/*
+	  * @desc drag move the point if selection exists
+	  */
+		mousemove: function mousemove(data) {
+			var event = data.input,
+			    action = data.output,
+			    type = event.selects.length ? 'EDIT' : 'NOTHING',
+			    out = {
+				point: event.mouse,
+				splice: true
+			};
+			return action(type, out);
+		}
+	};
 
 /***/ },
 /* 14 */
@@ -12971,46 +12857,22 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
 	/**
-	 * @type { eventName : handler :: Event -> Action }
+	 * @type { eventName : handler :: Event -> Maybe Model }
 	 */
 	exports.default = {
-		/**
-	  * @desc check if point state.selected on mousedown
-	  */
-		mousedown: function mousedown(event, state) {
-
-			var mouse = (0, _util.getMouse)(state.context, event),
-			    index = (0, _util.findPoint)(mouse)(state.points),
-
-			//if mouse is near curve, select it
-			type = index > -1 ? 'SELECT' : 'NEW_POINT',
-			    data = {
-				point: (0, _util.getMouse)(state.context, event),
-				index: index,
-				splice: false
+		change: function change(data) {
+			var event = data.input,
+			    action = data.output,
+			    optionName = event.target.getAttribute('id'),
+			    option = {
+				name: 'curve.' + optionName,
+				value: event.target.checked
 			};
 
-			return state.data.action(type, data);
-		},
-		/*
-	  * @desc clear selection on mouseup
-	  */
-		mouseup: function mouseup(event, state) {
-			return state.data.action('DESELECT', { index: null });
-		},
-		/*
-	  * @desc drag move the point if selection exists
-	  */
-		mousemove: function mousemove(event, state) {
-			var type = state.selects.length ? 'EDIT' : 'NOTHING',
-			    data = {
-				point: (0, _util.getMouse)(state.context, event),
-				splice: true
-			};
-			return state.data.action(type, data);
+			return action('OPTION', option);
 		}
 	};
 
@@ -13023,23 +12885,70 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	exports.default = init;
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
+
+	var _canvas = __webpack_require__(16);
+
+	var _canvas2 = _interopRequireDefault(_canvas);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	/**
-	 * @type { eventName : handler :: Event -> Maybe Model }
+	 * @type init :: State -> IO
 	 */
-	exports.default = {
-		change: function change(event, state) {
-			var optionName = event.target.getAttribute('id'),
-			    option = {
-				name: 'curve.' + optionName,
-				value: event.target.checked
-			};
+	function init(state) {
+		//load view properties to be used when rendering
+		//and other view tasks, uses Assignable convention
+		var load = _tool.R.mapObjIndexed(function (loader, prop) {
+			return this[prop] = loader.bind(this)(state.context);
+		}.bind(state.view));
+		//render default state		
+		// 	initView = R.compose(render, initEvents, initElements);
 
-			return state.data.action('OPTION', option);
+		// return load(props) && initView(state);
+		load(_canvas2.default);
+
+		return render;
+	}
+
+	/**
+	 * @type render :: State -> IO
+	 */
+	function render(state) {
+
+		if (!state) throw Error('No state to render.');
+
+		//shortcuts
+		var view = state.view,
+		    points = state.points,
+		    context = state.context,
+		    options = state.options,
+		    width = context.canvas.width,
+		    height = context.canvas.height,
+		    draw = view.draw.bind(view)(options);
+
+		//clear canvas
+		context.clearRect(0, 0, width, height);
+		//no points to render
+		if (!points || points.length < 1)
+			//render default text (from HTML)
+			return draw('bgtext')(context.canvas.innerHTML);
+
+		//render points into curve
+		if (points && points.length >= 2) {
+			//save curve points for select drag render
+			view.curve = curve(points, options['curve']);
+			//render curve
+			draw('curve')(view.curve);
+			//fill curve
+			if (options.curve.fill) view.canvas('fill')();
 		}
-	};
+
+		//draw vertex points if > 1 point
+		if (options.curve.showPoints) draw('verts')(points);
+	}
 
 /***/ },
 /* 16 */
@@ -13051,59 +12960,101 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	var _model = __webpack_require__(17);
-
-	var _model2 = _interopRequireDefault(_model);
-
-	var _model3 = __webpack_require__(19);
-
-	var _model4 = _interopRequireDefault(_model3);
-
-	var _point = __webpack_require__(7);
-
-	var _point2 = _interopRequireDefault(_point);
-
-	var _action = __webpack_require__(13);
-
-	var _action2 = _interopRequireDefault(_action);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function State(attrs) {
-		// copy(attrs, this);
-		//shallow assign,
-		//TODO: smarter object inheritance from seed
-		_util.R.mapObjIndexed(function (value, label) {
-			this[label] = value;
-		}.bind(this), attrs);
-	}
-
+	/**
+	 *	@member props {Assignable}
+	 *	@desc	contains key/value where value is a high order function
+	 *	@type 	prop :: Context -> (* -> IO)
+	 */
 	exports.default = {
-		state: {},
-		State: State,
-		data: {
-			state: State,
-			model: _model4.default,
-			point: _point2.default,
-			action: _action2.default
+		/**
+	  *	@type config :: Context -> (Object -> IO)
+	  *	@desc returns a function that will set a property on
+	  *        the canvas context object. Needs to be imperative.
+	  */
+		config: function config(context) {
+			//setting context cannot be functional style?
+			var setContext = function setContext(val, key, obj) {
+				return _tool.R.prop(key, context) ? context[key] = val : null;
+			};
+			return _tool.R.mapObjIndexed(setContext);
 		},
-		init: function init(seed) {
-			var state = { data: this.data },
-			    attrs = _util.R.merge(_util.R.merge(_model4.default, state), seed);
-			//avoids the need to import into view
-			state.data.meta = this;
+		/**
+	  * @type canvas :: Context -> (String -> (* -> IO))
+	  * @desc returns a function that will return a canvas API method
+	  * 		 ready to be invoked with whatever params it needs
+	  */
+		canvas: function canvas(context) {
+			return _tool.R.compose(_tool.R.flip(_tool.R.bind)(context), _tool.R.flip(_tool.R.prop)(context));
+		},
+		/**
+	  * @type { optionName : comp :: Context -> Drawer }
+	  */
+		comp: function comp(context) {
+			return {
+				/**
+	    * @type curve :: [Point] -> View -> IO
+	    */
+				curve: function curve(points, view) {
+					var lineTo = _tool.R.apply(view.canvas('lineTo'));
 
-			return this.state = new State(attrs);
+					return _tool.R.compose(_tool.R.map(lineTo), _tool.getPoints)(points);
+				},
+				/**
+	    * @type verts :: [Point] -> View -> IO
+	    */
+				verts: function verts(points, view) {
+					var w = 6,
+					    h = 6,
+					    offset = _tool.R.flip(_tool.R.subtract)(w / 2),
+					    dimens = _tool.R.flip(_tool.R.concat)([w, h]),
+					    params = _tool.R.compose(dimens, _tool.getPoint, _tool.R.map(offset)),
+					    rect = _tool.R.apply(view.canvas('rect'));
+
+					return _tool.R.compose(_tool.R.map(rect), _tool.R.map(params))(points);
+				},
+				/**
+	    * @type bgtext :: String -> View -> IO
+	    */
+				bgtext: function bgtext(text, view) {
+					var w = context.canvas.width,
+					    h = context.canvas.height,
+
+					//center text
+					x = w / 2 - text.length * 10 / 2,
+					    y = h / 2;
+
+					return view.canvas('fillText')(text, x, y);
+				}
+			};
 		},
-		get: function get() {
-			return this.state;
+		/**
+	  * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
+	  */
+		paint: function paint(context) {
+
+			return _tool.R.curry(function (drawer, view, options, data) {
+				view.config(options);
+
+				if (typeof data !== 'string') view.canvas('beginPath')();
+
+				view.comp[drawer](data, view);
+
+				if (typeof data !== 'string') view.canvas('stroke')();
+			});
 		},
-		set: function set(action) {
-			//for now state is modified in model
-			return (0, _model2.default)(action, this.state);
+		/**
+	  *	@type draw :: Context -> IO 
+	  */
+		draw: function draw(context) {
+			//extract style options
+			var getOptions = _tool.R.compose(_tool.R.flip(_tool.R.prop), _tool.R.prop('style')),
+			    buildParams = _tool.R.compose(_tool.R.prepend(_tool.R.identity), _tool.R.prepend(_tool.R.always(this)));
+
+			return _tool.R.compose(_tool.R.converge(this.paint), buildParams, _tool.R.of, getOptions);
 		}
+
 	};
 
 /***/ },
@@ -13115,46 +13066,38 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = model;
+	exports.default = state;
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
 
-	var _actions = __webpack_require__(18);
+	var _core = __webpack_require__(18);
 
-	var _actions2 = _interopRequireDefault(_actions);
+	var _core2 = _interopRequireDefault(_core);
+
+	var _core3 = __webpack_require__(23);
+
+	var _core4 = _interopRequireDefault(_core3);
+
+	var _state = __webpack_require__(21);
+
+	var _state2 = _interopRequireDefault(_state);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var state = {};
 	/**
-	 * @type model :: Action -> State -> State
-	 * @desc takes an action and a previous State,
-	 *		 and returns a next State. If action
-	 *		 is initial action, create a new Model
+	 * @type state :: IO -> (WorldData -> (InputData -> State))
 	 */
-	function model(action, state) {
+	function state(world) {
+		var currentState = state || new _state2.default(world),
+		    processInput = _tool.R.flip(_core2.default)(currentState),
+		    processState = _tool.R.flip(_core4.default)(currentState),
+		    nextState = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(processState), _tool.R.of, processInput);
 
-		if (!action || !action.type) throw Error('No action to process.');
-
-		if (action.type === 'NOTHING') return null;
-
-		var nextState,
-		    getHandler = _util.R.compose(_util.R.flip(_util.R.gt)(0), _util.R.length, _util.R.filter(_util.R.equals(action.type)));
-
-		if (state) _util.R.mapObjIndexed(function (actionList, handlerName) {
-			//if model has handler
-			//get action handler
-			if (getHandler(actionList)) try {
-				// console.log(action.type);
-				nextState = _actions2.default[handlerName](action, state);
-			} catch (err) {
-				console.log(err);
-			}
-		}, _actions2.default.eventMap);
-
-		if (!nextState) throw Error('No state was processed!');
-
-		return nextState;
-	}
+		return function (input) {
+			return input ? exports.default = state = nextState(input) : world;
+		};
+	};
 
 /***/ },
 /* 18 */
@@ -13166,7 +13109,263 @@
 		value: true
 	});
 
-	var _util = __webpack_require__(1);
+	var _tool = __webpack_require__(1);
+
+	var _types = __webpack_require__(19);
+
+	var data = _interopRequireWildcard(_types);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	var eventTypes = {
+		eventMap: {
+			parseEvent: ['mousedown', 'mouseup', 'mousemove']
+		},
+
+		parseEvent: function parseEvent(worldData) {
+			var event = worldData.input,
+			    state = worlData.state;
+
+			return {
+				input: {
+					type: event.type,
+					mouse: (0, _tool.getMouse)(state.context, event),
+					index: state.points.length ? (0, _tool.findPoint)(mouse)(state.points) : state.points
+				},
+				output: data.action
+			};
+		}
+	};
+
+	/**
+	 * @type :: data :: IO -> State -> Data
+	 */
+	exports.default = _tool.R.curry(function init(event, state) {
+
+		if (event) {
+			var inputData,
+			    worldData = {
+				input: event,
+				state: state
+			},
+			    getHandler = _tool.R.compose(_tool.R.flip(_tool.R.gt)(0), _tool.R.length, _tool.R.filter(_tool.R.equals(event.type)));
+
+			_tool.R.mapObjIndexed(function (dataList, handlerName) {
+				//if model has handler
+				//get data handler
+				if (getHandler(dataList)) {
+					try {
+						// console.log(data.type);
+						inputData = eventTypes[handlerName](worldData);
+					} catch (err) {
+						console.log(err);
+					}
+				}
+			}, eventTypes.eventMap);
+
+			return inputData;
+		} else {
+			return state;
+		}
+	});
+
+/***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _action = __webpack_require__(20);
+
+	Object.defineProperty(exports, 'action', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_action).default;
+	  }
+	});
+
+	var _point = __webpack_require__(7);
+
+	Object.defineProperty(exports, 'point', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_point).default;
+	  }
+	});
+
+	var _state = __webpack_require__(21);
+
+	Object.defineProperty(exports, 'state', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_state).default;
+	  }
+	});
+
+	var _world = __webpack_require__(22);
+
+	Object.defineProperty(exports, 'world', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_world).default;
+	  }
+	});
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _tool = __webpack_require__(1);
+
+	//shortcut instantiation
+	exports.default = _tool.R.curry(function (type, data) {
+		return new Action(type, data);
+	});
+
+
+	function Action(type, data) {
+		return {
+			type: type,
+			data: data
+		};
+	}
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = State;
+
+	var _tool = __webpack_require__(1);
+
+	function State(seed) {
+		//shallow assign,
+		//TODO: smarter object inheritance from seed
+		_tool.R.mapObjIndexed(function (value, label) {
+			this[label] = value;
+		}.bind(this), seed);
+	}
+
+	// export default {
+	// 	points 	: [],
+	// 	selects : [],
+	// 	ui 		: {
+	// 		elements : [],
+	// 		view : {
+	// 			curve : []
+	// 		},
+	// 		state : {
+	// 			slider : {}
+	// 		}
+	// 	}
+	// };
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _tool = __webpack_require__(1);
+
+	//shortcut instantiation
+	// export default R.curry(function(type, data){
+	// 	return new Action(type, data);
+	// });
+
+	// function Action(type, data){
+	// 	return {
+	// 		type : type,
+	// 		data : data
+	// 	};
+	exports.default = {
+		context: {},
+		options: {}
+	};
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _tool = __webpack_require__(1);
+
+	var _props = __webpack_require__(24);
+
+	var _props2 = _interopRequireDefault(_props);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/**
+	 * @type model :: Data -> State -> State
+	 */
+	exports.default = _tool.R.curry(function init(data, state) {
+
+		if (!data) {
+			if (!data.type) throw Error('No data to process.');
+
+			if (data.type === 'NOTHING') return null;
+
+			var nextState,
+			    getHandler = _tool.R.compose(_tool.R.flip(_tool.R.gt)(0), _tool.R.length, _tool.R.filter(_tool.R.equals(data.type)));
+
+			if (state) _tool.R.mapObjIndexed(function (dataList, handlerName) {
+				//if model has handler
+				//get data handler
+				if (getHandler(dataList)) try {
+					// console.log(data.type);
+					nextState = _props2.default[handlerName](data, state);
+				} catch (err) {
+					console.log(err);
+				}
+			}, _props2.default.eventMap);
+
+			// if(!nextState)
+			// 	throw Error('No state was processed!');
+
+			return nextState;
+		} else {
+			return state;
+		}
+	});
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _tool = __webpack_require__(1);
 
 	exports.default = {
 		eventMap: {
@@ -13207,7 +13406,7 @@
 
 			if (_name.length > 1) {
 				var localName = _name.splice(1)[0],
-				    _options = (0, _util.getProp)(_name[0], state.options);
+				    _options = (0, _tool.getProp)(_name[0], state.options);
 
 				_options[localName] = option.value;
 			} else if (_name.length) {
@@ -13227,32 +13426,32 @@
 	};
 
 /***/ },
-/* 19 */
-/***/ function(module, exports) {
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
-	exports.default = {
-		context: {},
-		options: {},
-		points: [],
-		selects: [],
-		ui: {
-			elements: [],
-			view: {
-				curve: []
-			},
-			state: {
-				slider: {}
-			}
-		}
+
+	exports.default = function (options) {
+	  return _tool.R.merge({ state: document }, options);
 	};
 
+	var _tool = __webpack_require__(1);
+
+	;
+	// import view from './view/core';
+	// import state from './state/core';
+
+	/**
+	 * @type world :: DOM -> IO
+	 */
+	// var world = R.compose(view, state);
+
 /***/ },
-/* 20 */
+/* 26 */
 /***/ function(module, exports) {
 
 	'use strict';

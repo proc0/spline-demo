@@ -1,5 +1,5 @@
 'use strict';
-import { R, B } from '../../tool';
+import { R, B } from '../../../tool';
 import * as events from './ui';
 
 //initialize events

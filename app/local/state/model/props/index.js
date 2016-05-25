@@ -1,5 +1,5 @@
 'use strict';
-import { R, getProp } from '../../../tool';
+import { R, getProp } from '../../../../tool';
 
 export default {
 	eventMap : {

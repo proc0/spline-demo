@@ -7,7 +7,8 @@ import state from './state/core';
  * @type local :: World -> IO
  * @cyto app :: IO -> IO
  */
- export default R.compose(view, state);
+ //world : { options, state }
+ export var local = R.converge(R.call, [view, state]);
 // export default {
 // 	core : R.compose(view.output, state.model, view.input, state.data),
 // 	state : state,
