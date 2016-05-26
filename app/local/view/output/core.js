@@ -30,8 +30,8 @@ function render(state){
 	//shortcuts
 	var view	= state.view,
 		points 	= state.points,
-		context = state.context,
-		options = state.options,
+		context = state.view.context,
+		options = state.world.options,
 		width	= context.canvas.width,
 		height	= context.canvas.height,
 		draw 	= view.draw.bind(view)(options);

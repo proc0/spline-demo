@@ -12436,7 +12436,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = view;
+	exports.default = init;
 
 	var _tool = __webpack_require__(1);
 
@@ -12458,10 +12458,20 @@
 
 	var view = {};
 
-	function view(worldData) {
+	function init(worldData) {
 
-		view.elements = initElements(worldData.state)(events);
-		view.context = worldData.state.getElementsByClassName('canvas')[0].getContext('2d');
+		var dom = worldData.state;
+
+		view.elements = initElements(dom)(events);
+		view.context = dom.getElementsByClassName('canvas')[0].getContext('2d');
+
+		return initEvents;
+	}
+
+	function initEvents(state) {
+
+		var currentState = state(),
+		    dom = currentState.world.state;
 
 		var combine = _tool.R.compose(_tool.R.map(_tool.R.apply(_tool.R.call)), _tool.R.zip),
 		    extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
@@ -12469,17 +12479,19 @@
 		//bind an array of elements to Bacon events
 		bindElements = _tool.R.curry(function (handlers, elements) {
 			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-			return _tool.R.map(_tool.R.curry(bindElement)(handlers).bind(view), elements);
+			return _tool.R.map(_tool.R.curry(bindElement)(handlers).bind(state()), elements);
 		}),
 		    bindEvents = extract(_tool.R.compose(bindElements, _tool.R.identity)),
 
 		//bind all action creators to events
 		initialize = _tool.R.converge(combine, [bindEvents, _tool.R.always(view.elements)]);
 
-		// view.output = output(view);
+		view.handle = _core2.default;
+		view.render = (0, _core4.default)(view);
 
-		initialize(events);
+		currentState.view = view;
 
+		return initialize(events);
 		// view.init(state);
 
 		//initialize UI controllers
@@ -12487,7 +12499,7 @@
 		//init function to all event handlers
 		// events.slider.init(state);
 
-		return (0, _core4.default)(view);
+		// return view;
 	}
 
 	//bind an element to a Bacon Events
@@ -12497,12 +12509,6 @@
 		    _bind = function _bind(handler, eventName) {
 			//meta handler uses handler closure
 			var trigger = function trigger(event) {
-				//todo insert data abstraction layer
-				// //here
-				// 	var prev 	= state.get(),
-				// 		State 	= state.State,
-				// 		next 	= state.set.bind(state),
-				// 		handle 	= handler.bind(handlers),
 				var noop = function noop() {
 					return;
 				},
@@ -12511,11 +12517,11 @@
 				},
 
 				//only render if model returns State
-				IO = _tool.R.ifElse(isState, state.output(state), noop),
-				    process = _tool.R.compose(IO, state, state.input(state));
-				//process = input -> state -> IO
+				render = _tool.R.ifElse(isState, view.render(state), noop),
+				    process = _tool.R.compose(render, _tool.R.flip(_tool.R.apply)(view.handle), state);
+				//process :: IO -> IO
 				//w/ current event and prev state
-				return process(event, prev);
+				return process(event);
 			};
 			//only bind if handler is a function
 			if ('function' === typeof handler)
@@ -12536,33 +12542,6 @@
 
 		return getElements;
 	}
-
-	/**
-	 * @type init :: State -> IO
-	//  */
-	// function init(state){
-	// 		//load view properties to be used when rendering
-	// 		//and other view tasks, uses Assignable convention
-	// 	var load = R.mapObjIndexed(function(loader, prop){
-	// 			return this[prop] = loader.bind(this)(state.context);
-	// 		}.bind(state.ui.view)),
-	// 		//render default state		
-	// 		initView = R.compose(render, initEvents, initElements);
-
-	// 	return load(props) && initView(state);
-	// }
-	// var hasInit;
-
-	// export default function(state){
-	// 	if(!hasInit){
-	// 		init(state);
-	// 		hasInit = true;
-	// 	}
-	// 	// if(state instanceof State)
-	// 	// 	output(state);
-	// 	// else
-	// 	// 	input(state);
-	// }
 
 /***/ },
 /* 10 */
@@ -12898,12 +12877,13 @@
 	/**
 	 * @type init :: State -> IO
 	 */
-	function init(state) {
+	function init(view) {
+		// view = _view;
 		//load view properties to be used when rendering
 		//and other view tasks, uses Assignable convention
 		var load = _tool.R.mapObjIndexed(function (loader, prop) {
-			return this[prop] = loader.bind(this)(state.context);
-		}.bind(state.view));
+			return this[prop] = loader.bind(this)(view.context);
+		}.bind(view));
 		//render default state		
 		// 	initView = R.compose(render, initEvents, initElements);
 
@@ -13066,7 +13046,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = state;
+	exports.default = init;
 
 	var _tool = __webpack_require__(1);
 
@@ -13088,14 +13068,21 @@
 	/**
 	 * @type state :: IO -> (WorldData -> (InputData -> State))
 	 */
-	function state(world) {
-		var currentState = state || new _state2.default(world),
-		    processInput = _tool.R.flip(_core2.default)(currentState),
-		    processState = _tool.R.flip(_core4.default)(currentState),
-		    nextState = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(processState), _tool.R.of, processInput);
+	function init(world) {
+		var seed = { world: world },
+		    then = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend),
+		    reverseApply = _tool.R.compose(_tool.R.of, _tool.R.flip(_tool.R.apply), _tool.R.of);
 
-		return function (input) {
-			return input ? exports.default = state = nextState(input) : world;
+		state = new _state2.default(seed);
+
+		return function meta(io) {
+			if (!io) return state;
+
+			var processInput = _tool.R.flip(_core2.default)(state),
+			    processState = _tool.R.flip(_core4.default)(state),
+			    nextState = _tool.R.compose(then(processState), reverseApply, processInput);
+
+			return nextState(io);
 		};
 	};
 

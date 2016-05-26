@@ -6,13 +6,20 @@ import * as events from './input/ui';
 
 var view = {};
 
-export default function view(state){
+export default function init(worldData){
+	
+	var dom = worldData.state;
+
+	view.elements = initElements(dom)(events);
+	view.context = dom.getElementsByClassName('canvas')[0].getContext('2d');
+
+	return initEvents;
+}
+
+function initEvents(state){
 	
 	var currentState = state(),
 		dom = currentState.world.state;
-
-	view.elements = initElements(dom)(events);
-	view.context =dom.getElementsByClassName('canvas')[0].getContext('2d');
 
 	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
 		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
@@ -30,7 +37,7 @@ export default function view(state){
 
 	currentState.view = view;
 
-	initialize(events);
+	return initialize(events);
 	// view.init(state);
 
 	//initialize UI controllers
@@ -38,7 +45,7 @@ export default function view(state){
 	//init function to all event handlers
 	// events.slider.init(state);
 
-	return view;
+	// return view;
 }
 
 //bind an element to a Bacon Events

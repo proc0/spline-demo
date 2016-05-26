@@ -15,7 +15,7 @@ export default function init(world){
 		
 	state = new State(seed);
 
-	return function state(io){
+	return function meta(io){
 		if(!io) return state;
 
 		var processInput = R.flip(data)(state),
