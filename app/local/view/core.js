@@ -38,14 +38,6 @@ function initEvents(state){
 	currentState.view = view;
 
 	return initialize(events);
-	// view.init(state);
-
-	//initialize UI controllers
-	//TODO: propagate and properly abstract
-	//init function to all event handlers
-	// events.slider.init(state);
-
-	// return view;
 }
 
 //bind an element to a Bacon Events

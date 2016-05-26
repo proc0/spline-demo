@@ -50,9 +50,11 @@
 
 	var _core = __webpack_require__(8);
 
-	var _core2 = __webpack_require__(25);
+	var _core2 = _interopRequireDefault(_core);
 
-	var _core3 = _interopRequireDefault(_core2);
+	var _core3 = __webpack_require__(25);
+
+	var _core4 = _interopRequireDefault(_core3);
 
 	var _options = __webpack_require__(26);
 
@@ -63,7 +65,7 @@
 	/**
 	 * @type app :: IO -> IO
 	 */
-	var app = _tool.R.compose(_core.local, _core3.default)({ options: _options2.default });
+	var app = _tool.R.compose(_core2.default, _core4.default)({ options: _options2.default });
 	//start on DOM loaded
 	//document.addEventListener('DOMContentLoaded', app, false);
 
@@ -12398,7 +12400,10 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.local = undefined;
+
+	exports.default = function (worldData) {
+	  return _tool.R.converge(_tool.R.call, [_core2.default, _core4.default])(worldData);
+	};
 
 	var _tool = __webpack_require__(1);
 
@@ -12411,21 +12416,6 @@
 	var _core4 = _interopRequireDefault(_core3);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	// import State from '../state/data/types/state';
-	// import * as events from './input/ui';
-	/**
-	 * @type local :: World -> IO
-	 * @cyto app :: IO -> IO
-	 */
-	//world : { options, state }
-	var local = exports.local = _tool.R.converge(_tool.R.call, [_core2.default, _core4.default]);
-	// export default {
-	// 	core : R.compose(view.output, state.model, view.input, state.data),
-	// 	state : state,
-	// 	view : view
-	// }
-	// R.compose( R.flip(state)(view.input));
 
 /***/ },
 /* 9 */
@@ -12492,14 +12482,6 @@
 		currentState.view = view;
 
 		return initialize(events);
-		// view.init(state);
-
-		//initialize UI controllers
-		//TODO: propagate and properly abstract
-		//init function to all event handlers
-		// events.slider.init(state);
-
-		// return view;
 	}
 
 	//bind an element to a Bacon Events
@@ -12903,8 +12885,8 @@
 		//shortcuts
 		var view = state.view,
 		    points = state.points,
-		    context = state.context,
-		    options = state.options,
+		    context = state.view.context,
+		    options = state.world.options,
 		    width = context.canvas.width,
 		    height = context.canvas.height,
 		    draw = view.draw.bind(view)(options);
@@ -13066,25 +13048,29 @@
 
 	var state = {};
 	/**
-	 * @type state :: IO -> (WorldData -> (InputData -> State))
+	 * @type init :: WorldData -> (IO -> State)
 	 */
 	function init(world) {
-		var seed = { world: world },
-		    then = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend),
-		    reverseApply = _tool.R.compose(_tool.R.of, _tool.R.flip(_tool.R.apply), _tool.R.of);
+		var seed = { world: world };
 
 		state = new _state2.default(seed);
 
-		return function meta(io) {
-			if (!io) return state;
-
-			var processInput = _tool.R.flip(_core2.default)(state),
-			    processState = _tool.R.flip(_core4.default)(state),
-			    nextState = _tool.R.compose(then(processState), reverseApply, processInput);
-
-			return nextState(io);
-		};
+		return meta;
 	};
+	/**
+	 * @type meta :: IO -> State
+	 */
+	function meta(io) {
+		if (!io) return state;
+
+		var then = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend),
+		    reverseApply = _tool.R.compose(_tool.R.of, _tool.R.flip(_tool.R.apply), _tool.R.of),
+		    processInput = _tool.R.flip(_core2.default)(state),
+		    processState = _tool.R.flip(_core4.default)(state),
+		    nextState = _tool.R.compose(then(processState), reverseApply, processInput);
+
+		return nextState(io);
+	}
 
 /***/ },
 /* 18 */

@@ -6,22 +6,26 @@ import State from './data/types/state';
 
 var state = {};
 /**
- * @type state :: IO -> (WorldData -> (InputData -> State))
+ * @type init :: WorldData -> (IO -> State)
  */ 
 export default function init(world){
-	var seed = { world : world },
-		then = R.compose(R.apply(R.compose), R.prepend),
-		reverseApply = R.compose(R.of, R.flip(R.apply), R.of);
-		
+	var seed = { world : world };
+
 	state = new State(seed);
 
-	return function meta(io){
-		if(!io) return state;
-
-		var processInput = R.flip(data)(state),
-			processState = R.flip(model)(state),
-			nextState = R.compose(then(processState), reverseApply, processInput);
-
-		return nextState(io);
-	};
+	return meta;
 };
+/**
+ * @type meta :: IO -> State
+ */ 
+function meta(io){
+	if(!io) return state;
+
+	var then = R.compose(R.apply(R.compose), R.prepend),
+		reverseApply = R.compose(R.of, R.flip(R.apply), R.of),
+		processInput = R.flip(data)(state),
+		processState = R.flip(model)(state),
+		nextState = R.compose(then(processState), reverseApply, processInput);
+
+	return nextState(io);
+}
