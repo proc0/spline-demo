@@ -4,74 +4,67 @@ import input from './input/core';
 import output from './output/core';
 import * as events from './input/ui';
 
-var view = {};
+var combine = R.compose(R.map(R.apply(R.call)), R.zip),
+	extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed);
 
-export default function init(worldData){
+//should only be called once
+export default function init(stateMonad){
 	
-	var dom = worldData.state;
-
-	view.elements = initElements(dom)(events);
-	view.context = dom.getElementsByClassName('canvas')[0].getContext('2d');
-
-	return initEvents;
-}
-
-function initEvents(state){
-	
-	var currentState = state(),
-		dom = currentState.world.state;
-
-	var combine = R.compose(R.map(R.apply(R.call)), R.zip),
-		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
-		//bind an array of elements to Bacon events
-		bindElements = R.curry(function(handlers, elements){
-			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-			return R.map(R.curry(bindElement)(handlers).bind(state()), elements);
-		}),
-		bindEvents = extract(R.compose(bindElements, R.identity)),
+	var state = stateMonad(),
+		view = state.view,
+		world = state.world,
+		/**
+		 * EventBind Pipeline
+		 */
+		//set stuff on view
+		setInput 	= R.set(R.lensProp('input'), input(state)),
+		setOutput 	= R.set(R.lensProp('output'), output(state)),
+		setElements = R.flip(R.set(R.lensProp('elements')))(view),
+		processView = R.compose(setOutput, setInput, setElements),
+		//use event handler object to get dom elements form world
+		processEvents = R.compose(processView, world.output),
+		//initiate view bindings and evnets, and return elements for
+		//even more event binding.
+		initView = R.compose(R.prop('elements'), processEvents),
 		//bind all action creators to events
-		initialize = R.converge(combine, [bindEvents, R.always(view.elements)]);
-
-	view.handle = input;
-	view.render = output(view);
-
-	currentState.view = view;
+		initialize = R.converge(combine, [extract(bindEvents), initView]);
 
 	return initialize(events);
 }
 
+//bind an array of elements to Bacon events
+function bindEvents(stateMonad){
+	var _bind = R.curry(function(handlers, elements){
+		//use bindEvent to bind to HTMLElement, bind to state Controller (not runtime)
+		return R.map(R.curry(bindEvent)(handlers).bind(stateMonad), elements);
+	});
+	//bind each ui element to the reducer function
+	return R.compose(_bind, R.identity);
+}
+
 //bind an element to a Bacon Events
-function bindElement(handlers, element){
-	//bound to state
-	var state = this,
-		_bind = function(handler, eventName){
-			//meta handler uses handler closure
-			var trigger = function(event){
-					var noop 	= function(){ return; },
-						isState = function(s){ return s instanceof State },
-						//only render if model returns State
-						render  = R.ifElse(isState, view.render(state), noop),
-						process = R.compose(render, R.flip(R.apply)(view.handle), state);
-					//process :: IO -> IO
-					//w/ current event and prev state
-					return process(event);
-				};
+function bindEvent(handlers, element){
+		//get state
+	var state = this(),
+		State = state.meta,
+		view = state.view,
+		noop = Function.prototype,
+		//process ui input
+		I = R.flip(R.apply)(view.input),
+		//only render if output is State
+		O = R.ifElse(State, view.output, noop),
+	/** IO :: IO -> IO ;-- StateMonad <- Input
+	 * ---------------------------------------------- */
+		IO = R.compose(O, I, this), 
+		//IO = R.pipe(this, I, O) works?
+		baconWrap = function(handler, event){
 			//only bind if handler is a function
 			if('function' === typeof handler)
 				//Bacon stream event from HTMLElement
-				B.fromEvent(element, eventName).onValue(trigger);
+				B.fromEvent(element, event).onValue(IO);
 		};
 	//map element handlers by using the object
 	//property name as the event name
-	return R.mapObjIndexed(_bind, handlers);
+	return R.mapObjIndexed(baconWrap, handlers);
 }
 
-//attach UI elements to state
-function initElements(dom){
-	var extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed), 
-		getElements = extract(function(handlers, className){ 
-			return dom.getElementsByClassName(className); 
-		});
-
-	return getElements;
-}

@@ -65,7 +65,7 @@
 	/**
 	 * @type app :: IO -> IO
 	 */
-	var app = _tool.R.compose(_core2.default, _core4.default)({ options: _options2.default });
+	var app = _tool.R.compose(_core2.default, _core4.default)(_options2.default);
 	//start on DOM loaded
 	//document.addEventListener('DOMContentLoaded', app, false);
 
@@ -12400,10 +12400,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-
-	exports.default = function (worldData) {
-	  return _tool.R.converge(_tool.R.call, [_core2.default, _core4.default])(worldData);
-	};
+	exports.default = init;
 
 	var _tool = __webpack_require__(1);
 
@@ -12416,6 +12413,22 @@
 	var _core4 = _interopRequireDefault(_core3);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	/**
+	 * @name AppCore
+	 * @type init :: WorldData -> IO
+	 * @cyto app :: IO -> IO
+	 */
+	var seed = {
+	  view: {
+	    elements: []
+	  },
+	  points: []
+	};
+	function init(world) {
+	  seed.world = world;
+	  return _tool.R.compose(_core2.default, _core4.default)(seed);
+	}
 
 /***/ },
 /* 9 */
@@ -12446,83 +12459,77 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var view = {};
+	var combine = _tool.R.compose(_tool.R.map(_tool.R.apply(_tool.R.call)), _tool.R.zip),
+	    extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed);
 
-	function init(worldData) {
+	//should only be called once
+	function init(stateMonad) {
 
-		var dom = worldData.state;
+		var state = stateMonad(),
+		    view = state.view,
+		    world = state.world,
 
-		view.elements = initElements(dom)(events);
-		view.context = dom.getElementsByClassName('canvas')[0].getContext('2d');
+		/**
+	  * EventBind Pipeline
+	  */
+		//set stuff on view
+		setInput = _tool.R.set(_tool.R.lensProp('input'), (0, _core2.default)(state)),
+		    setOutput = _tool.R.set(_tool.R.lensProp('output'), (0, _core4.default)(state)),
+		    setElements = _tool.R.flip(_tool.R.set(_tool.R.lensProp('elements')))(view),
+		    processView = _tool.R.compose(setOutput, setInput, setElements),
 
-		return initEvents;
-	}
+		//use event handler object to get dom elements form world
+		processEvents = _tool.R.compose(processView, world.output),
 
-	function initEvents(state) {
-
-		var currentState = state(),
-		    dom = currentState.world.state;
-
-		var combine = _tool.R.compose(_tool.R.map(_tool.R.apply(_tool.R.call)), _tool.R.zip),
-		    extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
-
-		//bind an array of elements to Bacon events
-		bindElements = _tool.R.curry(function (handlers, elements) {
-			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-			return _tool.R.map(_tool.R.curry(bindElement)(handlers).bind(state()), elements);
-		}),
-		    bindEvents = extract(_tool.R.compose(bindElements, _tool.R.identity)),
+		//initiate view bindings and evnets, and return elements for
+		//even more event binding.
+		initView = _tool.R.compose(_tool.R.prop('elements'), processEvents),
 
 		//bind all action creators to events
-		initialize = _tool.R.converge(combine, [bindEvents, _tool.R.always(view.elements)]);
-
-		view.handle = _core2.default;
-		view.render = (0, _core4.default)(view);
-
-		currentState.view = view;
+		initialize = _tool.R.converge(combine, [extract(bindEvents), initView]);
 
 		return initialize(events);
 	}
 
-	//bind an element to a Bacon Events
-	function bindElement(handlers, element) {
-		//bound to state
-		var state = this,
-		    _bind = function _bind(handler, eventName) {
-			//meta handler uses handler closure
-			var trigger = function trigger(event) {
-				var noop = function noop() {
-					return;
-				},
-				    isState = function isState(s) {
-					return s instanceof State;
-				},
+	//bind an array of elements to Bacon events
+	function bindEvents(stateMonad) {
+		var _bind = _tool.R.curry(function (handlers, elements) {
+			//use bindEvent to bind to HTMLElement, bind to state Controller (not runtime)
+			return _tool.R.map(_tool.R.curry(bindEvent)(handlers).bind(stateMonad), elements);
+		});
+		//bind each ui element to the reducer function
+		return _tool.R.compose(_bind, _tool.R.identity);
+	}
 
-				//only render if model returns State
-				render = _tool.R.ifElse(isState, view.render(state), noop),
-				    process = _tool.R.compose(render, _tool.R.flip(_tool.R.apply)(view.handle), state);
-				//process :: IO -> IO
-				//w/ current event and prev state
-				return process(event);
-			};
+	//bind an element to a Bacon Events
+	function bindEvent(handlers, element) {
+		//StateMonad
+		var state = this(),
+		    State = state.meta,
+		    view = state.view,
+		    noop = Function.prototype,
+
+		//process ui input
+		I = _tool.R.flip(_tool.R.apply)(view.input),
+
+		//only render if output is State
+		O = _tool.R.ifElse(State, view.output, noop),
+
+
+		/** IO :: IO -> IO 
+	  * ---------------------------------------------- */
+		IO = _tool.R.compose(O, I, this),
+
+		//IO = R.pipe(this, I, O) works?
+		baconWrap = function baconWrap(handler, event) {
 			//only bind if handler is a function
 			if ('function' === typeof handler)
 				//Bacon stream event from HTMLElement
-				_tool.B.fromEvent(element, eventName).onValue(trigger);
+				_tool.B.fromEvent(element, event).onValue(IO);
 		};
 		//map element handlers by using the object
 		//property name as the event name
-		return _tool.R.mapObjIndexed(_bind, handlers);
-	}
-
-	//attach UI elements to state
-	function initElements(dom) {
-		var extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
-		    getElements = extract(function (handlers, className) {
-			return dom.getElementsByClassName(className);
-		});
-
-		return getElements;
+		return _tool.R.mapObjIndexed(baconWrap, handlers);
 	}
 
 /***/ },
@@ -12582,10 +12589,14 @@
 		}
 	};
 
+	function init(state) {
+
+		return input;
+	}
 	/**
-	 * @type :: data :: IO -> State -> Data
+	 * @type :: input :: IO -> Data
 	 */
-	function init(inputData) {
+	function input(inputData) {
 
 		var modelData,
 		    getHandler = _tool.R.compose(_tool.R.flip(_tool.R.gt)(0), _tool.R.length, _tool.R.filter(_tool.R.equals(inputData.input.type)));
@@ -12859,13 +12870,13 @@
 	/**
 	 * @type init :: State -> IO
 	 */
-	function init(view) {
+	function init(state) {
 		// view = _view;
 		//load view properties to be used when rendering
 		//and other view tasks, uses Assignable convention
 		var load = _tool.R.mapObjIndexed(function (loader, prop) {
-			return this[prop] = loader.bind(this)(view.context);
-		}.bind(view));
+			return this[prop] = loader.bind(this)(state.world.state.context);
+		}.bind(state.view));
 		//render default state		
 		// 	initView = R.compose(render, initEvents, initElements);
 
@@ -12885,8 +12896,8 @@
 		//shortcuts
 		var view = state.view,
 		    points = state.points,
-		    context = state.view.context,
-		    options = state.world.options,
+		    context = state.world.state.context,
+		    options = state.world.input,
 		    width = context.canvas.width,
 		    height = context.canvas.height,
 		    draw = view.draw.bind(view)(options);
@@ -13046,30 +13057,30 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var state = {};
+	var state = {},
+	    then = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend),
+	    reverseApply = _tool.R.compose(_tool.R.of, _tool.R.flip(_tool.R.apply), _tool.R.of);
 	/**
-	 * @type init :: WorldData -> (IO -> State)
+	 * State Monad
+	 * @type init :: {Object} -> (IO -> {State})
 	 */
-	function init(world) {
-		var seed = { world: world };
-
+	function init(seed) {
+		seed.meta = _state2.default;
 		state = new _state2.default(seed);
-
 		return meta;
 	};
 	/**
 	 * @type meta :: IO -> State
 	 */
 	function meta(io) {
+
 		if (!io) return state;
 
-		var then = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend),
-		    reverseApply = _tool.R.compose(_tool.R.of, _tool.R.flip(_tool.R.apply), _tool.R.of),
-		    processInput = _tool.R.flip(_core2.default)(state),
+		var processInput = _tool.R.flip(_core2.default)(state),
 		    processState = _tool.R.flip(_core4.default)(state),
-		    nextState = _tool.R.compose(then(processState), reverseApply, processInput);
+		    getNextState = _tool.R.compose(then(processState), reverseApply, processInput);
 
-		return nextState(io);
+		return getNextState(io);
 	}
 
 /***/ },
@@ -13229,6 +13240,7 @@
 	var _tool = __webpack_require__(1);
 
 	function State(seed) {
+		if (seed instanceof this) return true;
 		//shallow assign,
 		//TODO: smarter object inheritance from seed
 		_tool.R.mapObjIndexed(function (value, label) {
@@ -13405,16 +13417,12 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
-
-	exports.default = function (options) {
-	  return _tool.R.merge({ state: document }, options);
-	};
+	exports.default = init;
 
 	var _tool = __webpack_require__(1);
 
-	;
 	// import view from './view/core';
 	// import state from './state/core';
 
@@ -13422,6 +13430,38 @@
 	 * @type world :: DOM -> IO
 	 */
 	// var world = R.compose(view, state);
+	var seed = {
+		state: {},
+		input: {},
+		output: {}
+	};
+
+	/* @name AppCore
+	 * @type init :: WorldData -> IO
+	 * @cyto app :: IO -> IO
+	 */
+	function init(options) {
+		seed.input = options;
+
+		seed.state.dom = document;
+		// seed.state.view = initElements(seed.state.dom);
+		seed.state.context = document.getElementsByClassName('canvas')[0].getContext('2d');
+
+		seed.output = initElements();
+		// return R.converge(R.call, [view, state])(seed);
+
+		return seed;
+	}
+
+	//attach UI elements to state
+	function initElements() {
+		var extract = _tool.R.compose(_tool.R.apply(_tool.R.compose), _tool.R.prepend(_tool.R.values), _tool.R.of, _tool.R.mapObjIndexed),
+		    getElements = extract(function (handlers, className) {
+			return document.getElementsByClassName(className);
+		});
+
+		return getElements;
+	}
 
 /***/ },
 /* 26 */

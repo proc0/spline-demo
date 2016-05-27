@@ -41,10 +41,14 @@ var eventTypes = {
 	}
 };
 
+export default function init(state){
+
+	return input;
+}
 /**
- * @type :: data :: IO -> State -> Data
+ * @type :: input :: IO -> Data
  */
-export default function init(inputData){
+function input(inputData){
 
 	var modelData,
 		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(inputData.input.type)));

@@ -3,13 +3,13 @@ import props from './canvas';
 /**
  * @type init :: State -> IO
  */
-export default function init(view){
+export default function init(state){
 	// view = _view;
 		//load view properties to be used when rendering 
 		//and other view tasks, uses Assignable convention
 	var load = R.mapObjIndexed(function(loader, prop){ 
-			return this[prop] = loader.bind(this)(view.context); 
-		}.bind(view));
+			return this[prop] = loader.bind(this)(state.world.state.context); 
+		}.bind(state.view));
 		//render default state		
 	// 	initView = R.compose(render, initEvents, initElements);
 
@@ -30,8 +30,8 @@ function render(state){
 	//shortcuts
 	var view	= state.view,
 		points 	= state.points,
-		context = state.view.context,
-		options = state.world.options,
+		context = state.world.state.context,
+		options = state.world.input,
 		width	= context.canvas.width,
 		height	= context.canvas.height,
 		draw 	= view.draw.bind(view)(options);

@@ -7,6 +7,17 @@ import state from './state/core';
  * @type init :: WorldData -> IO
  * @cyto app :: IO -> IO
  */
- export default function(worldData){
- 	return R.converge(R.call, [view, state])(worldData);
- }
+
+export default function init(world){
+	return R.compose(view, state, seed)(world);
+}
+
+function seed(world){
+ 	return {
+ 		world : world,
+		view : {
+			elements : []
+		},
+		points : []
+	};
+};

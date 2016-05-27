@@ -2,6 +2,8 @@
 import { R } from '../../../../tool';
 
 export default function State(seed){
+	if(seed instanceof this)
+		return true;
 	//shallow assign,
 	//TODO: smarter object inheritance from seed
 	R.mapObjIndexed(function(value, label){

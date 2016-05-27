@@ -4,8 +4,10 @@ import local from './local/core';
 import world from './world/core';
 import options from '../options';
 /**
- * @type app :: IO -> IO
+ * @type init :: () -> IO
  */
-var app = R.compose(local, world)({ options : options });
-//start on DOM loaded
-//document.addEventListener('DOMContentLoaded', app, false);
+var app = function init(event){
+		return R.compose(local, world)(options);
+	};
+
+world.init(app);
