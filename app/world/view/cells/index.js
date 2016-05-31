@@ -14,9 +14,10 @@ export default {
 	 *	@desc returns a function that will set a property on
 	 *        the canvas context object. Needs to be imperative.
 	 */
-	config : function(context){
+	config : function(view){
 			//setting context cannot be functional style?
-		var setContext = function(val, key, obj){
+		var context = view.context,
+			setContext = function(val, key, obj){
 				return R.prop(key, context) ? (context[key] = val) : null;
 			};
 		return R.mapObjIndexed(setContext);
@@ -26,13 +27,15 @@ export default {
 	 * @desc returns a function that will return a canvas API method
 	 * 		 ready to be invoked with whatever params it needs
 	 */
-	canvas : function(context){
+	canvas : function(view){
+		var context = view.context;
 		return R.compose(R.flip(R.bind)(context), R.flip(R.prop)(context));
 	},
 	/**
 	 * @type { optionName : comp :: Context -> Drawer }
 	 */
-	comp : function(context){
+	comp : function(view){
+		var context = view.context;
 		return {
 			/**
 			 * @type curve :: [Point] -> View -> IO
@@ -71,7 +74,8 @@ export default {
 	/**
 	 * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
 	 */
-	paint : function(context){
+	paint : function(view){
+		var context = view.context;
 
 		return R.curry(function(drawer, view, options, data){
 			view.config( options );
@@ -88,12 +92,12 @@ export default {
 	/**
 	 *	@type draw :: Context -> IO 
 	 */		
-	draw : function(context){
+	draw : function(view){
 			//extract style options
 		var getOptions = R.compose(R.flip(R.prop), R.prop('style')),
-			buildParams = R.compose(R.prepend(R.identity), R.prepend(R.always(this)));
+			buildParams = R.compose(R.prepend(R.identity), R.prepend(R.always(view)));
 
-		return R.compose(R.converge(this.paint), buildParams, R.of, getOptions);
+		return R.compose(R.converge(view.paint), buildParams, R.of, getOptions);
 	}
 
 };

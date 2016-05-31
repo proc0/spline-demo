@@ -1,8 +1,8 @@
 'use strict';
 import { R, B } from '../../tool';
-import data from './data/core';
+// import data from './data/core';
 import model from './model/core';
-import State from './data/types/state';
+// import State from './data/types/state';
 
 var state = {},
 	then = R.compose(R.apply(R.compose), R.prepend),

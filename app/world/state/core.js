@@ -1,48 +1,35 @@
-import { R, B } from '../tool';
-import data from './data/core';
-import model from './model/core';
+'use strict';
+import { R, B } from '../../tool';
+import cells from './cells';
 
-function State(seed){
-	//shallow assign,
-	//TODO: smarter object inheritance from seed
-	R.mapObjIndexed(function(value, label){
-		this[label] = value;
-	}.bind(this), seed);
-}
-
-/**
- * @type state :: Data -> State
- */ 
-export default function state(world){
-	var currentState = world.state || new State(world),
-		nextState = R.compose(R.flip(model)(currentState), data);
-		
-	return world.state = nextState(world);
-};
-
-
-// export default {
-// 	state : {},
-// 	State : State,
-// 	data  : {
-// 		state 	: State,
-// 		model 	: Model,
-// 		point 	: Point,
-// 		action 	: Action
-// 	},
-// 	init : function(seed){
-// 		var state = { data : this.data },
-// 			attrs = R.merge(R.merge(Model, state), seed);
-// 		//avoids the need to import into view
-// 		state.data.meta = this;
-
-// 		return this.state = new State(attrs);
-// 	},
-// 	get : function(){
-// 		return this.state;
-// 	},
-// 	set : function(action){
-// 		//for now state is modified in model
-// 		return model(action, this.state);
-// 	}
+// var state = {},
+// 	then = R.compose(R.apply(R.compose), R.prepend),
+// 	reverseApply = R.compose(R.of, R.flip(R.apply), R.of);
+// /**
+//  * State Monad
+//  * @type init :: {Object} -> (IO -> {State})
+//  */ 
+// export default function init(seed){
+// 	seed.meta = State;
+// 	state = new State(seed);
+// 	return meta;
 // };
+// /**
+//  * @type meta :: IO -> State
+//  */ 
+// function meta(io){
+
+// 	if(!io) return state;
+
+// 	var processInput = R.flip(data)(state),
+// 		processState = R.flip(model)(state),
+// 		getNextState = R.compose(then(processState), reverseApply, processInput);
+
+// 	return getNextState(io);
+// }
+
+export default function init(world){
+	var state = world.input;
+
+	
+}

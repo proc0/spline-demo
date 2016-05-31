@@ -3,7 +3,7 @@ import { R, getProp } from '../../../tool';
 import props from './props';
 
 /**
- * @type model :: Data -> State -> State
+ * @type model :: WorldData -> State -> State
  */
 export default R.curry(function init(data, state){
 

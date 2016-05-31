@@ -8,16 +8,22 @@ import state from './state/core';
  * @cyto app :: IO -> IO
  */
 
-export default function init(world){
-	return R.compose(view, state, seed)(world);
+export default function local(world){
+	if(world.init)
+		return R.map(R.flip(R.apply)(world.init), R.pluck('init', [view, state]));
+	
+	var seed = {
+		state : {
+	 		world : world,
+			view : {
+				elements : []
+			},
+			points : []
+		},
+		input : state(world),
+		output : view(world)
+	};
+
+	return R.compose(view, state)(seed);
 }
 
-function seed(world){
- 	return {
- 		world : world,
-		view : {
-			elements : []
-		},
-		points : []
-	};
-};
