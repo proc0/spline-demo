@@ -5,6 +5,10 @@ import point from '../local/state/data/types/point';
 //get the Point class [x,y] by calling its method
 export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
 
+export var cyto = R.curry(function cyto(input, output, state){
+	return R.compose(R.apply(R.pipe(input, output)), R.merge(state));
+});
+
 export var getPoints = R.map(getPoint);
 //calculate mouse X Y
 export var getMouse = function(context, event){

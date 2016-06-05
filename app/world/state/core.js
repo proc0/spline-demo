@@ -1,5 +1,5 @@
 'use strict';
-import { R, B } from '../../tool';
+import { R, B, cyto } from '../../tool';
 import cells from './cells';
 
 // var state = {},
@@ -28,8 +28,9 @@ import cells from './cells';
 // 	return getNextState(io);
 // }
 
-export default function init(world){
-	var state = world.input;
+// export default function init(world){
+// 	var state = world.input;
 
 	
-}
+// }
+

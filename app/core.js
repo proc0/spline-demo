@@ -1,5 +1,5 @@
 'use strict';
-import { R } from './tool';
+import { R, cyto } from './tool';
 import local from './local/core';
 import world from './world/core';
 import options from '../options';
@@ -22,9 +22,10 @@ import options from '../options';
 // 		return R.compose(R.compose(R.apply(R.compose, route), R.compose(local, world)), R.flip(R.set(R.lensProp('input'))(seed) );
 // 	};
 
-var app = function init(options){
-	return R.compose(R.apply(R.pipe(local, world)), R.prepend(options), Array);
-};
+// var app = function init(options){
+// 	return R.compose(R.apply(R.pipe(local, world)), R.prepend(options), Array);
+// };
 
-world({ init : app(options) });
+
+world(cyto(local, world, options));
 
