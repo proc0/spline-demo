@@ -34,6 +34,6 @@ import state from './state/core';
 // };
 var seed = {
 		dom : document,
-		view : {}
+		ui : {}
 	};
-export default cyto(state(seed), view(seed), seed);
+export default cyto(state, view, seed);

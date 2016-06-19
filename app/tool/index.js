@@ -6,7 +6,13 @@ import point from '../local/state/data/types/point';
 export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
 
 export var cyto = R.curry(function cyto(input, output, state){
-	return R.compose(R.apply(R.pipe(input, output)), R.merge(state));
+	// return R.compose(R.apply(R.pipe(input, output)), R.merge(state));
+
+	return {
+		state : state,
+		input : state.input ? R.pipe(state.input, input) : input(state),
+		output : state.output ? R.pipe(state.output, output) : output(state)
+	};
 });
 
 export var getPoints = R.map(getPoint);

@@ -27,5 +27,5 @@ import options from '../options';
 // };
 
 
-world(cyto(local, world, options));
+export default cyto(local, world, options);
 
