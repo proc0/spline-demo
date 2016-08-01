@@ -13072,7 +13072,6 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function State(attrs) {
-		// copy(attrs, this);
 		//shallow assign,
 		//TODO: smarter object inheritance from seed
 		_util.R.mapObjIndexed(function (value, label) {
