@@ -5,9 +5,10 @@ A functional JS exercise using Canvas, and Ramda.js.
 ## Run the demo
 
 `npm install -g webpack`
+
 `npm install`
 
-Then open index.html in a browser.
+`open index.html`
 
 ## Description
 
