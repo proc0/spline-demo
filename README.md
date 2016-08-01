@@ -4,13 +4,16 @@ A functional JS exercise using Canvas, and Ramda.js.
 
 ## Run the demo
 
-`npm install -g webpack` //install webpack
+install dependencies
+`npm install -g webpack`
 
-`npm install` //install dependencies
+`npm install`
 
-`webpack` //build project
+build the project
+`webpack`
 
-`open index.html` //or just drop index in a browser
+use a browser to open index.html
+`open index.html`
 
 ## Description
 
