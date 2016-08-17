@@ -1,5 +1,5 @@
 'use strict';
-import { R, B, cyto } from '../../tool';
+import { R, B, cyto } from '../../meta';
 import types from './data/types';
 
 // var state = {},

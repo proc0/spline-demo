@@ -3,7 +3,7 @@ import {
 	R,
 	getMouse, 
 	findPoint 
-} from '../../../tool';
+} from '../../../meta';
 import * as data from './types';
 
 var eventTypes = {

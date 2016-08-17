@@ -12,11 +12,12 @@ export var cyto = function cyto(_input){
 
 		if(c.init){
 			var seed = R.merge(_input.state, c.init);
-			cell = {
+			//recurse
+			cell = cyto({
 				state : seed,
 				input : _input.input({ init : seed }),
 				output : _input.output({ init : seed })
-			};
+			})(_input);
 		} else {
 			cell = {
 				state : R.merge(_input.state, c.state),

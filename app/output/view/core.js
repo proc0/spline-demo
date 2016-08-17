@@ -1,4 +1,4 @@
-import { R, B } from '../../tool';
+import { R, B } from '../../meta';
 import cells from './cells';
 /**
  * @type init :: State -> IO

@@ -50,7 +50,7 @@
 		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	var _core = __webpack_require__(8);
 
@@ -66,28 +66,6 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	/**
-	 * @type init :: IO{Event} -> IO{a}
-	 */
-	// var app = function init(options){
-	// 		var route = [
-	// 				world.output,
-	// 				local.output,
-	// 				local.input,
-	// 				world.input
-	// 			],
-	// 			seed = {
-	// 				state : options,
-	// 				input : {}
-	// 			};
-	// 		//return a function that returns a function that will apply options
-	// 		//to then be initialized and routed to the processing route
-	// 		return R.compose(R.compose(R.apply(R.compose, route), R.compose(local, world)), R.flip(R.set(R.lensProp('input'))(seed) );
-	// 	};
-
-	// var app = function init(options){
-	// 	return R.compose(R.apply(R.pipe(local, world)), R.prepend(options), Array);
-	// };
 	var app = {
 		state: {},
 		input: _core2.default,
@@ -99,8 +77,11 @@
 			options: _options2.default
 		}
 	};
-
-	exports.default = (0, _tool.cyto)(app)(seed);
+	/**
+	 * @name Core
+	 * @type core :: IO()
+	 */
+	exports.default = (0, _meta.cyto)(app)(seed);
 
 /***/ },
 /* 1 */
@@ -146,11 +127,12 @@
 
 			if (c.init) {
 				var seed = _ramda2.default.merge(_input.state, c.init);
-				cell = {
+				//recurse
+				cell = cyto({
 					state: seed,
 					input: _input.input({ init: seed }),
 					output: _input.output({ init: seed })
-				};
+				})(_input);
 			} else {
 				cell = {
 					state: _ramda2.default.merge(_input.state, c.state),
@@ -12457,7 +12439,7 @@
 		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	// import view from './view/core';
 	// import state from './state/core';
@@ -12502,7 +12484,7 @@
 		return function (state) {};
 	};
 
-	exports.default = (0, _tool.cyto)({ output: view, input: model, state: seed });
+	exports.default = (0, _meta.cyto)({ output: view, input: model, state: seed });
 
 /***/ },
 /* 9 */
@@ -12511,10 +12493,10 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	var _core = __webpack_require__(10);
 
@@ -12526,42 +12508,19 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	/**
-	 * @name AppCore
-	 * @type init :: WorldData -> IO
-	 * @cyto app :: IO -> IO
-	 */
-
-	// export default function world(io){
-	// 	if(io.init){
-	// 		return document.addEventListener('DOMContentLoaded', io.init, false);
-	// 	} else {
-	// 		//io.input = DOM init Event
-	// 		//meta state
-	// 		var meta = {
-	// 	 			state : {
-	// 		 			options : io.state,
-	// 		 			dom : document,
-	// 		 			view : {}
-	// 	 			},
-	// 	 			input  : {},
-	// 	 			output : {}
-	// 	 		};
-
-	// 	 // 	return {
-	// 	 // 		data : meta,
-	// 		// 	input : state(meta),
-	// 		// 	output : view(meta)
-	// 		// };
-
-	// 		return R.compose(view, state)(meta);
-	// 	}
-	// };
-	var state = {
-	  dom: document,
-	  ui: {}
+	var seed = {
+		state: {
+			dom: document,
+			ui: {}
+		},
+		input: _core4.default,
+		output: _core2.default
 	};
-	exports.default = (0, _tool.cyto)({ state: state, input: _core4.default, output: _core2.default });
+	/**
+	 * @name Output
+	 * @type output :: WorldData -> IO
+	 */
+	exports.default = (0, _meta.cyto)(seed);
 
 /***/ },
 /* 10 */
@@ -12574,7 +12533,7 @@
 	});
 	exports.default = init;
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	var _cells = __webpack_require__(11);
 
@@ -12595,7 +12554,7 @@
 
 		//load view properties to be used when rendering
 		//and other view tasks, uses Assignable convention
-		var load = _tool.R.mapObjIndexed(function (loader, prop) {
+		var load = _meta.R.mapObjIndexed(function (loader, prop) {
 			return view[prop] = loader(view);
 		});
 
@@ -12649,7 +12608,7 @@
 		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	/**
 	 *	@member props {Assignable}
@@ -12666,9 +12625,9 @@
 			//setting context cannot be functional style?
 			var context = view.context,
 			    setContext = function setContext(val, key, obj) {
-				return _tool.R.prop(key, context) ? context[key] = val : null;
+				return _meta.R.prop(key, context) ? context[key] = val : null;
 			};
-			return _tool.R.mapObjIndexed(setContext);
+			return _meta.R.mapObjIndexed(setContext);
 		},
 		/**
 	  * @type canvas :: Context -> (String -> (* -> IO))
@@ -12677,7 +12636,7 @@
 	  */
 		canvas: function canvas(view) {
 			var context = view.context;
-			return _tool.R.compose(_tool.R.flip(_tool.R.bind)(context), _tool.R.flip(_tool.R.prop)(context));
+			return _meta.R.compose(_meta.R.flip(_meta.R.bind)(context), _meta.R.flip(_meta.R.prop)(context));
 		},
 		/**
 	  * @type { optionName : comp :: Context -> Drawer }
@@ -12689,9 +12648,9 @@
 	    * @type curve :: [Point] -> View -> IO
 	    */
 				curve: function curve(points, view) {
-					var lineTo = _tool.R.apply(view.canvas('lineTo'));
+					var lineTo = _meta.R.apply(view.canvas('lineTo'));
 
-					return _tool.R.compose(_tool.R.map(lineTo), _tool.getPoints)(points);
+					return _meta.R.compose(_meta.R.map(lineTo), _meta.getPoints)(points);
 				},
 				/**
 	    * @type verts :: [Point] -> View -> IO
@@ -12699,12 +12658,12 @@
 				verts: function verts(points, view) {
 					var w = 6,
 					    h = 6,
-					    offset = _tool.R.flip(_tool.R.subtract)(w / 2),
-					    dimens = _tool.R.flip(_tool.R.concat)([w, h]),
-					    params = _tool.R.compose(dimens, _tool.getPoint, _tool.R.map(offset)),
-					    rect = _tool.R.apply(view.canvas('rect'));
+					    offset = _meta.R.flip(_meta.R.subtract)(w / 2),
+					    dimens = _meta.R.flip(_meta.R.concat)([w, h]),
+					    params = _meta.R.compose(dimens, _meta.getPoint, _meta.R.map(offset)),
+					    rect = _meta.R.apply(view.canvas('rect'));
 
-					return _tool.R.compose(_tool.R.map(rect), _tool.R.map(params))(points);
+					return _meta.R.compose(_meta.R.map(rect), _meta.R.map(params))(points);
 				},
 				/**
 	    * @type bgtext :: String -> View -> IO
@@ -12727,7 +12686,7 @@
 		paint: function paint(view) {
 			var context = view.context;
 
-			return _tool.R.curry(function (drawer, view, options, data) {
+			return _meta.R.curry(function (drawer, view, options, data) {
 				view.config(options);
 
 				if (typeof data !== 'string') view.canvas('beginPath')();
@@ -12742,10 +12701,10 @@
 	  */
 		draw: function draw(view) {
 			//extract style options
-			var getOptions = _tool.R.compose(_tool.R.flip(_tool.R.prop), _tool.R.prop('style')),
-			    buildParams = _tool.R.compose(_tool.R.prepend(_tool.R.identity), _tool.R.prepend(_tool.R.always(view)));
+			var getOptions = _meta.R.compose(_meta.R.flip(_meta.R.prop), _meta.R.prop('style')),
+			    buildParams = _meta.R.compose(_meta.R.prepend(_meta.R.identity), _meta.R.prepend(_meta.R.always(view)));
 
-			return _tool.R.compose(_tool.R.converge(view.paint), buildParams, _tool.R.of, getOptions);
+			return _meta.R.compose(_meta.R.converge(view.paint), buildParams, _meta.R.of, getOptions);
 		}
 
 	};
@@ -12761,7 +12720,7 @@
 	});
 	exports.default = init;
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	var _types = __webpack_require__(13);
 
@@ -12795,8 +12754,8 @@
 	// 	return getNextState(io);
 	// }
 
-	function init(world) {
-		var state = world.input;
+	function init(seed) {
+		var state = seed.init;
 	}
 
 /***/ },
@@ -12857,10 +12816,10 @@
 		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	//shortcut instantiation
-	exports.default = _tool.R.curry(function (type, data) {
+	exports.default = _meta.R.curry(function (type, data) {
 		return new Action(type, data);
 	});
 
@@ -12883,13 +12842,13 @@
 	});
 	exports.default = State;
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	function State(seed) {
 		if (seed instanceof this) return true;
 		//shallow assign,
 		//TODO: smarter object inheritance from seed
-		_tool.R.mapObjIndexed(function (value, label) {
+		_meta.R.mapObjIndexed(function (value, label) {
 			this[label] = value;
 		}.bind(this), seed);
 	}
@@ -12918,7 +12877,7 @@
 		value: true
 	});
 
-	var _tool = __webpack_require__(1);
+	var _meta = __webpack_require__(1);
 
 	//shortcut instantiation
 	// export default R.curry(function(type, data){

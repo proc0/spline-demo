@@ -1,5 +1,5 @@
 'use strict';
-import { R } from '../../../../tool';
+import { R } from '../../../../meta';
 
 export default function State(seed){
 	if(seed instanceof this)
