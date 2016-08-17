@@ -1,6 +1,6 @@
 'use strict';
 import { R, B, cyto } from '../../tool';
-import cells from './cells';
+import types from './data/types';
 
 // var state = {},
 // 	then = R.compose(R.apply(R.compose), R.prepend),
@@ -28,9 +28,7 @@ import cells from './cells';
 // 	return getNextState(io);
 // }
 
-// export default function init(world){
-// 	var state = world.input;
-
-	
-// }
+export default function init(seed){
+	var state = seed.init;
+}
 

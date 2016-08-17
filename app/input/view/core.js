@@ -1,7 +1,7 @@
 'use strict';
 import { R, B } from '../../tool';
-import input from './input/core';
-import output from './output/core';
+import input from './state/core';
+import output from './view/core';
 import * as events from './input/ui';
 
 var combine = R.compose(R.map(R.apply(R.call)), R.zip),

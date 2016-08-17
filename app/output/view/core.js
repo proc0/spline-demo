@@ -1,25 +1,25 @@
-import { R, B } from '../../../tool';
+import { R, B } from '../../tool';
 import cells from './cells';
 /**
  * @type init :: State -> IO
  */
-export default function init(world){
+export default function init(seed){
 
-	var view = world.output;
+	var state = seed.init,
+		view = state.view = {};
 
-	view.options = world.state.options;
-	view.context = world.state.dom
+	view.options = state.options;
+	view.context = state.dom
 		.getElementsByClassName('canvas')[0]
 		.getContext('2d');
-		//load view properties to be used when rendering 
-		//and other view tasks, uses Assignable convention
+
+	//load view properties to be used when rendering 
+	//and other view tasks, uses Assignable convention
 	var load = R.mapObjIndexed(function(loader, prop){ 
-			return this[prop] = loader(view); 
+			return view[prop] = loader(view); 
 		});
 
-	load(cells);
-
-	return render;
+	return load(cells) && render;
 }
 
 /**

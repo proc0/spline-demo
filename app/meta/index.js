@@ -1,21 +1,35 @@
 'use strict';
 import R from '../../node_modules/ramda/dist/ramda';
-import point from '../local/state/data/types/point';
+import point from '../output/model/data/types/point';
 
-//get the Point class [x,y] by calling its method
-export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
+export { default as R } from '../../node_modules/ramda/dist/ramda';
+export { default as B } from '../../node_modules/baconjs/dist/Bacon';
 
-export var cyto = R.curry(function cyto(input, output, state){
-	// return R.compose(R.apply(R.pipe(input, output)), R.merge(state));
+export var cyto = function cyto(_input){
 
-	return {
-		state : state,
-		input : state.input ? R.pipe(state.input, input) : input(state),
-		output : state.output ? R.pipe(state.output, output) : output(state)
+	return function(c){
+		var cell = {};
+
+		if(c.init){
+			var seed = R.merge(_input.state, c.init);
+			cell = {
+				state : seed,
+				input : _input.input({ init : seed }),
+				output : _input.output({ init : seed })
+			};
+		} else {
+			cell = {
+				state : R.merge(_input.state, c.state),
+				input : R.pipe(_input.input, c.input),
+				output: R.pipe(_input.output, c.output)
+			};
+		}
+
+		return cell;
 	};
-});
+};
 
-export var getPoints = R.map(getPoint);
+
 //calculate mouse X Y
 export var getMouse = function(context, event){
 	var client = context.canvas.getBoundingClientRect(),
@@ -23,6 +37,10 @@ export var getMouse = function(context, event){
 		y = event.y - client.top;
 	return new point(x, y);
 };
+//get the Point class [x,y] by calling its method
+export var getPoint = R.converge(R.compose(R.call, R.bind), [R.prop('get'), R.identity]);
+export var getPoints = R.map(getPoint);
+
 
 export var getProp = function (str, obj){
 	// reduce a list of functions that return properties w/ obj
@@ -71,6 +89,3 @@ export var flatten = R.compose(R.flatten, Array.prototype.concat.bind(Array.prot
 export var cloneObj = function cloneObj(obj){
 	return R.converge(R.zipObj, [R.keys, R.converge(R.chain, [R.compose(R.apply(R.flip(R.prop)), Array), R.keys])])(obj);
 }
-
-export { default as R } from '../../node_modules/ramda/dist/ramda';
-export { default as B } from '../../node_modules/baconjs/dist/Bacon';

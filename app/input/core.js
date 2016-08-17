@@ -1,6 +1,6 @@
-import { R, cyto } from '../tool';
-import view from './view/core';
-import state from './state/core';
+import { R, cyto } from '../meta';
+// import view from './view/core';
+// import state from './state/core';
 
 /**
  * @name AppCore
@@ -32,6 +32,18 @@ var seed = 	{
 			elements : []
 		},
 		points : []
+	},
+	view = function(options){
+
+		return function(state){
+
+		}
+	},
+	model = function(options){
+
+		return function(state){
+
+		}
 	};
 
-export default cyto(view, state, seed);
+export default cyto({ output: view, input : model, state : seed });

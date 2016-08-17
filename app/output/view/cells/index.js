@@ -2,7 +2,7 @@ import {
 	R, 
 	getPoint, 
 	getPoints 
-} from '../../../../tool';
+} from '../../../tool';
 /**
  *	@member props {Assignable}
  *	@desc	contains key/value where value is a high order function
