@@ -5,28 +5,36 @@ import point from '../output/model/data/types/point';
 export { default as R } from '../../node_modules/ramda/dist/ramda';
 export { default as B } from '../../node_modules/baconjs/dist/Bacon';
 
-export var cyto = function cyto(_input){
+export var cyto = function cyto(haploid){
+	console.log('loading ...');
 
-	return function(c){
-		var cell = {};
-
-		if(c.init){
-			var seed = R.merge(_input.state, c.init);
+	return function(dna){
+		//initializing convention...
+		//if no state is passed in
+		//initialize recursively by executing
+		//input, output with no args
+		if(!dna){
+			console.log('initializing');
+			var seed = R.merge(this ? this.state : {}, haploid.state);
 			//recurse
-			cell = cyto({
+			return cyto({
 				state : seed,
-				input : _input.input({ init : seed }),
-				output : _input.output({ init : seed })
-			})(_input);
+				input : haploid.input.bind(seed)(),
+				output: haploid.output.bind(seed)()
+			})(haploid);
+
 		} else {
-			cell = {
-				state : R.merge(_input.state, c.state),
-				input : R.pipe(_input.input, c.input),
-				output: R.pipe(_input.output, c.output)
+			console.log('composing');
+			var cell = {
+				state : haploid.state,
+				input : R.pipe(dna.input, haploid.input),
+				output: R.pipe(dna.output, haploid.output)
 			};
+
+			return R.pipe(cell.input, cell.output);
 		}
 
-		return cell;
+		return console.log('void');
 	};
 };
 

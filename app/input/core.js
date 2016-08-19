@@ -33,13 +33,15 @@ var seed = 	{
 		},
 		points : []
 	},
-	view = function(options){
+	view = function(){
+		console.log('local view');
 
 		return function(state){
 
 		}
 	},
-	model = function(options){
+	model = function(){
+		console.log('local model');
 
 		return function(state){
 

@@ -28,7 +28,11 @@ import types from './data/types';
 // 	return getNextState(io);
 // }
 
-export default function init(seed){
-	var state = seed.init;
+export default function init(){
+	var state = this;
+	console.log('world model');
+	return function(state){
+
+	};
 }
 

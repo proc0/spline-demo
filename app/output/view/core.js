@@ -3,9 +3,10 @@ import cells from './cells';
 /**
  * @type init :: State -> IO
  */
-export default function init(seed){
+export default function init(){
+	console.log('world view');
 
-	var state = seed.init,
+	var state = this,
 		view = state.view = {};
 
 	view.options = state.options;

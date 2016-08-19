@@ -67,21 +67,17 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var app = {
-		state: {},
+		state: {
+			options: _options2.default
+		},
 		input: _core2.default,
 		output: _core4.default
-	},
-	    seed = {
-		//init flag
-		init: {
-			options: _options2.default
-		}
 	};
 	/**
 	 * @name Core
 	 * @type core :: IO()
 	 */
-	exports.default = (0, _meta.cyto)(app)(seed);
+	exports.default = (0, _meta.cyto)(app)();
 
 /***/ },
 /* 1 */
@@ -120,28 +116,35 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var cyto = exports.cyto = function cyto(_input) {
+	var cyto = exports.cyto = function cyto(haploid) {
+		console.log('loading ...');
 
-		return function (c) {
-			var cell = {};
-
-			if (c.init) {
-				var seed = _ramda2.default.merge(_input.state, c.init);
+		return function (dna) {
+			//initializing convention...
+			//if no state is passed in
+			//initialize recursively by executing
+			//input, output with no args
+			if (!dna) {
+				console.log('initializing');
+				var seed = _ramda2.default.merge(this ? this.state : {}, haploid.state);
 				//recurse
-				cell = cyto({
+				return cyto({
 					state: seed,
-					input: _input.input({ init: seed }),
-					output: _input.output({ init: seed })
-				})(_input);
+					input: haploid.input.bind(seed)(),
+					output: haploid.output.bind(seed)()
+				})(haploid);
 			} else {
-				cell = {
-					state: _ramda2.default.merge(_input.state, c.state),
-					input: _ramda2.default.pipe(_input.input, c.input),
-					output: _ramda2.default.pipe(_input.output, c.output)
+				console.log('composing');
+				var cell = {
+					state: haploid.state,
+					input: _ramda2.default.pipe(dna.input, haploid.input),
+					output: _ramda2.default.pipe(dna.output, haploid.output)
 				};
+
+				return _ramda2.default.pipe(cell.input, cell.output);
 			}
 
-			return cell;
+			return console.log('void');
 		};
 	};
 
@@ -12475,11 +12478,13 @@
 		},
 		points: []
 	},
-	    view = function view(options) {
+	    view = function view() {
+		console.log('local view');
 
 		return function (state) {};
 	},
-	    model = function model(options) {
+	    model = function model() {
+		console.log('local model');
 
 		return function (state) {};
 	};
@@ -12544,9 +12549,10 @@
 	/**
 	 * @type init :: State -> IO
 	 */
-	function init(seed) {
+	function init() {
+		console.log('world view');
 
-		var state = seed.init,
+		var state = this,
 		    view = state.view = {};
 
 		view.options = state.options;
@@ -12754,8 +12760,10 @@
 	// 	return getNextState(io);
 	// }
 
-	function init(seed) {
-		var state = seed.init;
+	function init() {
+		var state = this;
+		console.log('world model');
+		return function (state) {};
 	}
 
 /***/ },
