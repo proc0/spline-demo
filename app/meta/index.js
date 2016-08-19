@@ -5,15 +5,22 @@ import point from '../output/model/data/types/point';
 export { default as R } from '../../node_modules/ramda/dist/ramda';
 export { default as B } from '../../node_modules/baconjs/dist/Bacon';
 
-export var cyto = function cyto(haploid){
-	console.log('loading ...');
 
+var isCyto = function(obj){
+	return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
+}
+
+	var count = 0;
+export var cyto = function cyto(haploid){
+	console.log('loading ...' + count);
 	return function(dna){
 		//initializing convention...
 		//if no state is passed in
 		//initialize recursively by executing
 		//input, output with no args
 		if(!dna){
+			count++;
+
 			console.log('initializing');
 			var seed = R.merge(this ? this.state : {}, haploid.state);
 			//recurse
@@ -24,20 +31,45 @@ export var cyto = function cyto(haploid){
 			})(haploid);
 
 		} else {
+			count--;
+
 			console.log('composing');
 			var cell = {
-				state : haploid.state,
-				input : R.pipe(dna.input, haploid.input),
-				output: R.pipe(dna.output, haploid.output)
-			};
+				state : haploid.state instanceof Array ? R.concat(haploid.state, dna.state)
+						: isCyto(haploid.state) ? R.concat(haploid.state.state, dna.state) : [haploid.state, dna.state],
+				input : haploid.input instanceof Array ? R.concat(haploid.input, dna.input)
+						: isCyto(haploid.input) ? R.concat(haploid.input.input, dna.input) : [haploid.input, dna.input],
+				output: haploid.output instanceof Array ? R.concat(haploid.output, dna.output)
+						: isCyto(haploid.output) ? R.concat(haploid.output.output, dna.input) :[haploid.output, dna.input]
+			}, result = [];
 
-			return R.pipe(cell.input, cell.output);
+
+			if(count === 0){
+				console.log('root node.');
+				// for(var i in cell.input){
+				// 	if(i === 0 || i%2 === 0){
+				// 		result.push(cell.input[i]);
+				// 	} else {
+				// 		result.push(cell.output[i-1]);
+				// 		result.push(cell.input[i]);
+				// 		i++;
+				// 	}
+
+				// }
+
+				var app = R.apply(R.pipe)(R.flatten(R.zip(cell.input, cell.output))),
+					allstates = R.mergeAll(cell.state);
+
+				return app(allstates);
+			} else {
+				result = cell;
+			}
+			return result;
 		}
 
 		return console.log('void');
 	};
 };
-
 
 //calculate mouse X Y
 export var getMouse = function(context, event){

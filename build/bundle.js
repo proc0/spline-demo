@@ -116,15 +116,21 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var cyto = exports.cyto = function cyto(haploid) {
-		console.log('loading ...');
+	var isCyto = function isCyto(obj) {
+		return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
+	};
 
+	var count = 0;
+	var cyto = exports.cyto = function cyto(haploid) {
+		console.log('loading ...' + count);
 		return function (dna) {
 			//initializing convention...
 			//if no state is passed in
 			//initialize recursively by executing
 			//input, output with no args
 			if (!dna) {
+				count++;
+
 				console.log('initializing');
 				var seed = _ramda2.default.merge(this ? this.state : {}, haploid.state);
 				//recurse
@@ -134,14 +140,37 @@
 					output: haploid.output.bind(seed)()
 				})(haploid);
 			} else {
+				count--;
+
 				console.log('composing');
 				var cell = {
-					state: haploid.state,
-					input: _ramda2.default.pipe(dna.input, haploid.input),
-					output: _ramda2.default.pipe(dna.output, haploid.output)
-				};
+					state: haploid.state instanceof Array ? _ramda2.default.concat(haploid.state, dna.state) : isCyto(haploid.state) ? _ramda2.default.concat(haploid.state.state, dna.state) : [haploid.state, dna.state],
+					input: haploid.input instanceof Array ? _ramda2.default.concat(haploid.input, dna.input) : isCyto(haploid.input) ? _ramda2.default.concat(haploid.input.input, dna.input) : [haploid.input, dna.input],
+					output: haploid.output instanceof Array ? _ramda2.default.concat(haploid.output, dna.output) : isCyto(haploid.output) ? _ramda2.default.concat(haploid.output.output, dna.input) : [haploid.output, dna.input]
+				},
+				    result = [];
 
-				return _ramda2.default.pipe(cell.input, cell.output);
+				if (count === 0) {
+					console.log('root node.');
+					// for(var i in cell.input){
+					// 	if(i === 0 || i%2 === 0){
+					// 		result.push(cell.input[i]);
+					// 	} else {
+					// 		result.push(cell.output[i-1]);
+					// 		result.push(cell.input[i]);
+					// 		i++;
+					// 	}
+
+					// }
+
+					var app = _ramda2.default.apply(_ramda2.default.pipe)(_ramda2.default.flatten(_ramda2.default.zip(cell.input, cell.output))),
+					    allstates = _ramda2.default.mergeAll(cell.state);
+
+					return app(allstates);
+				} else {
+					result = cell;
+				}
+				return result;
 			}
 
 			return console.log('void');
