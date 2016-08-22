@@ -1,13 +1,12 @@
 import { R, B } from '../../meta';
-import cells from './cells';
+import view from './view';
 /**
  * @type init :: State -> IO
  */
-export default function init(){
+export default function initWorldView(state){
 	console.log('world view');
 
-	var state = this,
-		view = state.view = {};
+	var view = state.view = {};
 
 	view.options = state.options;
 	view.context = state.dom
@@ -20,7 +19,7 @@ export default function init(){
 			return view[prop] = loader(view); 
 		});
 
-	return load(cells) && render;
+	return load(view) && render;
 }
 
 /**

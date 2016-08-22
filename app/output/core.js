@@ -1,14 +1,13 @@
 import { cyto } from '../meta';
-import view from './view/core';
-import model from './model/core';
+import output from './output/core';
+import intput from './intput/core';
 
 var seed = {
 		state : {
-			dom : document,
-			ui : {}
+			dom : document
 		},
-		input : model,
-		output : view
+		input : intput,
+		output : output
 	};
 /**
  * @name Output

@@ -33,18 +33,18 @@ var seed = 	{
 		},
 		points : []
 	},
-	view = function(){
+	view = function initLocalView(state){
 		console.log('local view');
 
-		return function(state){
-
+		return function localView(state){
+			return state;
 		}
 	},
-	model = function(){
+	model = function initLocalModel(state){
 		console.log('local model');
 
-		return function(state){
-
+		return function localModel(state){
+			return state;
 		}
 	};
 

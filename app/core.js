@@ -1,5 +1,5 @@
 'use strict';
-import { R, cyto } from './meta';
+import { cyto } from './meta';
 import input from './input/core';
 import output from './output/core';
 import options from '../options';

@@ -10,65 +10,38 @@ var isCyto = function(obj){
 	return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
 }
 
-	var count = 0;
-export var cyto = function cyto(haploid){
-	console.log('loading ...' + count);
-	return function(dna){
-		//initializing convention...
-		//if no state is passed in
-		//initialize recursively by executing
-		//input, output with no args
-		if(!dna){
-			count++;
+var meta = {
+		state : {},
+		input : [],
+		output: []
+	};
 
-			console.log('initializing');
-			var seed = R.merge(this ? this.state : {}, haploid.state);
-			//recurse
-			return cyto({
-				state : seed,
-				input : haploid.input.bind(seed)(),
-				output: haploid.output.bind(seed)()
-			})(haploid);
+export var cyto = function cyto(happ){
+	//merge all incoming states
+	meta.state = R.merge(meta.state, happ.state || {});
+	//last call will be root
+	return function(){
+		//pass the state back up to leaves
+		//get input and output functions
+		var input = happ.input(meta.state),
+			output = happ.output(meta.state);
 
-		} else {
-			count--;
+		//only root cell will return input and output as Cyto
+		if(typeof input === 'function' && typeof output === 'function'){
+			meta.input.push(input);
+			meta.output.push(output);
 
-			console.log('composing');
-			var cell = {
-				state : haploid.state instanceof Array ? R.concat(haploid.state, dna.state)
-						: isCyto(haploid.state) ? R.concat(haploid.state.state, dna.state) : [haploid.state, dna.state],
-				input : haploid.input instanceof Array ? R.concat(haploid.input, dna.input)
-						: isCyto(haploid.input) ? R.concat(haploid.input.input, dna.input) : [haploid.input, dna.input],
-				output: haploid.output instanceof Array ? R.concat(haploid.output, dna.output)
-						: isCyto(haploid.output) ? R.concat(haploid.output.output, dna.input) :[haploid.output, dna.input]
-			}, result = [];
+			return meta;
+		} else { //root cell
+			//align all input and output functions
+			var meiosis = R.concat(R.reverse(meta.input), meta.output),	
+				cell = R.apply(R.pipe)(meiosis);
 
-
-			if(count === 0){
-				console.log('root node.');
-				// for(var i in cell.input){
-				// 	if(i === 0 || i%2 === 0){
-				// 		result.push(cell.input[i]);
-				// 	} else {
-				// 		result.push(cell.output[i-1]);
-				// 		result.push(cell.input[i]);
-				// 		i++;
-				// 	}
-
-				// }
-
-				var app = R.apply(R.pipe)(R.flatten(R.zip(cell.input, cell.output))),
-					allstates = R.mergeAll(cell.state);
-
-				return app(allstates);
-			} else {
-				result = cell;
-			}
-			return result;
+			//start chain with state
+			return cell(meta.state);
 		}
 
-		return console.log('void');
-	};
+	}
 };
 
 //calculate mouse X Y

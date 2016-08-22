@@ -120,60 +120,35 @@
 		return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
 	};
 
-	var count = 0;
-	var cyto = exports.cyto = function cyto(haploid) {
-		console.log('loading ...' + count);
-		return function (dna) {
-			//initializing convention...
-			//if no state is passed in
-			//initialize recursively by executing
-			//input, output with no args
-			if (!dna) {
-				count++;
+	var count = 0,
+	    meta = {
+		state: {},
+		input: [],
+		output: []
+	};
 
-				console.log('initializing');
-				var seed = _ramda2.default.merge(this ? this.state : {}, haploid.state);
-				//recurse
-				return cyto({
-					state: seed,
-					input: haploid.input.bind(seed)(),
-					output: haploid.output.bind(seed)()
-				})(haploid);
+	var cyto = exports.cyto = function cyto(happ) {
+		// count++;
+		meta.state = _ramda2.default.merge(meta.state, happ.state || {});
+
+		return function () {
+
+			var input = happ.input(meta.state),
+			    output = happ.output(meta.state);
+
+			// count--;
+
+			if (typeof input === 'function' && typeof output === 'function') {
+				meta.input.push(input);
+				meta.output.push(output);
+
+				return meta;
 			} else {
-				count--;
+				var meiosis = _ramda2.default.concat(_ramda2.default.reverse(meta.input), meta.output),
+				    cell = _ramda2.default.apply(_ramda2.default.pipe)(meiosis);
 
-				console.log('composing');
-				var cell = {
-					state: haploid.state instanceof Array ? _ramda2.default.concat(haploid.state, dna.state) : isCyto(haploid.state) ? _ramda2.default.concat(haploid.state.state, dna.state) : [haploid.state, dna.state],
-					input: haploid.input instanceof Array ? _ramda2.default.concat(haploid.input, dna.input) : isCyto(haploid.input) ? _ramda2.default.concat(haploid.input.input, dna.input) : [haploid.input, dna.input],
-					output: haploid.output instanceof Array ? _ramda2.default.concat(haploid.output, dna.output) : isCyto(haploid.output) ? _ramda2.default.concat(haploid.output.output, dna.input) : [haploid.output, dna.input]
-				},
-				    result = [];
-
-				if (count === 0) {
-					console.log('root node.');
-					// for(var i in cell.input){
-					// 	if(i === 0 || i%2 === 0){
-					// 		result.push(cell.input[i]);
-					// 	} else {
-					// 		result.push(cell.output[i-1]);
-					// 		result.push(cell.input[i]);
-					// 		i++;
-					// 	}
-
-					// }
-
-					var app = _ramda2.default.apply(_ramda2.default.pipe)(_ramda2.default.flatten(_ramda2.default.zip(cell.input, cell.output))),
-					    allstates = _ramda2.default.mergeAll(cell.state);
-
-					return app(allstates);
-				} else {
-					result = cell;
-				}
-				return result;
+				return cell(meta.state);
 			}
-
-			return console.log('void');
 		};
 	};
 
@@ -12507,15 +12482,19 @@
 		},
 		points: []
 	},
-	    view = function view() {
+	    view = function initLocalView(state) {
 		console.log('local view');
 
-		return function (state) {};
+		return function localView(state) {
+			return state;
+		};
 	},
-	    model = function model() {
+	    model = function initLocalModel(state) {
 		console.log('local model');
 
-		return function (state) {};
+		return function localModel(state) {
+			return state;
+		};
 	};
 
 	exports.default = (0, _meta.cyto)({ output: view, input: model, state: seed });
@@ -12565,7 +12544,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = init;
+	exports.default = initWorldView;
 
 	var _meta = __webpack_require__(1);
 
@@ -12578,11 +12557,10 @@
 	/**
 	 * @type init :: State -> IO
 	 */
-	function init() {
+	function initWorldView(state) {
 		console.log('world view');
 
-		var state = this,
-		    view = state.view = {};
+		var view = state.view = {};
 
 		view.options = state.options;
 		view.context = state.dom.getElementsByClassName('canvas')[0].getContext('2d');
@@ -12753,7 +12731,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = init;
+	exports.default = initWorldModel;
 
 	var _meta = __webpack_require__(1);
 
@@ -12789,10 +12767,11 @@
 	// 	return getNextState(io);
 	// }
 
-	function init() {
-		var state = this;
+	function initWorldModel(state) {
 		console.log('world model');
-		return function (state) {};
+		return function model(state) {
+			return state;
+		};
 	}
 
 /***/ },
