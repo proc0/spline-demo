@@ -1,6 +1,6 @@
 'use strict';
 import R from '../../node_modules/ramda/dist/ramda';
-import point from '../output/model/data/types/point';
+import point from '../output/input/data/types/point';
 
 export { default as R } from '../../node_modules/ramda/dist/ramda';
 export { default as B } from '../../node_modules/baconjs/dist/Bacon';
@@ -20,25 +20,33 @@ export var cyto = function cyto(happ){
 	//merge all incoming states
 	meta.state = R.merge(meta.state, happ.state || {});
 	//last call will be root
-	return function(){
+	return function(init){
 		//pass the state back up to leaves
 		//get input and output functions
 		var input = happ.input(meta.state),
 			output = happ.output(meta.state);
 
-		//only root cell will return input and output as Cyto
-		if(typeof input === 'function' && typeof output === 'function'){
+		if(typeof input === 'function')
 			meta.input.push(input);
+
+		if(typeof output === 'function')
 			meta.output.push(output);
 
-			return meta;
-		} else { //root cell
-			//align all input and output functions
-			var meiosis = R.concat(R.reverse(meta.input), meta.output),	
-				cell = R.apply(R.pipe)(meiosis);
+		if(input instanceof Array)
+			meta.input = R.concat(meta.input, input);
 
-			//start chain with state
-			return cell(meta.state);
+		if(output instanceof Array)
+			meta.input = R.concat(meta.output, output);
+
+		//only root cell will return input and output as Cyto
+		if(typeof init === 'function'){
+			return init({
+					state : meta.state,
+					input : R.reverse(meta.input),
+					output : meta.output
+				});
+		} else {
+			return meta;
 		}
 
 	}

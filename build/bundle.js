@@ -60,7 +60,7 @@
 
 	var _core4 = _interopRequireDefault(_core3);
 
-	var _options = __webpack_require__(17);
+	var _options = __webpack_require__(10);
 
 	var _options2 = _interopRequireDefault(_options);
 
@@ -77,7 +77,68 @@
 	 * @name Core
 	 * @type core :: IO()
 	 */
-	exports.default = (0, _meta.cyto)(app)();
+	exports.default = (0, _meta.cyto)(app)(init);
+
+
+	function init(app) {
+		console.log(app);
+		// return R.pipe(app.input, app.output)(app.state);
+	}
+	// //should only be called once
+	// function init(state){
+
+	// 	var view = state.view,
+	// 		events = view.events,
+
+	// 		combine = R.compose(R.map(R.apply(R.call)), R.zip),
+	// 		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed),
+	// 		//bind an array of elements to Bacon events
+	// 		bindElements = R.curry(function(handlers, elements){
+	// 			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
+	// 			return R.map(R.curry(bindElement)(handlers).bind(state.data.meta), elements);
+	// 		}),
+	// 		bindEvents = extract(R.compose(bindElements, R.identity)),
+	// 		//bind all action creators to events
+	// 		initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
+
+	// 	initialize(events);
+	// }
+
+	// //bind an array of elements to Bacon events
+	// function bindEvents(state){
+	// 	var _bind = R.curry(function(handlers, elements){
+	// 		//use bindEvent to bind to HTMLElement, bind to state Controller (not runtime)
+	// 		return R.map(R.curry(bindEvent)(handlers).bind(state), elements);
+	// 	});
+	// 	//bind each ui element to the reducer function
+	// 	return R.compose(_bind, R.identity);
+	// }
+
+	// //bind an element to a Bacon Events
+	// function bindEvent(handlers, element){
+	// 		//get state
+	// 	var state = this(),
+	// 		State = state.meta,
+	// 		view = state.view,
+	// 		noop = Function.prototype,
+	// 		//process ui input
+	// 		I = R.flip(R.apply)(view.input),
+	// 		//only render if output is State
+	// 		O = R.ifElse(State, view.output, noop),
+	// 	/** IO :: IO -> IO ;-- StateMonad <- Input
+	// 	 * ---------------------------------------------- */
+	// 		IO = R.compose(O, I, this),
+	// 		//IO = R.pipe(this, I, O) works?
+	// 		baconWrap = function(handler, event){
+	// 			//only bind if handler is a function
+	// 			if('function' === typeof handler)
+	// 				//Bacon stream event from HTMLElement
+	// 				B.fromEvent(element, event).onValue(IO);
+	// 		};
+	// 	//map element handlers by using the object
+	// 	//property name as the event name
+	// 	return R.mapObjIndexed(baconWrap, handlers);
+	// }
 
 /***/ },
 /* 1 */
@@ -120,34 +181,39 @@
 		return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
 	};
 
-	var count = 0,
-	    meta = {
+	var meta = {
 		state: {},
 		input: [],
 		output: []
 	};
 
 	var cyto = exports.cyto = function cyto(happ) {
-		// count++;
+		//merge all incoming states
 		meta.state = _ramda2.default.merge(meta.state, happ.state || {});
-
-		return function () {
-
+		//last call will be root
+		return function (init) {
+			//pass the state back up to leaves
+			//get input and output functions
 			var input = happ.input(meta.state),
 			    output = happ.output(meta.state);
 
-			// count--;
+			if (typeof input === 'function') meta.input.push(input);
 
-			if (typeof input === 'function' && typeof output === 'function') {
-				meta.input.push(input);
-				meta.output.push(output);
+			if (typeof output === 'function') meta.output.push(output);
 
-				return meta;
+			if (input instanceof Array) meta.input = _ramda2.default.concat(meta.input, input);
+
+			if (output instanceof Array) meta.input = _ramda2.default.concat(meta.output, output);
+
+			//only root cell will return input and output as Cyto
+			if (typeof init === 'function') {
+				return init({
+					state: meta.state,
+					input: _ramda2.default.reverse(meta.input),
+					output: meta.output
+				});
 			} else {
-				var meiosis = _ramda2.default.concat(_ramda2.default.reverse(meta.input), meta.output),
-				    cell = _ramda2.default.apply(_ramda2.default.pipe)(meiosis);
-
-				return cell(meta.state);
+				return meta;
 			}
 		};
 	};
@@ -12449,55 +12515,34 @@
 	var _meta = __webpack_require__(1);
 
 	// import view from './view/core';
-	// import state from './state/core';
-
-	/**
-	 * @name AppCore
-	 * @type init :: WorldData -> IO
-	 * @cyto app :: IO -> IO
-	 */
-
-	// export default function local(world){
-	// 	if(world.init)
-	// 		return R.map(R.flip(R.apply)(world.init), R.pluck('init', [view, state]));
-
-	// 	var seed = {
-	// 		state : {
-	// 	 		world : world,
-	// 			view : {
-	// 				elements : []
-	// 			},
-	// 			points : []
-	// 		},
-	// 		input : state(world),
-	// 		output : view(world)
-	// 	};
-
-	// 	return R.compose(view, state)(seed);
-	// }
+	// import events from './view/events';
+	// import model from './model/core';
 
 	var seed = {
-		view: {
-			elements: []
+		state: {
+			view: {
+				elements: []
+				// events : events
+			},
+			points: []
 		},
-		points: []
-	},
-	    view = function initLocalView(state) {
-		console.log('local view');
+		// input : model,
+		// output : view
+		input: function iIi(initState) {
 
-		return function localView(state) {
-			return state;
-		};
-	},
-	    model = function initLocalModel(state) {
-		console.log('local model');
+			return function Ii(state) {
+				return state;
+			};
+		},
+		output: function iIo(initState) {
 
-		return function localModel(state) {
-			return state;
-		};
+			return function Io(state) {
+				return state;
+			};
+		}
 	};
 
-	exports.default = (0, _meta.cyto)({ output: view, input: model, state: seed });
+	exports.default = (0, _meta.cyto)(seed);
 
 /***/ },
 /* 9 */
@@ -12511,23 +12556,27 @@
 
 	var _meta = __webpack_require__(1);
 
-	var _core = __webpack_require__(10);
-
-	var _core2 = _interopRequireDefault(_core);
-
-	var _core3 = __webpack_require__(12);
-
-	var _core4 = _interopRequireDefault(_core3);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	// import output from './output/core';
+	// import intput from './intput/core';
 
 	var seed = {
 		state: {
-			dom: document,
-			ui: {}
+			dom: document
 		},
-		input: _core4.default,
-		output: _core2.default
+		// input : intput,
+		// output : output
+		input: function iOi(initState) {
+
+			return function Oi(state) {
+				return state;
+			};
+		},
+		output: function iOo(initState) {
+
+			return function Oo(state) {
+				return state;
+			};
+		}
 	};
 	/**
 	 * @name Output
@@ -12537,381 +12586,6 @@
 
 /***/ },
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = initWorldView;
-
-	var _meta = __webpack_require__(1);
-
-	var _cells = __webpack_require__(11);
-
-	var _cells2 = _interopRequireDefault(_cells);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	/**
-	 * @type init :: State -> IO
-	 */
-	function initWorldView(state) {
-		console.log('world view');
-
-		var view = state.view = {};
-
-		view.options = state.options;
-		view.context = state.dom.getElementsByClassName('canvas')[0].getContext('2d');
-
-		//load view properties to be used when rendering
-		//and other view tasks, uses Assignable convention
-		var load = _meta.R.mapObjIndexed(function (loader, prop) {
-			return view[prop] = loader(view);
-		});
-
-		return load(_cells2.default) && render;
-	}
-
-	/**
-	 * @type render :: State -> IO
-	 */
-	function render(state) {
-
-		if (!state) throw Error('No state to render.');
-
-		//shortcuts
-		var view = state.view,
-		    points = view.points,
-		    context = view.context,
-		    options = view.options,
-		    width = context.canvas.width,
-		    height = context.canvas.height,
-		    draw = view.draw.bind(view)(options);
-
-		//clear canvas
-		context.clearRect(0, 0, width, height);
-		//no points to render
-		if (!points || points.length < 1)
-			//render default text (from HTML)
-			return draw('bgtext')(context.canvas.innerHTML);
-
-		//render points into curve
-		if (points && points.length >= 2) {
-			//save curve points for select drag render
-			view.curve = curve(points, options['curve']);
-			//render curve
-			draw('curve')(view.curve);
-			//fill curve
-			if (options.curve.fill) view.canvas('fill')();
-		}
-
-		//draw vertex points if > 1 point
-		if (options.curve.showPoints) draw('verts')(points);
-	}
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _meta = __webpack_require__(1);
-
-	/**
-	 *	@member props {Assignable}
-	 *	@desc	contains key/value where value is a high order function
-	 *	@type 	prop :: Context -> (* -> IO)
-	 */
-	exports.default = {
-		/**
-	  *	@type config :: Context -> (Object -> IO)
-	  *	@desc returns a function that will set a property on
-	  *        the canvas context object. Needs to be imperative.
-	  */
-		config: function config(view) {
-			//setting context cannot be functional style?
-			var context = view.context,
-			    setContext = function setContext(val, key, obj) {
-				return _meta.R.prop(key, context) ? context[key] = val : null;
-			};
-			return _meta.R.mapObjIndexed(setContext);
-		},
-		/**
-	  * @type canvas :: Context -> (String -> (* -> IO))
-	  * @desc returns a function that will return a canvas API method
-	  * 		 ready to be invoked with whatever params it needs
-	  */
-		canvas: function canvas(view) {
-			var context = view.context;
-			return _meta.R.compose(_meta.R.flip(_meta.R.bind)(context), _meta.R.flip(_meta.R.prop)(context));
-		},
-		/**
-	  * @type { optionName : comp :: Context -> Drawer }
-	  */
-		comp: function comp(view) {
-			var context = view.context;
-			return {
-				/**
-	    * @type curve :: [Point] -> View -> IO
-	    */
-				curve: function curve(points, view) {
-					var lineTo = _meta.R.apply(view.canvas('lineTo'));
-
-					return _meta.R.compose(_meta.R.map(lineTo), _meta.getPoints)(points);
-				},
-				/**
-	    * @type verts :: [Point] -> View -> IO
-	    */
-				verts: function verts(points, view) {
-					var w = 6,
-					    h = 6,
-					    offset = _meta.R.flip(_meta.R.subtract)(w / 2),
-					    dimens = _meta.R.flip(_meta.R.concat)([w, h]),
-					    params = _meta.R.compose(dimens, _meta.getPoint, _meta.R.map(offset)),
-					    rect = _meta.R.apply(view.canvas('rect'));
-
-					return _meta.R.compose(_meta.R.map(rect), _meta.R.map(params))(points);
-				},
-				/**
-	    * @type bgtext :: String -> View -> IO
-	    */
-				bgtext: function bgtext(text, view) {
-					var w = context.canvas.width,
-					    h = context.canvas.height,
-
-					//center text
-					x = w / 2 - text.length * 10 / 2,
-					    y = h / 2;
-
-					return view.canvas('fillText')(text, x, y);
-				}
-			};
-		},
-		/**
-	  * @type paint :: Context -> (String -> View -> Options -> Data -> IO)
-	  */
-		paint: function paint(view) {
-			var context = view.context;
-
-			return _meta.R.curry(function (drawer, view, options, data) {
-				view.config(options);
-
-				if (typeof data !== 'string') view.canvas('beginPath')();
-
-				view.comp[drawer](data, view);
-
-				if (typeof data !== 'string') view.canvas('stroke')();
-			});
-		},
-		/**
-	  *	@type draw :: Context -> IO 
-	  */
-		draw: function draw(view) {
-			//extract style options
-			var getOptions = _meta.R.compose(_meta.R.flip(_meta.R.prop), _meta.R.prop('style')),
-			    buildParams = _meta.R.compose(_meta.R.prepend(_meta.R.identity), _meta.R.prepend(_meta.R.always(view)));
-
-			return _meta.R.compose(_meta.R.converge(view.paint), buildParams, _meta.R.of, getOptions);
-		}
-
-	};
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = initWorldModel;
-
-	var _meta = __webpack_require__(1);
-
-	var _types = __webpack_require__(13);
-
-	var _types2 = _interopRequireDefault(_types);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	// var state = {},
-	// 	then = R.compose(R.apply(R.compose), R.prepend),
-	// 	reverseApply = R.compose(R.of, R.flip(R.apply), R.of);
-	// /**
-	//  * State Monad
-	//  * @type init :: {Object} -> (IO -> {State})
-	//  */
-	// export default function init(seed){
-	// 	seed.meta = State;
-	// 	state = new State(seed);
-	// 	return meta;
-	// };
-	// /**
-	//  * @type meta :: IO -> State
-	//  */
-	// function meta(io){
-
-	// 	if(!io) return state;
-
-	// 	var processInput = R.flip(data)(state),
-	// 		processState = R.flip(model)(state),
-	// 		getNextState = R.compose(then(processState), reverseApply, processInput);
-
-	// 	return getNextState(io);
-	// }
-
-	function initWorldModel(state) {
-		console.log('world model');
-		return function model(state) {
-			return state;
-		};
-	}
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _action = __webpack_require__(14);
-
-	Object.defineProperty(exports, 'action', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_action).default;
-	  }
-	});
-
-	var _point = __webpack_require__(7);
-
-	Object.defineProperty(exports, 'point', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_point).default;
-	  }
-	});
-
-	var _state = __webpack_require__(15);
-
-	Object.defineProperty(exports, 'state', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_state).default;
-	  }
-	});
-
-	var _world = __webpack_require__(16);
-
-	Object.defineProperty(exports, 'world', {
-	  enumerable: true,
-	  get: function get() {
-	    return _interopRequireDefault(_world).default;
-	  }
-	});
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _meta = __webpack_require__(1);
-
-	//shortcut instantiation
-	exports.default = _meta.R.curry(function (type, data) {
-		return new Action(type, data);
-	});
-
-
-	function Action(type, data) {
-		return {
-			type: type,
-			data: data
-		};
-	}
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = State;
-
-	var _meta = __webpack_require__(1);
-
-	function State(seed) {
-		if (seed instanceof this) return true;
-		//shallow assign,
-		//TODO: smarter object inheritance from seed
-		_meta.R.mapObjIndexed(function (value, label) {
-			this[label] = value;
-		}.bind(this), seed);
-	}
-
-	// export default {
-	// 	points 	: [],
-	// 	selects : [],
-	// 	ui 		: {
-	// 		elements : [],
-	// 		view : {
-	// 			curve : []
-	// 		},
-	// 		state : {
-	// 			slider : {}
-	// 		}
-	// 	}
-	// };
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _meta = __webpack_require__(1);
-
-	//shortcut instantiation
-	// export default R.curry(function(type, data){
-	// 	return new Action(type, data);
-	// });
-
-	// function Action(type, data){
-	// 	return {
-	// 		type : type,
-	// 		data : data
-	// 	};
-	exports.default = {
-		context: {},
-		options: {}
-	};
-
-/***/ },
-/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';

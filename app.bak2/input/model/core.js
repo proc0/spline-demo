@@ -1,7 +1,7 @@
 'use strict';
 import { R, B } from '../../tool';
-// import data from './data/core';
-import model from './model/core';
+import data from './data/core';
+// import model from './model/core';
 // import State from './data/types/state';
 
 var state = {},
@@ -11,7 +11,7 @@ var state = {},
  * State Monad
  * @type init :: {Object} -> (IO -> {State})
  */ 
-export default function init(seed){
+export default function initIi(seed){
 	seed.meta = State;
 	state = new State(seed);
 	return meta;
@@ -63,46 +63,3 @@ import * as events from './ui';
 // 	return state;
 // }
 
-
-var eventTypes = {
-	eventMap : {
-		parseEvent : ['mousedown', 'mouseup', 'mousemove']
-	},
-
-	parseEvent : function(event, state){
-
-		return {
-			mouse : getMouse(state.context, event),
-			index : state.points.length ? findPoint(mouse)(state.points) : state.points
-		};
-	}
-};
-
-export default function init(state){
-
-	return input;
-}
-/**
- * @type :: input :: IO -> Data
- */
-function input(inputData){
-
-	var modelData,
-		getHandler = R.compose(R.flip(R.gt)(0), R.length, R.filter(R.equals(inputData.input.type)));
-
-	if(state)
-		R.mapObjIndexed(function(dataList, handlerName){
-			//if model has handler
-			//get data handler
-			if( getHandler(dataList) ){
-				try { 
-					// console.log(data.type); 
-					modelData = eventTypes[handlerName](inputData);
-				} catch(err){ 
-					console.log(err) 
-				}
-			}
-		}, events);
-
-	return modelData;
-}

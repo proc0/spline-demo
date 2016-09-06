@@ -1,11 +1,11 @@
 'use strict';
 import { R, getProp } from '../../../tool';
-import props from './props';
+import ui from './ui';
 
 /**
  * @type model :: WorldData -> State -> State
  */
-export default R.curry(function init(data, state){
+export default R.curry(function initIo(data, state){
 
 	if(!data){
 		if(!data.type)
@@ -24,11 +24,11 @@ export default R.curry(function init(data, state){
 				if( getHandler(dataList) )
 					try { 
 						// console.log(data.type); 
-						nextState = props[handlerName](data, state); 
+						nextState = ui[handlerName](data, state); 
 					} catch(err){ 
 						console.log(err) 
 					}
-			}, props.eventMap);
+			}, ui.eventMap);
 		
 		// if(!nextState)
 		// 	throw Error('No state was processed!');

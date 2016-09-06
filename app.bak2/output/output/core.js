@@ -3,7 +3,7 @@ import view from './view';
 /**
  * @type init :: State -> IO
  */
-export default function initWorldView(state){
+export default function initOo(state){
 	console.log('world view');
 
 	var view = state.view = {};

@@ -1,45 +1,10 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Spline Demo</title>
+		<title>Cyto Demo</title>
 		<link rel="stylesheet" type="text/css" href="style/style.css">
 	</head>
 	<body>
-		<main>
-			<div id="options" class="options noselect">
-				<h1>Spline Tool Demo</h1>
-				<label for="segments"><span>segments</span></label>
-				<div class="slider">
-					<div class="component">
-						<div class="label-contain"><label><span class="value"></span></label></div>
-						<input id="segments" type="range" value="12" min="1" max="20" />
-					</div>
-				</div>
-				
-				<label for="tension"><span>tension</span></label>
-				<div class="slider">
-					<div class="component">
-						<div class="label-contain"><label><span class="value"></span></label></div>
-						<input id="tension" type="range" data-fractional="true" value="50" min="-100" max="100"/>
-					</div>
-				</div>
-				<div class="panel">
-					<div class="checkbox">
-						<label for="closed">closed</label>
-						<input id="closed" type="checkbox" checked>
-					</div>
-					<div class="checkbox">
-						<label for="showPoints">points</label>
-						<input id="showPoints" type="checkbox" checked>
-					</div>
-					<div class="checkbox">
-						<label for="fill">fill</label>
-						<input id="fill" type="checkbox">
-					</div>
-				</div>
-			</div>
-			<canvas class="canvas noselect" width="800" height="450">Click to add a point.</canvas>
-		</main>
 		<script src="build/bundle.js"></script>
 	</body>
 </html>
