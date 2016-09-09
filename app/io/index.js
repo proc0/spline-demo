@@ -1,4 +1,4 @@
 'use strict';
-import dom from 'dom/core';
+import dom from './dom/core';
 
-return [dom];
+export default [dom];

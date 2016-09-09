@@ -12,15 +12,31 @@ var meta = {
 		output: []
 	};
 
-export var cyto = function cyto(happ){
+export var cyto = function cyto(seed){
 	//merge all incoming states
-	meta.state = R.merge(meta.state, happ.state || {});
+	meta.state = R.merge(meta.state, seed.state || {});
 	//last call will be root
-	return function(init){
+	return function _cyto(init){
+
+		var input = seed.input,
+			output = seed.output;
+		
+		if(input instanceof Array && input.length > 0){
+			R.map(R.compose(R.flip(R.call)({}), cyto), input);
+		} else {
+			meta.input.push(input);
+		}
+
+		if(output instanceof Array && output.length > 0){
+			R.map(R.compose(R.flip(R.call)({}), cyto), output);
+		} else {
+			meta.output.push(output);
+		}
+
 		//pass the state back up to leaves
 		//get input and output functions
-		// var input = happ.input(meta.state),
-		// 	output = happ.output(meta.state);
+		// var input = seed.input(meta.state),
+		// 	output = seed.output(meta.state);
 
 		// if(typeof input === 'function')
 		// 	meta.input.push(input);
@@ -36,13 +52,13 @@ export var cyto = function cyto(happ){
 
 		//only root cell will return input and output as Cyto
 		if(typeof init === 'function'){
-			// return init({
-			// 		state : meta.state,
-			// 		input : R.reverse(meta.input),
-			// 		output : meta.output
-			// 	});
+			return init({
+					state : meta.state,
+					input : R.reverse(meta.input),
+					output : meta.output
+				});
 		} else {
-			// return meta;
+			return meta;
 		}
 
 	}

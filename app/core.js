@@ -1,7 +1,7 @@
 'use strict';
-import { cyto } from 'etc';
-import cells from 'cell';
-import ios from 'io';
+import { cyto } from './etc';
+import cells from './cell';
+import ios from './io';
 import options from '../options';
 
 var app = { 

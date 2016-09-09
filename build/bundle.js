@@ -50,17 +50,17 @@
 		value: true
 	});
 
-	var _meta = __webpack_require__(1);
+	var _etc = __webpack_require__(1);
 
-	var _core = __webpack_require__(8);
+	var _cell = __webpack_require__(7);
 
-	var _core2 = _interopRequireDefault(_core);
+	var _cell2 = _interopRequireDefault(_cell);
 
-	var _core3 = __webpack_require__(9);
+	var _io = __webpack_require__(12);
 
-	var _core4 = _interopRequireDefault(_core3);
+	var _io2 = _interopRequireDefault(_io);
 
-	var _options = __webpack_require__(10);
+	var _options = __webpack_require__(14);
 
 	var _options2 = _interopRequireDefault(_options);
 
@@ -70,75 +70,20 @@
 		state: {
 			options: _options2.default
 		},
-		input: _core2.default,
-		output: _core4.default
+		input: _cell2.default,
+		output: _io2.default
 	};
-	/**
-	 * @name Core
-	 * @type core :: IO()
-	 */
-	exports.default = (0, _meta.cyto)(app)(init);
-
 
 	function init(app) {
 		console.log(app);
 		// return R.pipe(app.input, app.output)(app.state);
 	}
-	// //should only be called once
-	// function init(state){
 
-	// 	var view = state.view,
-	// 		events = view.events,
-
-	// 		combine = R.compose(R.map(R.apply(R.call)), R.zip),
-	// 		extract = R.compose(R.apply(R.compose), R.prepend(R.values), R.of, R.mapObjIndexed),
-	// 		//bind an array of elements to Bacon events
-	// 		bindElements = R.curry(function(handlers, elements){
-	// 			//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-	// 			return R.map(R.curry(bindElement)(handlers).bind(state.data.meta), elements);
-	// 		}),
-	// 		bindEvents = extract(R.compose(bindElements, R.identity)),
-	// 		//bind all action creators to events
-	// 		initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
-
-	// 	initialize(events);
-	// }
-
-	// //bind an array of elements to Bacon events
-	// function bindEvents(state){
-	// 	var _bind = R.curry(function(handlers, elements){
-	// 		//use bindEvent to bind to HTMLElement, bind to state Controller (not runtime)
-	// 		return R.map(R.curry(bindEvent)(handlers).bind(state), elements);
-	// 	});
-	// 	//bind each ui element to the reducer function
-	// 	return R.compose(_bind, R.identity);
-	// }
-
-	// //bind an element to a Bacon Events
-	// function bindEvent(handlers, element){
-	// 		//get state
-	// 	var state = this(),
-	// 		State = state.meta,
-	// 		view = state.view,
-	// 		noop = Function.prototype,
-	// 		//process ui input
-	// 		I = R.flip(R.apply)(view.input),
-	// 		//only render if output is State
-	// 		O = R.ifElse(State, view.output, noop),
-	// 	/** IO :: IO -> IO ;-- StateMonad <- Input
-	// 	 * ---------------------------------------------- */
-	// 		IO = R.compose(O, I, this),
-	// 		//IO = R.pipe(this, I, O) works?
-	// 		baconWrap = function(handler, event){
-	// 			//only bind if handler is a function
-	// 			if('function' === typeof handler)
-	// 				//Bacon stream event from HTMLElement
-	// 				B.fromEvent(element, event).onValue(IO);
-	// 		};
-	// 	//map element handlers by using the object
-	// 	//property name as the event name
-	// 	return R.mapObjIndexed(baconWrap, handlers);
-	// }
+	/**
+	 * @name Core
+	 * @type core :: IO()
+	 */
+	exports.default = (0, _etc.cyto)(app)(init);
 
 /***/ },
 /* 1 */
@@ -149,7 +94,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.cloneObj = exports.flatten = exports.chunk = exports.findPoint = exports.getProp = exports.getPoints = exports.getPoint = exports.getMouse = exports.cyto = exports.B = exports.R = undefined;
+	exports.B = exports.R = exports.cyto = undefined;
 
 	var _ramda = __webpack_require__(2);
 
@@ -171,15 +116,11 @@
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
-	var _point = __webpack_require__(7);
-
-	var _point2 = _interopRequireDefault(_point);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var isCyto = function isCyto(obj) {
-		return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
-	};
+	// var isCyto = function(obj){
+	// 	return obj.hasOwnProperty('state') && obj.hasOwnProperty('input') && obj.hasOwnProperty('output');
+	// }
 
 	var meta = {
 		state: {},
@@ -187,23 +128,43 @@
 		output: []
 	};
 
-	var cyto = exports.cyto = function cyto(happ) {
+	var cyto = exports.cyto = function cyto(seed) {
 		//merge all incoming states
-		meta.state = _ramda2.default.merge(meta.state, happ.state || {});
+		meta.state = _ramda2.default.merge(meta.state, seed.state || {});
 		//last call will be root
-		return function (init) {
+		return function _cyto(init) {
+
+			var input = seed.input,
+			    output = seed.output;
+
+			if (input instanceof Array && input.length > 0) {
+				_ramda2.default.map(_ramda2.default.compose(_ramda2.default.flip(_ramda2.default.call)({}), cyto), input);
+			} else {
+				meta.input.push(input);
+			}
+
+			if (output instanceof Array && output.length > 0) {
+				_ramda2.default.map(_ramda2.default.compose(_ramda2.default.flip(_ramda2.default.call)({}), cyto), output);
+			} else {
+				meta.output.push(output);
+			}
+
 			//pass the state back up to leaves
 			//get input and output functions
-			var input = happ.input(meta.state),
-			    output = happ.output(meta.state);
+			// var input = seed.input(meta.state),
+			// 	output = seed.output(meta.state);
 
-			if (typeof input === 'function') meta.input.push(input);
+			// if(typeof input === 'function')
+			// 	meta.input.push(input);
 
-			if (typeof output === 'function') meta.output.push(output);
+			// if(typeof output === 'function')
+			// 	meta.output.push(output);
 
-			if (input instanceof Array) meta.input = _ramda2.default.concat(meta.input, input);
+			// if(input instanceof Array)
+			// 	meta.input = R.concat(meta.input, input);
 
-			if (output instanceof Array) meta.input = _ramda2.default.concat(meta.output, output);
+			// if(output instanceof Array)
+			// 	meta.input = R.concat(meta.output, output);
 
 			//only root cell will return input and output as Cyto
 			if (typeof init === 'function') {
@@ -216,61 +177,6 @@
 				return meta;
 			}
 		};
-	};
-
-	//calculate mouse X Y
-	var getMouse = exports.getMouse = function getMouse(context, event) {
-		var client = context.canvas.getBoundingClientRect(),
-		    x = event.x - client.left,
-		    y = event.y - client.top;
-		return new _point2.default(x, y);
-	};
-	//get the Point class [x,y] by calling its method
-	var getPoint = exports.getPoint = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.call, _ramda2.default.bind), [_ramda2.default.prop('get'), _ramda2.default.identity]);
-	var getPoints = exports.getPoints = _ramda2.default.map(getPoint);
-
-	var getProp = exports.getProp = function getProp(str, obj) {
-		// reduce a list of functions that return properties w/ obj
-		return _ramda2.default.reduce(_ramda2.default.flip(_ramda2.default.call), obj, _ramda2.default.map(_ramda2.default.prop, str.split('.')));
-	};
-
-	var findPoint = exports.findPoint = _ramda2.default.curry(function (mouse, points) {
-		var x = mouse.x,
-		    y = mouse.y,
-		    area = 10,
-		    sub_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt), _ramda2.default.flip(_ramda2.default.subtract)(area)),
-		    add_area = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.lt), _ramda2.default.flip(_ramda2.default.add)(area)),
-		    area_point = _ramda2.default.converge(Array, [sub_area, add_area]),
-		    area_curve = _ramda2.default.compose(_ramda2.default.map(_ramda2.default.map(area_point))),
-		    check_point = _ramda2.default.compose(_ramda2.default.map, _ramda2.default.flip(_ramda2.default.apply), _ramda2.default.of),
-		    check_x = _ramda2.default.compose(check_point(x), _ramda2.default.prop('x')),
-		    check_y = _ramda2.default.compose(check_point(y), _ramda2.default.prop('y')),
-		    check_curve = _ramda2.default.converge(_ramda2.default.concat, [check_x, check_y]),
-		    search_area = _ramda2.default.compose(_ramda2.default.map(check_curve), area_curve),
-		    atLeast = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), _ramda2.default.append(_ramda2.default.filter(_ramda2.default.identity)), _ramda2.default.append(_ramda2.default.length), _ramda2.default.of, _ramda2.default.equals),
-		    extract = _ramda2.default.compose(_ramda2.default.findIndex(_ramda2.default.identity), _ramda2.default.map(atLeast(4)));
-
-		return extract(search_area(points));
-	});
-	//partitions an array into chunks
-	var chunk = exports.chunk = _ramda2.default.curry(function (amount, list) {
-		//recursive function
-		var split = function split(list) {
-			var step = _ramda2.default.compose(split, _ramda2.default.splitAt(amount), _ramda2.default.last),
-			    recurse = _ramda2.default.converge(_ramda2.default.concat, [_ramda2.default.compose(_ramda2.default.of, _ramda2.default.head), step]),
-			    hasLength = _ramda2.default.compose(_ramda2.default.flip(_ramda2.default.gt)(amount), _ramda2.default.length, _ramda2.default.last);
-
-			return _ramda2.default.ifElse(hasLength, recurse, _ramda2.default.identity)(list);
-		},
-		    init = _ramda2.default.compose(split, _ramda2.default.splitAt(amount));
-		// check input and start recursion
-		return list && list.length > amount ? init(list) : list.length === amount ? [list] : list;
-	});
-
-	var flatten = exports.flatten = _ramda2.default.compose(_ramda2.default.flatten, Array.prototype.concat.bind(Array.prototype));
-
-	var cloneObj = exports.cloneObj = function cloneObj(obj) {
-		return _ramda2.default.converge(_ramda2.default.zipObj, [_ramda2.default.keys, _ramda2.default.converge(_ramda2.default.chain, [_ramda2.default.compose(_ramda2.default.apply(_ramda2.default.flip(_ramda2.default.prop)), Array), _ramda2.default.keys])])(obj);
 	};
 
 /***/ },
@@ -12472,80 +12378,100 @@
 
 /***/ },
 /* 7 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	//shortcut instantiation
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
-	exports.default = point;
-	exports.default = Point;
-	function point(x, y) {
-		return new Point(x, y);
-	}
 
-	function Point(x, y) {
-		return {
-			x: x,
-			y: y,
-			map: function map(transform) {
-				var p = new Float32Array([this.x, this.y]),
-				    _x = transform(p[0]),
-				    _y = transform(p[1]);
-				return new Point(_x, _y);
-			},
-			get: function get() {
-				return [this.x, this.y];
-			}
-		};
-	};
+	var _core = __webpack_require__(8);
+
+	var _core2 = _interopRequireDefault(_core);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = [_core2.default];
 
 /***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+	// import { cyto } from '../../etc';
+
+	Object.defineProperty(exports, "__esModule", {
+			value: true
+	});
+
+	var _model = __webpack_require__(9);
+
+	var _model2 = _interopRequireDefault(_model);
+
+	var _view = __webpack_require__(10);
+
+	var _view2 = _interopRequireDefault(_view);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = {
+			state: {},
+			input: _model2.default,
+			output: _view2.default
+	};
+
+	// export default cyto(core);
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+	var props = {
+		firstname: function firstname(state) {
 
-	var _meta = __webpack_require__(1);
+			return function (action) {
 
-	// import view from './view/core';
-	// import events from './view/events';
-	// import model from './model/core';
-
-	var seed = {
-		state: {
-			view: {
-				elements: []
-				// events : events
-			},
-			points: []
-		},
-		// input : model,
-		// output : view
-		input: function iIi(initState) {
-
-			return function Ii(state) {
 				return state;
 			};
 		},
-		output: function iIo(initState) {
 
-			return function Io(state) {
+		lastname: function lastname(state) {
+
+			return function (action) {
+
 				return state;
 			};
 		}
 	};
 
-	exports.default = (0, _meta.cyto)(seed);
+	exports.default = props;
 
 /***/ },
-/* 9 */
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _core = __webpack_require__(11);
+
+	var _core2 = _interopRequireDefault(_core);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = [_core2.default];
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12554,38 +12480,93 @@
 		value: true
 	});
 
-	var _meta = __webpack_require__(1);
+	var _etc = __webpack_require__(1);
 
-	// import output from './output/core';
-	// import intput from './intput/core';
-
-	var seed = {
+	var textfield = {
 		state: {
-			dom: document
+			textfield: {
+				active: true
+			}
 		},
-		// input : intput,
-		// output : output
-		input: function iOi(initState) {
+		input: {
+			mouseup: function mouseup(state) {
 
-			return function Oi(state) {
-				return state;
-			};
+				return function onMouseUp(event) {
+					return event;
+				};
+			}
 		},
-		output: function iOo(initState) {
+		output: {
+			dom: function dom(state) {
 
-			return function Oo(state) {
-				return state;
-			};
+				return function render(context) {};
+			}
 		}
 	};
-	/**
-	 * @name Output
-	 * @type output :: WorldData -> IO
-	 */
-	exports.default = (0, _meta.cyto)(seed);
+
+	exports.default = (0, _etc.cyto)(textfield);
 
 /***/ },
-/* 10 */
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _core = __webpack_require__(13);
+
+	var _core2 = _interopRequireDefault(_core);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = [_core2.default];
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _etc = __webpack_require__(1);
+
+	var dom = {
+		state: document,
+		input: {
+			event: function event(state) {
+
+				return function (event) {
+
+					return event;
+				};
+			}
+		},
+		output: {
+			canvas: function canvas(state) {
+
+				return function (comp) {};
+			},
+
+			dom: function dom(state) {
+
+				return function (comp) {
+
+					return comp();
+				};
+			}
+		}
+	};
+
+	exports.default = dom;
+
+/***/ },
+/* 14 */
 /***/ function(module, exports) {
 
 	'use strict';

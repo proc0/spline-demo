@@ -24,9 +24,10 @@ var dom = {
 				
 				return function(comp){
 
+					return comp();
 				}
 			}
 		}
 	};
 
-export default cyto(dom);
+export default dom;

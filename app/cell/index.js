@@ -1,4 +1,4 @@
 'use strict';
-import core from 'core/core';
+import core from './core/core';
 
-return [core];
+export default [core];

@@ -18,4 +18,4 @@ var props = {
 		}
 	};
 
-export props;
+export default props;

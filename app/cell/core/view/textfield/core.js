@@ -10,19 +10,19 @@ var textfield = {
 		input : {
 			mouseup : function(state){
 
-				return function(event){
+				return function onMouseUp(event){
 					return event;
 				};
 			}
 		},
 		output : {
-			textfield : function (state){
+			dom : function (state){
 
-				return function(context){
+				return function render(context){
 
 				}
 			}
 		}
 	};
 
-export cyto(textfield);
+export default cyto(textfield);

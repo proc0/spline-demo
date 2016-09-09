@@ -1,4 +1,4 @@
 'use strict';
-import textfield from 'textfield/core';
+import textfield from './textfield/core';
 
-export [textfield];
+export default [textfield];
