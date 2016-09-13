@@ -23,13 +23,13 @@ export var cyto = function cyto(seed){
 		
 		if(input instanceof Array && input.length > 0){
 			R.map(R.compose(R.flip(R.call)({}), cyto), input);
-		} else {
+		} else if(input){
 			meta.input.push(input);
 		}
 
 		if(output instanceof Array && output.length > 0){
 			R.map(R.compose(R.flip(R.call)({}), cyto), output);
-		} else {
+		} else if(output){
 			meta.output.push(output);
 		}
 

@@ -1,33 +1,35 @@
 'use strict';
-import { cyto } from '../../etc';
+import { R, cyto } from '../../etc';
 
-var dom = {
-		state : document,
-		input : {
-			event : function(state){
+var input = {
+		keyup : function(event){
 
-				return function(event){
+			return event;
+		}
+	},
+	output = {
+		canvas : function(state){
 
-					return event;
-				}
+			return function(comp){
+
 			}
 		},
-		output : {
-			canvas : function(state){
 
-				return function(comp){
+		dom : function(state){
+			
+			return function(comp){
 
-				}
-			},
-
-			dom : function(state){
-				
-				return function(comp){
-
-					return comp();
-				}
+				return comp();
 			}
 		}
+	},
+	dom = {
+		state : {
+			document,
+			events : R.keys(input)
+		},
+		input : input,
+		output : output
 	};
 
 export default dom;

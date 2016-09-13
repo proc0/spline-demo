@@ -1,18 +1,17 @@
 'use strict';
 import { cyto } from '../../../../etc';
+import template from './textfield.hbs';
 
 var textfield = {
 		state : {
 			textfield : {
-				active : true
+				secret : 'blah'
 			}
 		},
 		input : {
-			mouseup : function(state){
+			firstname : function(event){
 
-				return function onMouseUp(event){
-					return event;
-				};
+				return event.target.value;
 			}
 		},
 		output : {
@@ -20,9 +19,9 @@ var textfield = {
 
 				return function render(context){
 
-				}
+				}	
 			}
 		}
 	};
 
-export default cyto(textfield);
+export default textfield;

@@ -5,6 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "baconjs": "^0.7.84",
+    "handlebars": "^4.0.5",
+    "handlebars-loader": "^1.4.0",
     "ramda": "^0.20.1"
   },
   "devDependencies": {
@@ -14,7 +16,9 @@
     "webpack": "^1.13.0",
     "webpack-build": "^1.0.1"
   },
-  "bin" : { "build" : "index.js"},
+  "bin": {
+    "build": "index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

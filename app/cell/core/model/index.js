@@ -1,20 +1,14 @@
 'use strict';
 
 var props = {
-		firstname : function(state){
+		firstname : function(action){
 
-			return function(action){
-
-				return state;
-			}
+			return state;
 		},
 
-		lastname : function (state){
+		lastname : function (action){
 
-			return function(action){
-
-				return state;
-			}
+			return state;
 		}
 	};
 
