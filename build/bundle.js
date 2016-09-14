@@ -74,16 +74,102 @@
 		output: _io2.default
 	};
 
-	function init(app) {
-		console.log(app);
-		// return R.pipe(app.input, app.output)(app.state);
-	}
-
 	/**
 	 * @name Core
 	 * @type core :: IO()
 	 */
 	exports.default = (0, _etc.cyto)(app)(init);
+
+
+	function init(app) {
+		var inputs = app.input,
+		    io = inputs[0],
+
+		// comps = inputs[1],
+		outputs = app.outputs,
+		    state = app.state,
+		    events = state.events,
+		    ui = state.ui;
+
+		var getElement = function getElement(className) {
+			return document.getElementsByClassName(className)[0];
+		};
+
+		_etc.R.map(function (comp) {
+			var element = getElement(comp.name),
+			    eventList = _etc.R.keys(io);
+
+			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
+
+				_etc.R.map(function (eventName) {
+
+					if (_etc.R.contains(eventName, eventList)) _etc.B.fromEvent(element, eventName).onValue(bindElement);
+				}, eventNames);
+			}, comp.map);
+		}, ui);
+		// R.map(R.mapObjIndexed(function(handler, eventName){
+
+		// 	// R.map(function(comp){
+
+		// 	// 	var element = getElement(comp.state.name);
+
+		// 	// 	R.mapObjIndexed(function(compHandler, compEventName){
+
+		// 	// 		if(compEventName === eventName){
+		// 	// 			B.fromEvent(element, eventName).onValue(bindElement);
+		// 	// 		}
+
+		// 	// 	}, comp.input);
+
+		// 	// }, comps);
+		// }), inputs);
+		// state.ui.elements = R.map(getElements, ui.classes);
+
+		// B.fromEvent()
+		// var combine = R.compose(R.map(R.apply(R.call)), R.zip),
+		// 	//bind an array of elements to Bacon events
+		// 	bindElements = R.curry(function(handlers, elements){
+		// 		//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
+		// 		return R.map(R.curry(bindElement)(handlers), elements);
+		// 	}),
+		// 	bindEvents = extract(R.compose(bindElements, R.identity)),
+		// 	//bind all action creators to events
+		// 	initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
+
+		// initialize(events);
+	}
+
+	//bind an element to a Bacon Events
+	function bindElement(handlers, element) {
+
+		return this;
+		//bound to state
+		// var state = this,
+		// 	_bind = function(handler, eventName){
+		// 		//meta handler uses handler closure
+		// 		var trigger = function(event){
+		// 				var prev 	= state.get(),
+		// 					State 	= state.State,
+		// 					next 	= state.set.bind(state),
+		// 					handle 	= handler.bind(handlers),
+		// 					noop 	= function(){ return; },
+		// 					isState = function(s){ return s instanceof State },
+		// 					//only render if model returns State
+		// 					IO  	= R.ifElse(isState, render, noop),
+		// 					process = R.compose(IO, next, handle);
+		// 				//process = handle next IO
+		// 				//w/ current event and prev state
+		// 				return process(event, prev);
+		// 			};
+		// 		//only bind if handler is a function
+		// 		if('function' === typeof handler)
+		// 			//Bacon stream event from HTMLElement
+		// 			B.fromEvent(element, eventName).onValue(trigger);
+		// 	};
+		// //map element handlers by using the object
+		// //property name as the event name
+		// return R.mapObjIndexed(_bind, handlers);
+	}
 
 /***/ },
 /* 1 */
@@ -12418,7 +12504,7 @@
 
 	exports.default = {
 		state: {
-			ui: _etc.R.compose(_etc.R.chain(_etc.R.keys), _etc.R.map(_etc.R.prop('state')))(_view2.default)
+			ui: _etc.R.map(_etc.R.prop('state'), _view2.default)
 		},
 		input: _model2.default,
 		output: _view2.default
@@ -12485,12 +12571,14 @@
 
 	var textfield = {
 		state: {
-			textfield: {
-				secret: 'blah'
-			}
+			name: 'textfield',
+			map: {
+				keyup: ['keyup']
+			},
+			secret: 'blah'
 		},
 		input: {
-			firstname: function firstname(event) {
+			keyup: function keyup(event) {
 
 				return event.target.value;
 			}
@@ -12502,6 +12590,10 @@
 			}
 		}
 	};
+
+	var main = document.getElementsByTagName('main')[0];
+
+	main.innerHTML = (0, _textfield2.default)({});
 
 	exports.default = textfield;
 

@@ -4,12 +4,14 @@ import template from './textfield.hbs';
 
 var textfield = {
 		state : {
-			textfield : {
-				secret : 'blah'
-			}
+			name : 'textfield',
+			map : {
+				keyup : ['keyup']
+			},
+			secret : 'blah'
 		},
 		input : {
-			firstname : function(event){
+			keyup : function(event){
 
 				return event.target.value;
 			}
@@ -23,5 +25,9 @@ var textfield = {
 			}
 		}
 	};
+
+var main = document.getElementsByTagName('main')[0];
+
+main.innerHTML = template({});
 
 export default textfield;

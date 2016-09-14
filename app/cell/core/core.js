@@ -5,7 +5,7 @@ import comps from './view';
 
 export default {
 		state : {
-			ui : R.compose(R.chain(R.keys), R.map(R.prop('state')))(comps)
+			ui : R.map(R.prop('state'), comps)
 		},
 		input : props,
 		output : comps
