@@ -72,6 +72,10 @@
 		},
 		input: _cell2.default,
 		output: _io2.default
+	},
+	    IOEventData = {
+		'handler': ['keyup'],
+		'mouseHandler': ['mouseup']
 	};
 
 	/**
@@ -83,7 +87,6 @@
 
 	function init(app) {
 		var inputs = app.input,
-		    io = inputs[0],
 
 		// comps = inputs[1],
 		outputs = app.outputs,
@@ -93,82 +96,55 @@
 
 		var getElement = function getElement(className) {
 			return document.getElementsByClassName(className)[0];
+		},
+		    fst = _etc.R.compose(_etc.R.head, Array),
+		    snd = _etc.R.compose(_etc.R.last, Array),
+		    toComp = _etc.R.apply(_etc.R.compose),
+		    comply = _etc.R.compose(toComp, _etc.R.prepend(toComp), _etc.R.append(_etc.R.of), Array),
+		    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
+		    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), snd),
+		    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
+		    handler = comply(_etc.R.append(bindHandler)),
+		    bindType = comply(_etc.R.prepend(handler), _etc.R.prepend(_etc.R.flip(_etc.R.map))),
+
+		//bind an element to a Bacon Events
+		bindElement = function bindElement(event) {
+
+			var IOEvent = DataType(IOEventData),
+			    IO = bindType(IOEvent)(event.type),
+			    eventObj = IO(inputs[0], event);
+
+			console.log(eventObj);
+		},
+		    initEvents = function initEvents(eventList, compName) {
+			var element = getElement(compName),
+			    crossCheckEvents = _etc.R.compose(_etc.R.flip(_etc.R.intersection)(eventList), _etc.R.flatten, _etc.R.values),
+			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
+			    bindEvent = function bindEvent(eventName) {
+				_etc.B.fromEvent(element, eventName).onValue(bindElement);
+			},
+			    init = _etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), console.log);
+
+			return _etc.R.compose(init, crossCheckEvents)(IOEventData);
 		};
-
-		_etc.R.map(function (comp) {
-			var element = getElement(comp.name),
-			    eventList = _etc.R.keys(io);
-
-			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
-
-				_etc.R.map(function (eventName) {
-
-					if (_etc.R.contains(eventName, eventList)) _etc.B.fromEvent(element, eventName).onValue(bindElement);
-				}, eventNames);
-			}, comp.map);
-		}, ui);
-		// R.map(R.mapObjIndexed(function(handler, eventName){
-
-		// 	// R.map(function(comp){
-
-		// 	// 	var element = getElement(comp.state.name);
-
-		// 	// 	R.mapObjIndexed(function(compHandler, compEventName){
-
-		// 	// 		if(compEventName === eventName){
-		// 	// 			B.fromEvent(element, eventName).onValue(bindElement);
-		// 	// 		}
-
-		// 	// 	}, comp.input);
-
-		// 	// }, comps);
-		// }), inputs);
-		// state.ui.elements = R.map(getElements, ui.classes);
-
-		// B.fromEvent()
-		// var combine = R.compose(R.map(R.apply(R.call)), R.zip),
-		// 	//bind an array of elements to Bacon events
-		// 	bindElements = R.curry(function(handlers, elements){
-		// 		//use bindElement to bind to HTMLElement, bind to state Controller (not runtime)
-		// 		return R.map(R.curry(bindElement)(handlers), elements);
-		// 	}),
-		// 	bindEvents = extract(R.compose(bindElements, R.identity)),
-		// 	//bind all action creators to events
-		// 	initialize = R.converge(combine, [bindEvents, R.always(state.ui.elements)]);
-
-		// initialize(events);
+		//iterate through all ui elements, for each one get the mapping
+		//which contains a map from the comp's css class to event names
+		_etc.R.map(_etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('map')), ui);
 	}
 
-	//bind an element to a Bacon Events
-	function bindElement(handlers, element) {
+	function DataType(data) {
 
-		return this;
-		//bound to state
-		// var state = this,
-		// 	_bind = function(handler, eventName){
-		// 		//meta handler uses handler closure
-		// 		var trigger = function(event){
-		// 				var prev 	= state.get(),
-		// 					State 	= state.State,
-		// 					next 	= state.set.bind(state),
-		// 					handle 	= handler.bind(handlers),
-		// 					noop 	= function(){ return; },
-		// 					isState = function(s){ return s instanceof State },
-		// 					//only render if model returns State
-		// 					IO  	= R.ifElse(isState, render, noop),
-		// 					process = R.compose(IO, next, handle);
-		// 				//process = handle next IO
-		// 				//w/ current event and prev state
-		// 				return process(event, prev);
-		// 			};
-		// 		//only bind if handler is a function
-		// 		if('function' === typeof handler)
-		// 			//Bacon stream event from HTMLElement
-		// 			B.fromEvent(element, eventName).onValue(trigger);
-		// 	};
-		// //map element handlers by using the object
-		// //property name as the event name
-		// return R.mapObjIndexed(_bind, handlers);
+		return function (type) {
+			var handlers = [];
+
+			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
+				var match = _etc.R.filter(_etc.R.equals(type), eventNames);
+
+				if (match.length) handlers.push(handlerName);
+			}, data);
+
+			return handlers;
+		};
 	}
 
 /***/ },
@@ -12520,12 +12496,21 @@
 		value: true
 	});
 	var props = {
-		firstname: function firstname(action) {
+		map: {
+			firstname: ['textinput'],
+			lastname: ['textinput']
+		},
+
+		firstname: function firstname(state, action) {
+
+			state.firstname = action.value.split(' ')[0];
 
 			return state;
 		},
 
-		lastname: function lastname(action) {
+		lastname: function lastname(state, action) {
+
+			state.lastname = acion.value.split(' ')[1];
 
 			return state;
 		}
@@ -12571,22 +12556,28 @@
 
 	var textfield = {
 		state: {
-			name: 'textfield',
+			//auxiliary map for picking up which elements will bind to wich events
 			map: {
-				keyup: ['keyup']
+				textfield: ['keyup', 'mouseup']
 			},
 			secret: 'blah'
 		},
 		input: {
-			keyup: function keyup(event) {
+			textinput: function textinput(event) {
 
-				return event.target.value;
+				return {
+					type: 'textinput',
+					value: event.target.value
+				};
 			}
 		},
 		output: {
-			dom: function dom(state) {
+			render: function render(state) {
 
-				return function render(context) {};
+				return {
+					type: 'dom',
+					render: function render(context) {}
+				};
 			}
 		}
 	};
@@ -13816,30 +13807,28 @@
 
 	var _etc = __webpack_require__(1);
 
-	var input = {
-		keyup: function keyup(event) {
+	var transfer = _etc.R.converge(_etc.R.compose(_etc.R.call(_etc.R.fromPairs), _etc.R.zip), [_etc.R.compose(_etc.R.last, Array), _etc.R.flip(_etc.R.props)]);
 
-			return event;
+	var input = {
+		handler: function handler(event) {
+
+			return transfer(event, ['key', 'keyCode']);
+		},
+		mouseHandler: function mouseHandler(event) {
+			return transfer(event, ['x', 'y']);
 		}
 	},
 	    output = {
-		canvas: function canvas(state) {
+		canvas: function canvas(comp) {},
 
-			return function (comp) {};
-		},
+		dom: function dom(comp) {
 
-		dom: function dom(state) {
-
-			return function (comp) {
-
-				return comp();
-			};
+			return comp();
 		}
 	},
 	    dom = {
 		state: {
-			document: document,
-			events: _etc.R.keys(input)
+			dom: document
 		},
 		input: input,
 		output: output

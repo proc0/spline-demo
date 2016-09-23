@@ -4,24 +4,30 @@ import template from './textfield.hbs';
 
 var textfield = {
 		state : {
-			name : 'textfield',
+			//auxiliary map for picking up which elements will bind to wich events
 			map : {
-				keyup : ['keyup']
+				textfield : ['keyup', 'mouseup'],
 			},
 			secret : 'blah'
 		},
 		input : {
-			keyup : function(event){
+			textinput : function(event){
 
-				return event.target.value;
+				return {
+					type : 'textinput',
+					value : event.target.value
+				};
 			}
 		},
 		output : {
-			dom : function (state){
+			render : function (state){
 
-				return function render(context){
+				return {
+					type : 'dom',
+					render : function render(context){
 
-				}	
+					}
+				};
 			}
 		}
 	};

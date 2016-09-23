@@ -1,35 +1,34 @@
 'use strict';
 import { R, cyto } from '../../etc';
 
-var input = {
-		keyup : function(event){
+var transfer = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
 
-			return event;
+var input = {
+		handler : function(event){
+			
+			return transfer(event, ['key', 'keyCode']);
+		},
+		mouseHandler : function(event){
+			return transfer(event, ['x', 'y']);
 		}
 	},
 	output = {
-		canvas : function(state){
+		canvas : function(comp){
 
-			return function(comp){
-
-			}
 		},
 
-		dom : function(state){
-			
-			return function(comp){
+		dom : function(comp){
 
-				return comp();
-			}
+			return comp();
 		}
 	},
 	dom = {
 		state : {
-			document,
-			events : R.keys(input)
+			dom : document
 		},
 		input : input,
 		output : output
 	};
+
 
 export default dom;
