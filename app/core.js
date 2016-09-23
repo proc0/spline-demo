@@ -11,10 +11,10 @@ var app = {
 		input : cells, 
 		output : ios 
 	},
-	IOEventData = {
-		'handler' : ['keyup'],
-		'mouseHandler' : ['mouseup']
-	},
+	// IOEventData = {
+	// 	'handler' : ['keyup'],
+	// 	'mouseHandler' : ['mouseup']
+	// },
 	EventData = {
 		'textinput' : ['textinput'],
 		'mouseup' : ['increment']
@@ -40,15 +40,10 @@ export default cyto(app)(init);
 
 function init(app){
 	var inputs = app.input,
-		// comps = inputs[1],
+		IOEventData = inputs[0].type,
 		outputs = app.outputs,
 		state = app.state,
-		events = state.events,
-		ui = state.ui;
-
-	var getElement = function(className){ 
-			return document.getElementsByClassName(className)[0]; 
-		},
+		ui = state.ui,
 
 		fst = R.compose(R.head, Array),
 		snd = R.compose(R.last, Array),
@@ -61,31 +56,45 @@ function init(app){
 		handler 	= comply(R.append(bindHandler)),
 
 		bindType = comply(R.prepend(handler), R.prepend(R.flip(R.map))),
+
+		category = R.curry(function(arrows, data){
+			var typeMap = DataType(arrows.type),
+				buildType = bindType(typeMap),
+				getFunctors = buildType(data.type);
+			return getFunctors(arrows, data);
+		}),
+
 		//bind an element to a Bacon Events
 		bindElement = function (event){
 
-			var IOEvent = DataType(IOEventData),
-				IO = bindType(IOEvent)(event.type),
-				eventObj = IO(inputs[0], event);
+			var eventObj = category(inputs[0], event);
 
-			console.log(eventObj);
+			console.log(eventObj[0]);
 		},
-
+		getElement = function(className){ 
+			return document.getElementsByClassName(className)[0]; 
+		},
 		initEvents = function(eventList, compName){
 			var element = getElement(compName),
-				crossCheckEvents = R.compose(R.flip(R.intersection)(eventList), R.flatten, R.values),
-				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
 				bindEvent = function(eventName){
 					B.fromEvent(element, eventName).onValue(bindElement);
 				},
-				init = R.ifElse(isNotEmpty, R.map(bindEvent), console.log);
 
-			return R.compose(init, crossCheckEvents)(IOEventData);
+				ignoreTypesField = R.filter(R.compose(R.not, R.equals('type'))),
+				getIOEventList = R.compose(R.flatten, R.values),
+				crossCheckIOEvents = R.converge(R.compose(ignoreTypesField, R.intersection), [getIOEventList, snd]),
 
-		};
+				oopsies = R.compose(console.log, Error),
+				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
+				init = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), oopsies), crossCheckIOEvents);
+
+			return init(IOEventData, eventList);
+		},
+		initComps = R.compose(R.mapObjIndexed(initEvents), R.prop('map'));
+
 	//iterate through all ui elements, for each one get the mapping
 	//which contains a map from the comp's css class to event names
-	R.map(R.compose(R.mapObjIndexed(initEvents), R.prop('map')), ui);
+	return R.map(initComps, ui);
 }
 
 function DataType(data){

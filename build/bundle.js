@@ -73,9 +73,25 @@
 		input: _cell2.default,
 		output: _io2.default
 	},
-	    IOEventData = {
-		'handler': ['keyup'],
-		'mouseHandler': ['mouseup']
+
+	// IOEventData = {
+	// 	'handler' : ['keyup'],
+	// 	'mouseHandler' : ['mouseup']
+	// },
+	EventData = {
+		'textinput': ['textinput'],
+		'mouseup': ['increment']
+	},
+	    ActionData = {
+		'textinput': ['name'],
+		'increment': ['testnum']
+	},
+	    StateData = {
+		'name': ['render'],
+		'testnum': ['render']
+	},
+	    ContextData = {
+		'render': ['dom']
 	};
 
 	/**
@@ -87,16 +103,12 @@
 
 	function init(app) {
 		var inputs = app.input,
-
-		// comps = inputs[1],
-		outputs = app.outputs,
+		    IOEventData = inputs[0].type,
+		    outputs = app.outputs,
 		    state = app.state,
-		    events = state.events,
-		    ui = state.ui;
 
-		var getElement = function getElement(className) {
-			return document.getElementsByClassName(className)[0];
-		},
+		// events = state.events,
+		ui = state.ui,
 		    fst = _etc.R.compose(_etc.R.head, Array),
 		    snd = _etc.R.compose(_etc.R.last, Array),
 		    toComp = _etc.R.apply(_etc.R.compose),
@@ -106,30 +118,42 @@
 		    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
 		    handler = comply(_etc.R.append(bindHandler)),
 		    bindType = comply(_etc.R.prepend(handler), _etc.R.prepend(_etc.R.flip(_etc.R.map))),
+		    category = _etc.R.curry(function (arrows, data) {
+			var typeMap = DataType(arrows.type),
+			    buildType = bindType(typeMap),
+			    getFunctors = buildType(data.type);
+			return getFunctors(arrows, data);
+		}),
+		    getElement = function getElement(className) {
+			return document.getElementsByClassName(className)[0];
+		},
 
 		//bind an element to a Bacon Events
 		bindElement = function bindElement(event) {
 
-			var IOEvent = DataType(IOEventData),
-			    IO = bindType(IOEvent)(event.type),
-			    eventObj = IO(inputs[0], event);
+			var eventObj = category(inputs[0], event);
 
-			console.log(eventObj);
+			console.log(eventObj[0]);
 		},
 		    initEvents = function initEvents(eventList, compName) {
 			var element = getElement(compName),
-			    crossCheckEvents = _etc.R.compose(_etc.R.flip(_etc.R.intersection)(eventList), _etc.R.flatten, _etc.R.values),
-			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
 			    bindEvent = function bindEvent(eventName) {
 				_etc.B.fromEvent(element, eventName).onValue(bindElement);
 			},
-			    init = _etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), console.log);
+			    ignoreTypesField = _etc.R.filter(_etc.R.compose(_etc.R.not, _etc.R.equals('type'))),
+			    getIOEventList = _etc.R.compose(_etc.R.flatten, _etc.R.values),
+			    crossCheckIOEvents = _etc.R.converge(_etc.R.compose(ignoreTypesField, _etc.R.intersection), [getIOEventList, snd]),
+			    oopsies = _etc.R.compose(console.log, Error),
+			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
+			    init = _etc.R.compose(_etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), oopsies), crossCheckIOEvents);
 
-			return _etc.R.compose(init, crossCheckEvents)(IOEventData);
-		};
+			return init(IOEventData, eventList);
+		},
+		    initComps = _etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('map'));
+
 		//iterate through all ui elements, for each one get the mapping
 		//which contains a map from the comp's css class to event names
-		_etc.R.map(_etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('map')), ui);
+		return _etc.R.map(initComps, ui);
 	}
 
 	function DataType(data) {
@@ -12496,21 +12520,13 @@
 		value: true
 	});
 	var props = {
-		map: {
-			firstname: ['textinput'],
-			lastname: ['textinput']
-		},
 
-		firstname: function firstname(state, action) {
-
-			state.firstname = action.value.split(' ')[0];
+		firstname: function firstname(action) {
 
 			return state;
 		},
 
-		lastname: function lastname(state, action) {
-
-			state.lastname = acion.value.split(' ')[1];
+		lastname: function lastname(action) {
 
 			return state;
 		}
@@ -13810,6 +13826,10 @@
 	var transfer = _etc.R.converge(_etc.R.compose(_etc.R.call(_etc.R.fromPairs), _etc.R.zip), [_etc.R.compose(_etc.R.last, Array), _etc.R.flip(_etc.R.props)]);
 
 	var input = {
+		type: {
+			'handler': ['keyup'],
+			'mouseHandler': ['mouseup']
+		},
 		handler: function handler(event) {
 
 			return transfer(event, ['key', 'keyCode']);

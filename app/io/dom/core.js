@@ -4,6 +4,10 @@ import { R, cyto } from '../../etc';
 var transfer = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
 
 var input = {
+		type : {
+			'handler' : ['keyup'],
+			'mouseHandler' : ['mouseup']
+		},
 		handler : function(event){
 			
 			return transfer(event, ['key', 'keyCode']);
