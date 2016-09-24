@@ -11,22 +11,26 @@ var textfield = {
 			secret : 'blah'
 		},
 		input : {
+			type : {
+				'textinput' : ['keyup', 'mouseup']
+			},
 			textinput : function(event){
+
 
 				return {
 					type : 'textinput',
-					value : event.target.value
+					obj : event
 				};
 			}
 		},
 		output : {
+			type : {
+				'render' : ['render'],
+			},
 			render : function (state){
-
 				return {
-					type : 'dom',
-					render : function render(context){
-
-					}
+					type : 'html',
+					state : state
 				};
 			}
 		}

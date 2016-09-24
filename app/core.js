@@ -10,91 +10,66 @@ var app = {
 		}, 
 		input : cells, 
 		output : ios 
-	},
-	// IOEventData = {
-	// 	'handler' : ['keyup'],
-	// 	'mouseHandler' : ['mouseup']
-	// },
-	EventData = {
-		'textinput' : ['textinput'],
-		'mouseup' : ['increment']
-	},
-	ActionData = {
-		'textinput' : ['name'],
-		'increment' : ['testnum']
-	},
-	StateData = {
-		'name' : ['render'],
-		'testnum' : ['render']
-	},
-	ContextData = {
-		'render' : ['dom']
 	};
 
+var cmp  = R.apply(R.compose),
+	fst  = R.compose(R.head, Array),
+	snd  = R.compose(R.last, Array),
+	wrap = R.compose(cmp, R.prepend(cmp), R.append(R.of), Array),
+	then = R.compose(R.apply(wrap), R.map(R.prepend), R.reverse, Array),
+	
+	getHandler 	= R.compose(R.flip(R.prop), fst),
+	callHandler = R.compose(R.flip(R.call), snd),
+	bindHandler = R.converge(R.compose, [callHandler, getHandler]),
+	bindArrows	= R.pipe(DataType, then(R.flip(R.map), wrap(R.append(bindHandler)))),
+	category 	= R.curry(function(arrows, data){ 
+		return bindArrows(arrows.type)(data.type)(arrows, data); }),
 
+	pipeSegment = R.pipe(category, then(R.head, lift)),
+	buildPipeline = R.compose(R.apply(R.pipe), R.map(pipeSegment));
 /**
  * @name Core
  * @type core :: IO()
  */
 export default cyto(app)(init);
 
-function init(app){
-	var inputs = app.input,
-		IOEventData = inputs[0].type,
-		outputs = app.outputs,
-		state = app.state,
-		ui = state.ui,
+function init(dna){
+		/*** 
+		 *
+		 **/
+	var pipeline = R.flatten([dna.input, dna.output]),
+		app = buildPipeline pipeline),
 
-		fst = R.compose(R.head, Array),
-		snd = R.compose(R.last, Array),
-		toComp = R.apply(R.compose),
-		comply = R.compose(toComp, R.prepend(toComp), R.append(R.of), Array),
-		
-		getHandler 	= R.compose(R.flip(R.prop), fst),
-		callHandler = R.compose(R.flip(R.call), snd),
-		bindHandler = R.converge(R.compose, [callHandler, getHandler]),
-		handler 	= comply(R.append(bindHandler)),
-
-		bindType = comply(R.prepend(handler), R.prepend(R.flip(R.map))),
-
-		category = R.curry(function(arrows, data){
-			var typeMap = DataType(arrows.type),
-				buildType = bindType(typeMap),
-				getFunctors = buildType(data.type);
-			return getFunctors(arrows, data);
-		}),
-
-		//bind an element to a Bacon Events
-		bindElement = function (event){
-
-			var eventObj = category(inputs[0], event);
-
-			console.log(eventObj[0]);
-		},
 		getElement = function(className){ 
 			return document.getElementsByClassName(className)[0]; 
 		},
-		initEvents = function(eventList, compName){
-			var element = getElement(compName),
-				bindEvent = function(eventName){
-					B.fromEvent(element, eventName).onValue(bindElement);
-				},
+		initEvents = function(compEvents, compName){
+			var inputEvents = dna.input[0].type,
+				htmlElement = getElement(compName),
+				
+				getEventList = R.compose(R.flatten, R.values),
+				filterFields = R.filter(R.compose(R.not, R.equals('type'))),
+				filterEvents = R.converge(R.compose(filterFields, R.intersection), [getEventList, snd]),
 
-				ignoreTypesField = R.filter(R.compose(R.not, R.equals('type'))),
-				getIOEventList = R.compose(R.flatten, R.values),
-				crossCheckIOEvents = R.converge(R.compose(ignoreTypesField, R.intersection), [getIOEventList, snd]),
-
-				oopsies = R.compose(console.log, Error),
+				handlError = R.compose(console.log, Error),
 				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
-				init = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), oopsies), crossCheckIOEvents);
 
-			return init(IOEventData, eventList);
+				bindEvent = function(eventName){ return B.fromEvent(htmlElement, eventName).onValue(app) },
+				initialize = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), handlError), filterEvents);
+
+			return initialize( inputEvents, compEvents );
 		},
-		initComps = R.compose(R.mapObjIndexed(initEvents), R.prop('map'));
-
+		//TODO: cleanup method of initializing dom elements with comp states
+		initUI = R.compose(R.mapObjIndexed(initEvents), R.prop('map'));
 	//iterate through all ui elements, for each one get the mapping
 	//which contains a map from the comp's css class to event names
-	return R.map(initComps, ui);
+	return R.map(initUI, dna.state.ui);
+}
+
+
+function lift(value){
+	console.log(value);
+	return value;
 }
 
 function DataType(data){

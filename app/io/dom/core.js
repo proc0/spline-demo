@@ -10,20 +10,26 @@ var input = {
 		},
 		handler : function(event){
 			
-			return transfer(event, ['key', 'keyCode']);
+			var eventObject = transfer(event, ['type', 'key', 'keyCode']);
+
+			return eventObject;
 		},
 		mouseHandler : function(event){
-			return transfer(event, ['x', 'y']);
+			return transfer(event, ['type', 'x', 'y']);
 		}
 	},
 	output = {
-		canvas : function(comp){
+		type : {
+			'dom' : ['html']
+		},
+
+		canvas : function(context){
 
 		},
 
-		dom : function(comp){
+		dom : function(context){
 
-			return comp();
+			return context;
 		}
 	},
 	dom = {

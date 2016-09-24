@@ -1,15 +1,24 @@
 'use strict';
 
+var state = {
+	type : ''
+};
 var props = {
-
+		type : {
+			'firstname' : ['textinput'],
+			'lastname' : ['textinput']
+		},
 		firstname : function(action){	
-
-			return state;
+			return {
+				type : 'render'
+			};
 		},
 
 		lastname : function (action){
 			
-			return state;
+			return {
+				type : 'render'
+			};
 		}
 	};
 
