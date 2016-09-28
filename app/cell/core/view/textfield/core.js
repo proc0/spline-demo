@@ -1,5 +1,5 @@
 'use strict';
-import { cyto } from '../../../../etc';
+// import { cyto } from '../../../../etc';
 import template from './textfield.hbs';
 
 var textfield = {
@@ -30,14 +30,10 @@ var textfield = {
 			render : function (state){
 				return {
 					type : 'html',
-					state : state
+					html : template({})
 				};
 			}
 		}
 	};
-
-var main = document.getElementsByTagName('main')[0];
-
-main.innerHTML = template({});
 
 export default textfield;

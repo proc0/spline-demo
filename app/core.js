@@ -10,7 +10,9 @@ var app = {
 		}, 
 		input : cells, 
 		output : ios 
-	};
+	},
+	main = document.getElementsByTagName('main')[0];
+
 
 var cmp  = R.apply(R.compose),
 	fst  = R.compose(R.head, Array),
@@ -22,8 +24,9 @@ var cmp  = R.apply(R.compose),
 	callHandler = R.compose(R.flip(R.call), snd),
 	bindHandler = R.converge(R.compose, [callHandler, getHandler]),
 	bindArrows	= R.pipe(DataType, then(R.flip(R.map), wrap(R.append(bindHandler)))),
-	category 	= R.curry(function(arrows, data){ 
-		return bindArrows(arrows.type)(data.type)(arrows, data); }),
+	category = R.curry(function(arrows, data){ 
+		return bindArrows(arrows.type)(data.type)(arrows, data);
+	}),
 
 	pipeSegment = R.pipe(category, then(R.head, lift)),
 	buildPipeline = R.compose(R.apply(R.pipe), R.map(pipeSegment));
@@ -38,7 +41,7 @@ function init(dna){
 		 *
 		 **/
 	var pipeline = R.flatten([dna.input, dna.output]),
-		app = buildPipeline pipeline),
+		app = buildPipeline(pipeline),
 
 		getElement = function(className){ 
 			return document.getElementsByClassName(className)[0]; 
@@ -54,7 +57,7 @@ function init(dna){
 				handlError = R.compose(console.log, Error),
 				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
 
-				bindEvent = function(eventName){ return B.fromEvent(htmlElement, eventName).onValue(app) },
+				bindEvent  = function(eventName){ return B.fromEvent(htmlElement, eventName).onValue(app) },
 				initialize = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), handlError), filterEvents);
 
 			return initialize( inputEvents, compEvents );

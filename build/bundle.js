@@ -72,7 +72,8 @@
 		},
 		input: _cell2.default,
 		output: _io2.default
-	};
+	},
+	    main = document.getElementsByTagName('main')[0];
 
 	var cmp = _etc.R.apply(_etc.R.compose),
 	    fst = _etc.R.compose(_etc.R.head, Array),
@@ -82,16 +83,9 @@
 	    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
 	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), snd),
 	    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
-
-	// handler 	= ,
-	// bindMap 	= wrap(R.prepend(handler), R.prepend(R.flip(R.map))),
-	bindMap = then(_etc.R.flip(_etc.R.map), wrap(_etc.R.append(bindHandler))),
+	    bindArrows = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap(_etc.R.append(bindHandler)))),
 	    category = _etc.R.curry(function (arrows, data) {
-		var typeMap = DataType(arrows.type),
-		    bindArrows = bindMap(typeMap),
-		    getFunctors = bindArrows(data.type);
-
-		return getFunctors(arrows, data);
+		return bindArrows(arrows.type)(data.type)(arrows, data);
 	}),
 	    pipeSegment = _etc.R.pipe(category, then(_etc.R.head, lift)),
 	    buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
@@ -12549,12 +12543,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
+	// import { cyto } from '../../../../etc';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-
-	var _etc = __webpack_require__(1);
 
 	var _textfield = __webpack_require__(12);
 
@@ -12589,15 +12582,11 @@
 			render: function render(state) {
 				return {
 					type: 'html',
-					state: state
+					html: (0, _textfield2.default)({})
 				};
 			}
 		}
 	};
-
-	var main = document.getElementsByTagName('main')[0];
-
-	main.innerHTML = (0, _textfield2.default)({});
 
 	exports.default = textfield;
 
@@ -13820,7 +13809,7 @@
 
 	var _etc = __webpack_require__(1);
 
-	var transfer = _etc.R.converge(_etc.R.compose(_etc.R.call(_etc.R.fromPairs), _etc.R.zip), [_etc.R.compose(_etc.R.last, Array), _etc.R.flip(_etc.R.props)]);
+	var copyFrom = _etc.R.converge(_etc.R.compose(_etc.R.call(_etc.R.fromPairs), _etc.R.zip), [_etc.R.compose(_etc.R.last, Array), _etc.R.flip(_etc.R.props)]);
 
 	var input = {
 		type: {
@@ -13829,12 +13818,12 @@
 		},
 		handler: function handler(event) {
 
-			var eventObject = transfer(event, ['type', 'key', 'keyCode']);
+			var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
 
 			return eventObject;
 		},
 		mouseHandler: function mouseHandler(event) {
-			return transfer(event, ['type', 'x', 'y']);
+			return copyFrom(event, ['type', 'x', 'y']);
 		}
 	},
 	    output = {
@@ -13844,9 +13833,11 @@
 
 		canvas: function canvas(context) {},
 
-		dom: function dom(context) {
+		dom: function dom(html) {
 
-			return context;
+			var main = document.getElementsByTagName('main')[0];
+
+			main.innerHTML = html;
 		}
 	},
 	    dom = {

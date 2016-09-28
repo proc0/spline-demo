@@ -1,7 +1,7 @@
 'use strict';
 import { R, cyto } from '../../etc';
 
-var transfer = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
+var copyFrom = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
 
 var input = {
 		type : {
@@ -10,12 +10,12 @@ var input = {
 		},
 		handler : function(event){
 			
-			var eventObject = transfer(event, ['type', 'key', 'keyCode']);
+			var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
 
 			return eventObject;
 		},
 		mouseHandler : function(event){
-			return transfer(event, ['type', 'x', 'y']);
+			return copyFrom(event, ['type', 'x', 'y']);
 		}
 	},
 	output = {
@@ -27,9 +27,11 @@ var input = {
 
 		},
 
-		dom : function(context){
+		dom : function(html){
 
-			return context;
+			var main = document.getElementsByTagName('main')[0];
+
+			main.innerHTML = html;
 		}
 	},
 	dom = {
