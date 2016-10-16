@@ -1,5 +1,5 @@
 'use strict';
-import { R, cyto } from '../../etc';
+import { R, Cyto, Cell } from '../../etc';
 
 var copyFrom = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
 
@@ -8,39 +8,42 @@ var input = {
 			'handler' : ['keyup'],
 			'mouseHandler' : ['mouseup']
 		},
-		handler : function(event){
-			
-			var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
+		maps : {
+			handler : function(event){
+				
+				var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
 
-			return eventObject;
-		},
-		mouseHandler : function(event){
-			return copyFrom(event, ['type', 'x', 'y']);
+				return eventObject;
+			},
+			mouseHandler : function(event){
+				return copyFrom(event, ['type', 'x', 'y']);
+			}
 		}
 	},
 	output = {
 		type : {
 			'dom' : ['html']
 		},
+		maps : {
+			canvas : function(context){
 
-		canvas : function(context){
+			},
 
-		},
+			dom : function(html){
 
-		dom : function(html){
+				var main = document.getElementsByTagName('main')[0];
 
-			var main = document.getElementsByTagName('main')[0];
-
-			main.innerHTML = html;
+				main.innerHTML = html;
+			}
 		}
 	},
 	dom = {
 		state : {
 			dom : document
 		},
-		input : input,
-		output : output
+		input : new Cell(input),
+		output : new Cell(output)
 	};
 
 
-export default dom;
+export default new Cyto(dom);

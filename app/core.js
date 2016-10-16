@@ -1,16 +1,16 @@
 'use strict';
-import { R, B, cyto } from './etc';
+import { R, B, Cyto, cyto } from './etc';
 import cells from './cell';
 import ios from './io';
 import options from '../options';
 
-var app = { 
+var app = new Cyto({ 
 		state : {
 			options : options
 		}, 
 		input : cells, 
 		output : ios 
-	},
+	}),
 	main = document.getElementsByTagName('main')[0];
 
 

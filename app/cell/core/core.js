@@ -1,12 +1,14 @@
 'use strict';
-import { R } from '../../etc';
+import { R, Cyto, Cell } from '../../etc';
 import props from './model';
 import comps from './view';
 
-export default {
+var app = {
 		state : {
 			ui : R.map(R.prop('state'), comps)
 		},
-		input : props,
+		input : new Cell(props),
 		output : comps
 	};
+
+export default new Cyto(app);

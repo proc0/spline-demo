@@ -1,39 +1,43 @@
 'use strict';
-// import { cyto } from '../../../../etc';
+import { Cyto, Cell } from '../../../../etc';
 import template from './textfield.hbs';
 
 var textfield = {
 		state : {
 			//auxiliary map for picking up which elements will bind to wich events
-			map : {
+			maps : {
 				textfield : ['keyup', 'mouseup'],
 			},
 			secret : 'blah'
 		},
-		input : {
+		input : new Cell({
 			type : {
 				'textinput' : ['keyup', 'mouseup']
 			},
-			textinput : function(event){
+			maps :{
+				textinput : function(event){
 
 
-				return {
-					type : 'textinput',
-					obj : event
-				};
+					return {
+						type : 'textinput',
+						obj : event
+					};
+				}
 			}
-		},
-		output : {
+		}),
+		output : new Cell({
 			type : {
 				'render' : ['render'],
 			},
-			render : function (state){
-				return {
-					type : 'html',
-					html : template({})
-				};
+			maps : {
+				render : function (state){
+					return {
+						type : 'html',
+						html : template({})
+					};
+				}
 			}
-		}
+		})
 	};
 
-export default textfield;
+export default new Cyto(textfield);
