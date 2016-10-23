@@ -52,15 +52,15 @@
 
 	var _etc = __webpack_require__(1);
 
-	var _cell = __webpack_require__(7);
+	var _cell = __webpack_require__(11);
 
 	var _cell2 = _interopRequireDefault(_cell);
 
-	var _io = __webpack_require__(32);
+	var _io = __webpack_require__(36);
 
 	var _io2 = _interopRequireDefault(_io);
 
-	var _options = __webpack_require__(34);
+	var _options = __webpack_require__(38);
 
 	var _options2 = _interopRequireDefault(_options);
 
@@ -75,78 +75,123 @@
 	}),
 	    main = document.getElementsByTagName('main')[0];
 
-	var cmp = _etc.R.apply(_etc.R.compose),
-	    fst = _etc.R.compose(_etc.R.head, Array),
-	    snd = _etc.R.compose(_etc.R.last, Array),
-	    wrap = _etc.R.compose(cmp, _etc.R.prepend(cmp), _etc.R.append(_etc.R.of), Array),
-	    then = _etc.R.compose(_etc.R.apply(wrap), _etc.R.map(_etc.R.prepend), _etc.R.reverse, Array),
-	    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
-	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), snd),
-	    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
-	    bindArrows = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap(_etc.R.append(bindHandler)))),
-	    category = _etc.R.curry(function (arrows, data) {
-		return bindArrows(arrows.type)(data.type)(arrows, data);
-	}),
-	    pipeSegment = _etc.R.pipe(category, then(_etc.R.head, lift)),
-	    buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
-	/**
-	 * @name Core
-	 * @type core :: IO()
-	 */
-	exports.default = (0, _etc.cyto)(app)(init);
-
-
-	function init(dna) {
-		/*** 
-	  *
-	  **/
-		var pipeline = _etc.R.flatten([dna.input, dna.output]),
-		    app = buildPipeline(pipeline),
-		    getElement = function getElement(className) {
-			return document.getElementsByClassName(className)[0];
-		},
-		    initEvents = function initEvents(compEvents, compName) {
-			var inputEvents = dna.input[0].type,
-			    htmlElement = getElement(compName),
-			    getEventList = _etc.R.compose(_etc.R.flatten, _etc.R.values),
-			    filterFields = _etc.R.filter(_etc.R.compose(_etc.R.not, _etc.R.equals('type'))),
-			    filterEvents = _etc.R.converge(_etc.R.compose(filterFields, _etc.R.intersection), [getEventList, snd]),
-			    handlError = _etc.R.compose(console.log, Error),
-			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
-			    bindEvent = function bindEvent(eventName) {
-				return _etc.B.fromEvent(htmlElement, eventName).onValue(app);
-			},
-			    initialize = _etc.R.compose(_etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), handlError), filterEvents);
-
-			return initialize(inputEvents, compEvents);
-		},
-
-		//TODO: cleanup method of initializing dom elements with comp states
-		initUI = _etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('map'));
-		//iterate through all ui elements, for each one get the mapping
-		//which contains a map from the comp's css class to event names
-		return _etc.R.map(initUI, dna.state.ui);
+	function init(seed) {
+		console.log(seed);
+		// R.map(trace, seed);
+		console.log(_etc.R.reduce(redx, "", seed));
+		console.log(_etc.R.reduce(redx2, [], seed));
 	}
 
-	function lift(value) {
-		console.log(value);
-		return value;
+	exports.default = init(app);
+
+
+	function redx(a, b) {
+		var str;
+
+		if (b instanceof _etc.Cyto) {
+			str = a + "\nCell";
+		}
+
+		if (b instanceof _etc.Cell) {
+			str = a + "\nCell";
+		}
+
+		if (b instanceof _etc.State) {
+			str = a + "\nState";
+		}
+
+		return str;
 	}
 
-	function DataType(data) {
-
-		return function (type) {
-			var handlers = [];
-
-			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
-				var match = _etc.R.filter(_etc.R.equals(type), eventNames);
-
-				if (match.length) handlers.push(handlerName);
-			}, data);
-
-			return handlers;
-		};
+	function redx2(a, b) {
+		if (b instanceof _etc.State === false) {
+			a.push(b);
+		}
+		return a;
 	}
+
+	function trace(a) {
+		console.log(a);
+
+		return a;
+	}
+
+	// var cmp  = R.apply(R.compose),
+	// 	fst  = R.compose(R.head, Array),
+	// 	snd  = R.compose(R.last, Array),
+	// 	wrap = R.compose(cmp, R.prepend(cmp), R.append(R.of), Array),
+	// 	then = R.compose(R.apply(wrap), R.map(R.prepend), R.reverse, Array),
+
+	// 	getHandler 	= R.compose(R.flip(R.prop), fst),
+	// 	callHandler = R.compose(R.flip(R.call), snd),
+	// 	bindHandler = R.converge(R.compose, [callHandler, getHandler]),
+	// 	bindArrows	= R.pipe(DataType, then(R.flip(R.map), wrap(R.append(bindHandler)))),
+	// 	category = R.curry(function(arrows, data){
+	// 		return bindArrows(arrows.type)(data.type)(arrows, data);
+	// 	}),
+
+	// 	pipeSegment = R.pipe(category, then(R.head, lift)),
+	// 	buildPipeline = R.compose(R.apply(R.pipe), R.map(pipeSegment));
+	// /**
+	//  * @name Core
+	//  * @type core :: IO()
+	//  */
+	// export default cyto(app)(init);
+
+	// function init(dna){
+	// 		/***
+	// 		 *
+	// 		 **/
+	// 	var pipeline = R.flatten([dna.input, dna.output]),
+	// 		app = buildPipeline(pipeline),
+
+	// 		getElement = function(className){
+	// 			return document.getElementsByClassName(className)[0];
+	// 		},
+	// 		initEvents = function(compEvents, compName){
+	// 			var inputEvents = dna.input[0].type,
+	// 				htmlElement = getElement(compName),
+
+	// 				getEventList = R.compose(R.flatten, R.values),
+	// 				filterFields = R.filter(R.compose(R.not, R.equals('type'))),
+	// 				filterEvents = R.converge(R.compose(filterFields, R.intersection), [getEventList, snd]),
+
+	// 				handlError = R.compose(console.log, Error),
+	// 				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
+
+	// 				bindEvent  = function(eventName){ return B.fromEvent(htmlElement, eventName).onValue(app) },
+	// 				initialize = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), handlError), filterEvents);
+
+	// 			return initialize( inputEvents, compEvents );
+	// 		},
+	// 		//TODO: cleanup method of initializing dom elements with comp states
+	// 		initUI = R.compose(R.mapObjIndexed(initEvents), R.prop('map'));
+	// 	//iterate through all ui elements, for each one get the mapping
+	// 	//which contains a map from the comp's css class to event names
+	// 	return R.map(initUI, dna.state.ui);
+	// }
+
+	// function lift(value){
+	// 	console.log(value);
+	// 	return value;
+	// }
+
+	// function DataType(data){
+
+	// 	return function(type){
+	// 		var handlers = [];
+
+	// 		R.mapObjIndexed(function(eventNames, handlerName){
+	// 			var match = R.filter(R.equals(type), eventNames);
+
+	// 			if(match.length)
+	// 				handlers.push(handlerName);
+
+	// 		}, data);
+
+	// 		return handlers;
+	// 	}
+	// }
 
 /***/ },
 /* 1 */
@@ -155,91 +200,131 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
-	exports.B = exports.R = undefined;
-	exports.Cell = Cell;
-	exports.Cyto = Cyto;
-	exports.cyto = cyto;
 
-	var _ramda = __webpack_require__(2);
+	var _cyto = __webpack_require__(2);
+
+	Object.defineProperty(exports, 'Cyto', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_cyto).default;
+	  }
+	});
+
+	var _cell = __webpack_require__(4);
+
+	Object.defineProperty(exports, 'Cell', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_cell).default;
+	  }
+	});
+
+	var _state = __webpack_require__(5);
+
+	Object.defineProperty(exports, 'State', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_state).default;
+	  }
+	});
+
+	var _colony = __webpack_require__(6);
+
+	Object.defineProperty(exports, 'Colony', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_colony).default;
+	  }
+	});
+
+	var _ramda = __webpack_require__(3);
 
 	Object.defineProperty(exports, 'R', {
-		enumerable: true,
-		get: function get() {
-			return _interopRequireDefault(_ramda).default;
-		}
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_ramda).default;
+	  }
 	});
 
-	var _Bacon = __webpack_require__(3);
+	var _Bacon = __webpack_require__(7);
 
 	Object.defineProperty(exports, 'B', {
-		enumerable: true,
-		get: function get() {
-			return _interopRequireDefault(_Bacon).default;
-		}
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_Bacon).default;
+	  }
 	});
-
-	var _ramda2 = _interopRequireDefault(_ramda);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function Cell(cell) {
-		if (!cell || !cell.type || !cell.maps) throw Error('Bad Cell formation');
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
 
-		this.type = cell.type;
-		this.maps = cell.maps;
-	};
+	'use strict';
 
-	Cell.prototype.map = function (transform) {
-		return new Cell(transform(this));
-	};
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = Cyto;
 
-	Cell.prototype.reduce = function (transform, monoid) {
-		return transform(monoid, this);
-	};
+	var _ramda = __webpack_require__(3);
 
-	function State(obj) {
-		var s = this;
-		_ramda2.default.mapObjIndexed(function (val, key, obj) {
-			s[key] = val;
-		}, obj);
-	}
+	var _ramda2 = _interopRequireDefault(_ramda);
 
-	function Branch(cytos) {
-		this.value = cytos;
-	}
+	var _cell = __webpack_require__(4);
 
-	function Leaf(cells) {
-		this.value = cells;
-	}
+	var _cell2 = _interopRequireDefault(_cell);
 
-	function Node(nodes) {
-		if (nodes instanceof Array == false || !nodes.length) throw Error('Bad Node formation.');
+	var _state = __webpack_require__(5);
 
-		return nodes[0] instanceof Cyto ? new Branch(nodes) : nodes[0] instanceof Cell ? new Leaf(nodes) : Error('Bad Node formation');
-	}
+	var _state2 = _interopRequireDefault(_state);
 
-	Node.prototype.reduce = function (transform, monoid) {
-		return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
-	};
+	var _colony = __webpack_require__(6);
 
-	Node.prototype.map = function (transform, monoid) {
-		return _ramda2.default.map(_ramda2.default.map(transform), this.value);
-	};
+	var _colony2 = _interopRequireDefault(_colony);
 
-	Leaf.prototype = Branch.prototype = Node.prototype;
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var isCell = function isCell(c) {
+		return c instanceof _cell2.default;
+	},
+	    isCyto = function isCyto(c) {
+		return c instanceof Cyto;
+	},
+	    isArray = function isArray(a) {
+		return a instanceof Array;
+	},
+	    checkLength = _ramda2.default.compose(_ramda2.default.length, _ramda2.default.filter(_ramda2.default.identity), _ramda2.default.map(isCyto)),
+	    validLength = _ramda2.default.ifElse(isArray, checkLength, _ramda2.default.F),
+	    isColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]),
+	    isValid = _ramda2.default.converge(_ramda2.default.either, [isColony, isCell]),
+	    hasProp = function hasProp(o) {
+		return function (prop) {
+			return this.hasOwnProperty(prop);
+		}.bind(o);
+	},
+
+	// mustHave = R.compose(R.apply(R.compose), R.append(hasProp), R.of, R.flip(R.map)),
+	insertLengthCheck = _ramda2.default.converge(_ramda2.default.concat, [_ramda2.default.compose(_ramda2.default.append(_ramda2.default.length), _ramda2.default.of, _ramda2.default.head), _ramda2.default.compose(Array, _ramda2.default.last)]),
+	    validate = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), function (a) {
+		return a;
+	}, _ramda2.default.append(hasProp), Array), [_ramda2.default.compose(_ramda2.default.equals, _ramda2.default.length), _ramda2.default.flip(_ramda2.default.map)]);
 
 	function Cyto(seed) {
-		if (!seed.input || !seed.output || !seed.state) throw Error('Bad Cyto formation');
+		// if(!seed.input || !seed.output || !seed.state)
+		if (validate(['input', 'state', 'output'])(seed)) throw Error('Bad Cyto formation');
 
-		this.state = new State(seed.state);
-		this.input = seed.input.length ? Node(seed.input) : seed.input;
-		this.output = seed.output.length ? Node(seed.output) : seed.output;
+		if (!isValid(seed.input) || !isValid(seed.output)) throw Error('Bad Colony formation');
+
+		this.state = new _state2.default(seed.state, this);
+		this.input = isColony(seed.input) ? new _colony2.default(seed.input) : seed.input;
+		this.output = isColony(seed.output) ? new _colony2.default(seed.output) : seed.output;
 	};
 
 	Cyto.prototype.map = function (transform) {
-
 		return new Cyto({
 			input: _ramda2.default.map(transform, this.input),
 			output: _ramda2.default.map(transform, this.output),
@@ -265,106 +350,8 @@
 
 	Cyto.prototype.equals = function (node) {};
 
-	function cyto(seed) {
-
-		// R.map(trace, seed);
-		console.log(_ramda2.default.reduce(redx, "", seed));
-
-		console.log(_ramda2.default.reduce(redx2, [], seed));
-
-		return function _cyto(init) {};
-	}
-
-	var meta = {
-		state: {},
-		input: [],
-		output: []
-	};
-
-	function redx(a, b) {
-		var str;
-
-		if (b instanceof Cyto) {
-			str = a + "\nCell";
-		}
-
-		if (b instanceof Cell) {
-			str = a + "\nCell";
-		}
-
-		if (b instanceof State) {
-			str = a + "\nState";
-		}
-
-		return str;
-	}
-
-	function redx2(a, b) {
-		if (b instanceof State === false) {
-			a.push(b);
-		}
-		return a;
-	}
-
-	function trace(a) {
-		console.log(a);
-
-		return a;
-	}
-	// export var cyto = function cyto(seed){
-	// 	//merge all incoming states
-	// 	meta.state = R.merge(meta.state, seed.state || {});
-	// 	//last call will be root
-	// 	return function _cyto(init){
-
-	// 		var input = seed.input,
-	// 			output = seed.output;
-
-	// 		if(input instanceof Array && input.length > 0){
-	// 			R.map(R.compose(R.flip(R.call)({}), cyto), input);
-	// 		} else if(input){
-	// 			meta.input.push(input);
-	// 		}
-
-	// 		if(output instanceof Array && output.length > 0){
-	// 			R.map(R.compose(R.flip(R.call)({}), cyto), output);
-	// 		} else if(output){
-	// 			meta.output.push(output);
-	// 		}
-
-	// 		//pass the state back up to leaves
-	// 		//get input and output functions
-	// 		// var input = seed.input(meta.state),
-	// 		// 	output = seed.output(meta.state);
-
-	// 		// if(typeof input === 'function')
-	// 		// 	meta.input.push(input);
-
-	// 		// if(typeof output === 'function')
-	// 		// 	meta.output.push(output);
-
-	// 		// if(input instanceof Array)
-	// 		// 	meta.input = R.concat(meta.input, input);
-
-	// 		// if(output instanceof Array)
-	// 		// 	meta.input = R.concat(meta.output, output);
-
-	// 		//only root cell will return input and output as Cyto
-	// 		if(typeof init === 'function'){
-	// 			return init({
-	// 					state : meta.state,
-	// 					input : R.reverse(meta.input),
-	// 					output : meta.output
-	// 				});
-	// 		} else {
-	// 			return meta;
-	// 		}
-
-	// 	}
-	// };
-
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//  Ramda v0.20.1
@@ -9126,7 +9113,105 @@
 
 
 /***/ },
-/* 3 */
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = Cell;
+
+	var _ramda = __webpack_require__(3);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function Cell(cell) {
+		if (!cell || !cell.type || !cell.maps) throw Error('Bad Cell formation');
+
+		this.type = cell.type;
+		this.maps = cell.maps;
+	};
+
+	Cell.prototype.map = function (transform) {
+		return new Cell(transform(this));
+	};
+
+	Cell.prototype.reduce = function (transform, monoid) {
+		return transform(monoid, this);
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = State;
+
+	var _ramda = __webpack_require__(3);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function State(state, cyto) {
+		var s = this;
+		s.meta = cyto;
+		_ramda2.default.mapObjIndexed(function (val, key, obj) {
+			s[key] = val;
+		}, state);
+	}
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	exports.default = Colony;
+
+	var _ramda = __webpack_require__(3);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	var _cell = __webpack_require__(4);
+
+	var _cell2 = _interopRequireDefault(_cell);
+
+	var _cyto = __webpack_require__(2);
+
+	var _cyto2 = _interopRequireDefault(_cyto);
+
+	var _state = __webpack_require__(5);
+
+	var _state2 = _interopRequireDefault(_state);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function Colony(cytos) {
+		this.value = cytos;
+	}
+
+	Colony.prototype.reduce = function (transform, monoid) {
+		return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
+	};
+
+	Colony.prototype.map = function (transform, monoid) {
+		return _ramda2.default.map(_ramda2.default.map(transform), this.value);
+	};
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {(function() {
@@ -12512,7 +12597,7 @@
 	  return withDesc(new Bacon.Desc(this, "zip", [other]), Bacon.zipWith([this, other], f || Array));
 	};
 
-	if ("function" !== "undefined" && __webpack_require__(5) !== null && __webpack_require__(6) != null) {
+	if ("function" !== "undefined" && __webpack_require__(9) !== null && __webpack_require__(10) != null) {
 	  !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 	    return Bacon;
 	  }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -12527,10 +12612,10 @@
 	  }
 	}).call(this);
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(8)(module)))
 
 /***/ },
-/* 4 */
+/* 8 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -12546,14 +12631,14 @@
 
 
 /***/ },
-/* 5 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
 
 /***/ },
-/* 6 */
+/* 10 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
@@ -12561,7 +12646,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
 
 /***/ },
-/* 7 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12570,7 +12655,7 @@
 	  value: true
 	});
 
-	var _core = __webpack_require__(8);
+	var _core = __webpack_require__(12);
 
 	var _core2 = _interopRequireDefault(_core);
 
@@ -12579,7 +12664,7 @@
 	exports.default = [_core2.default];
 
 /***/ },
-/* 8 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12590,11 +12675,11 @@
 
 	var _etc = __webpack_require__(1);
 
-	var _model = __webpack_require__(9);
+	var _model = __webpack_require__(13);
 
 	var _model2 = _interopRequireDefault(_model);
 
-	var _view = __webpack_require__(10);
+	var _view = __webpack_require__(14);
 
 	var _view2 = _interopRequireDefault(_view);
 
@@ -12611,7 +12696,7 @@
 	exports.default = new _etc.Cyto(app);
 
 /***/ },
-/* 9 */
+/* 13 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -12643,7 +12728,7 @@
 	exports.default = props;
 
 /***/ },
-/* 10 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12652,7 +12737,7 @@
 	  value: true
 	});
 
-	var _core = __webpack_require__(11);
+	var _core = __webpack_require__(15);
 
 	var _core2 = _interopRequireDefault(_core);
 
@@ -12661,7 +12746,7 @@
 	exports.default = [_core2.default];
 
 /***/ },
-/* 11 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12672,7 +12757,7 @@
 
 	var _etc = __webpack_require__(1);
 
-	var _textfield = __webpack_require__(12);
+	var _textfield = __webpack_require__(16);
 
 	var _textfield2 = _interopRequireDefault(_textfield);
 
@@ -12718,10 +12803,10 @@
 	exports.default = new _etc.Cyto(textfield);
 
 /***/ },
-/* 12 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Handlebars = __webpack_require__(13);
+	var Handlebars = __webpack_require__(17);
 	function __default(obj) { return obj && (obj.__esModule ? obj["default"] : obj); }
 	module.exports = (Handlebars["default"] || Handlebars).template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
 	    var helper;
@@ -12732,16 +12817,16 @@
 	},"useData":true});
 
 /***/ },
-/* 13 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Create a simple path alias to allow browserify to resolve
 	// the runtime on a supported path.
-	module.exports = __webpack_require__(14)['default'];
+	module.exports = __webpack_require__(18)['default'];
 
 
 /***/ },
-/* 14 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12755,30 +12840,30 @@
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-	var _handlebarsBase = __webpack_require__(15);
+	var _handlebarsBase = __webpack_require__(19);
 
 	var base = _interopRequireWildcard(_handlebarsBase);
 
 	// Each of these augment the Handlebars object. No need to setup here.
 	// (This is done to easily share code between commonjs and browse envs)
 
-	var _handlebarsSafeString = __webpack_require__(29);
+	var _handlebarsSafeString = __webpack_require__(33);
 
 	var _handlebarsSafeString2 = _interopRequireDefault(_handlebarsSafeString);
 
-	var _handlebarsException = __webpack_require__(17);
+	var _handlebarsException = __webpack_require__(21);
 
 	var _handlebarsException2 = _interopRequireDefault(_handlebarsException);
 
-	var _handlebarsUtils = __webpack_require__(16);
+	var _handlebarsUtils = __webpack_require__(20);
 
 	var Utils = _interopRequireWildcard(_handlebarsUtils);
 
-	var _handlebarsRuntime = __webpack_require__(30);
+	var _handlebarsRuntime = __webpack_require__(34);
 
 	var runtime = _interopRequireWildcard(_handlebarsRuntime);
 
-	var _handlebarsNoConflict = __webpack_require__(31);
+	var _handlebarsNoConflict = __webpack_require__(35);
 
 	var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
 
@@ -12813,7 +12898,7 @@
 
 
 /***/ },
-/* 15 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12824,17 +12909,17 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
-	var _exception = __webpack_require__(17);
+	var _exception = __webpack_require__(21);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
-	var _helpers = __webpack_require__(18);
+	var _helpers = __webpack_require__(22);
 
-	var _decorators = __webpack_require__(26);
+	var _decorators = __webpack_require__(30);
 
-	var _logger = __webpack_require__(28);
+	var _logger = __webpack_require__(32);
 
 	var _logger2 = _interopRequireDefault(_logger);
 
@@ -12923,7 +13008,7 @@
 
 
 /***/ },
-/* 16 */
+/* 20 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13053,7 +13138,7 @@
 
 
 /***/ },
-/* 17 */
+/* 21 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13099,7 +13184,7 @@
 
 
 /***/ },
-/* 18 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13110,31 +13195,31 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _helpersBlockHelperMissing = __webpack_require__(19);
+	var _helpersBlockHelperMissing = __webpack_require__(23);
 
 	var _helpersBlockHelperMissing2 = _interopRequireDefault(_helpersBlockHelperMissing);
 
-	var _helpersEach = __webpack_require__(20);
+	var _helpersEach = __webpack_require__(24);
 
 	var _helpersEach2 = _interopRequireDefault(_helpersEach);
 
-	var _helpersHelperMissing = __webpack_require__(21);
+	var _helpersHelperMissing = __webpack_require__(25);
 
 	var _helpersHelperMissing2 = _interopRequireDefault(_helpersHelperMissing);
 
-	var _helpersIf = __webpack_require__(22);
+	var _helpersIf = __webpack_require__(26);
 
 	var _helpersIf2 = _interopRequireDefault(_helpersIf);
 
-	var _helpersLog = __webpack_require__(23);
+	var _helpersLog = __webpack_require__(27);
 
 	var _helpersLog2 = _interopRequireDefault(_helpersLog);
 
-	var _helpersLookup = __webpack_require__(24);
+	var _helpersLookup = __webpack_require__(28);
 
 	var _helpersLookup2 = _interopRequireDefault(_helpersLookup);
 
-	var _helpersWith = __webpack_require__(25);
+	var _helpersWith = __webpack_require__(29);
 
 	var _helpersWith2 = _interopRequireDefault(_helpersWith);
 
@@ -13151,14 +13236,14 @@
 
 
 /***/ },
-/* 19 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('blockHelperMissing', function (context, options) {
@@ -13196,7 +13281,7 @@
 
 
 /***/ },
-/* 20 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13206,9 +13291,9 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
-	var _exception = __webpack_require__(17);
+	var _exception = __webpack_require__(21);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
@@ -13296,7 +13381,7 @@
 
 
 /***/ },
-/* 21 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13306,7 +13391,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _exception = __webpack_require__(17);
+	var _exception = __webpack_require__(21);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
@@ -13327,14 +13412,14 @@
 
 
 /***/ },
-/* 22 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('if', function (conditional, options) {
@@ -13362,7 +13447,7 @@
 
 
 /***/ },
-/* 23 */
+/* 27 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13394,7 +13479,7 @@
 
 
 /***/ },
-/* 24 */
+/* 28 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13412,14 +13497,14 @@
 
 
 /***/ },
-/* 25 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('with', function (context, options) {
@@ -13451,7 +13536,7 @@
 
 
 /***/ },
-/* 26 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13462,7 +13547,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _decoratorsInline = __webpack_require__(27);
+	var _decoratorsInline = __webpack_require__(31);
 
 	var _decoratorsInline2 = _interopRequireDefault(_decoratorsInline);
 
@@ -13473,14 +13558,14 @@
 
 
 /***/ },
-/* 27 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	exports['default'] = function (instance) {
 	  instance.registerDecorator('inline', function (fn, props, container, options) {
@@ -13508,14 +13593,14 @@
 
 
 /***/ },
-/* 28 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	var logger = {
 	  methodMap: ['debug', 'info', 'warn', 'error'],
@@ -13561,7 +13646,7 @@
 
 
 /***/ },
-/* 29 */
+/* 33 */
 /***/ function(module, exports) {
 
 	// Build out our basic SafeString type
@@ -13582,7 +13667,7 @@
 
 
 /***/ },
-/* 30 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13602,15 +13687,15 @@
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-	var _utils = __webpack_require__(16);
+	var _utils = __webpack_require__(20);
 
 	var Utils = _interopRequireWildcard(_utils);
 
-	var _exception = __webpack_require__(17);
+	var _exception = __webpack_require__(21);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
-	var _base = __webpack_require__(15);
+	var _base = __webpack_require__(19);
 
 	function checkRevision(compilerInfo) {
 	  var compilerRevision = compilerInfo && compilerInfo[0] || 1,
@@ -13880,7 +13965,7 @@
 
 
 /***/ },
-/* 31 */
+/* 35 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/* global window */
@@ -13907,7 +13992,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 32 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13916,7 +14001,7 @@
 	  value: true
 	});
 
-	var _core = __webpack_require__(33);
+	var _core = __webpack_require__(37);
 
 	var _core2 = _interopRequireDefault(_core);
 
@@ -13925,7 +14010,7 @@
 	exports.default = [_core2.default];
 
 /***/ },
-/* 33 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13981,7 +14066,7 @@
 	exports.default = new _etc.Cyto(dom);
 
 /***/ },
-/* 34 */
+/* 38 */
 /***/ function(module, exports) {
 
 	'use strict';
