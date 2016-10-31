@@ -9,6 +9,10 @@ export default function Colony(cytos){
 	this.value = cytos;
 }
 
+Colony.prototype.concat = function(colony){
+	return this.value.concat(colony);
+}
+
 Colony.prototype.reduce = function(transform, monoid){
 	return R.reduce(R.reduce(transform), monoid, this.value);
 };

@@ -1,9 +1,10 @@
 'use strict';
-import { R, B, Cyto, Cell, State } from './etc';
+import { R, B, Cyto, Cell, Colony, State } from './etc';
 import cells from './cell';
 import ios from './io';
 import options from '../options';
 
+var isCell = function(c){ return c instanceof Cell };
 var app = new Cyto({ 
 		state : {
 			options : options
@@ -15,14 +16,53 @@ var app = new Cyto({
 
 
 function init(seed){
-	console.log(seed);
+	// console.log(seed);
 	// R.map(trace, seed);
-	console.log( R.reduce(redx, "", seed) );
-	console.log( R.reduce(redx2, [], seed) );
+	// console.log( R.reduce(redx, "", seed) );
+	console.log( R.reduce(reducer, { input : [], state : { input : {}, output : {} }, output : [] }, seed) );
 
 }
 
 export default init(app);
+
+
+function reducer(a, b){
+	// var newCyto = new Cyto(),
+	// 	newState = {
+	// 		input : {},
+	// 		output : {}
+	// 	};
+
+	// if(b instanceof State){
+	// 	if(b.meta.input instanceof Colony)
+	// 		a.state.input = R.reduce(R.merge, {}, b.meta.input);
+	// 	// 	newState.input = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.input);
+
+	// 	if(b.meta.output instanceof Colony)
+	// 		a.state.output = R.reduce(R.merge, {}, b.meta.output);
+	// 	// 	newState.output = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.output);
+
+	// 	if(b.meta.input instanceof Cell)
+	// 		a.input.push(b.meta.input);
+	// 	// 	newCyto.input.concat([b.meta.input]);
+
+	// 	if(b.meta.output instanceof Cell)
+	// 		a.output.push(b.meta.output);
+	// 	// 	newCyto.output.concat([b.meta.output]);
+	// }
+
+	// newCyto.state = newState;
+
+	// return a.concat(newCyto);
+	return a;
+}
+
+function trace(a){
+	console.log(a);
+
+	return a;
+}
+
 
 function redx(a, b){
 	var str;
@@ -41,20 +81,6 @@ function redx(a, b){
 
 	return str;
 }
-
-function redx2(a, b){
-	if(b instanceof State === false){
-		a.push(b);
-	}
-	return a;
-}
-
-function trace(a){
-	console.log(a);
-
-	return a;
-}
-
 
 
 

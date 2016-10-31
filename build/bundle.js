@@ -66,6 +66,9 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var isCell = function isCell(c) {
+		return c instanceof _etc.Cell;
+	};
 	var app = new _etc.Cyto({
 		state: {
 			options: _options2.default
@@ -76,14 +79,47 @@
 	    main = document.getElementsByTagName('main')[0];
 
 	function init(seed) {
-		console.log(seed);
+		// console.log(seed);
 		// R.map(trace, seed);
-		console.log(_etc.R.reduce(redx, "", seed));
-		console.log(_etc.R.reduce(redx2, [], seed));
+		// console.log( R.reduce(redx, "", seed) );
+		console.log(_etc.R.reduce(reducer, { input: [], state: { input: {}, output: {} }, output: [] }, seed));
 	}
 
 	exports.default = init(app);
 
+
+	function reducer(a, b) {
+		// var newCyto = new Cyto(),
+		// 	newState = {
+		// 		input : {},
+		// 		output : {}
+		// 	};
+
+		if (b instanceof _etc.State) {
+			if (b.meta.input instanceof _etc.Colony) a.state.input = _etc.R.reduce(_etc.R.merge, {}, b.meta.input);
+			// 	newState.input = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.input);
+
+			if (b.meta.output instanceof _etc.Colony) a.state.output = _etc.R.reduce(_etc.R.merge, {}, b.meta.output);
+			// 	newState.output = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.output);
+
+			if (b.meta.input instanceof _etc.Cell) a.input.push(b.meta.input);
+			// 	newCyto.input.concat([b.meta.input]);
+
+			if (b.meta.output instanceof _etc.Cell) a.output.push(b.meta.output);
+			// 	newCyto.output.concat([b.meta.output]);
+		}
+
+		// newCyto.state = newState;
+
+		// return a.concat(newCyto);
+		return a;
+	}
+
+	function trace(a) {
+		console.log(a);
+
+		return a;
+	}
 
 	function redx(a, b) {
 		var str;
@@ -101,19 +137,6 @@
 		}
 
 		return str;
-	}
-
-	function redx2(a, b) {
-		if (b instanceof _etc.State === false) {
-			a.push(b);
-		}
-		return a;
-	}
-
-	function trace(a) {
-		console.log(a);
-
-		return a;
 	}
 
 	// var cmp  = R.apply(R.compose),
@@ -294,34 +317,34 @@
 	    isCyto = function isCyto(c) {
 		return c instanceof Cyto;
 	},
-	    isArray = function isArray(a) {
+	    isList = function isList(a) {
 		return a instanceof Array;
 	},
 	    checkLength = _ramda2.default.compose(_ramda2.default.length, _ramda2.default.filter(_ramda2.default.identity), _ramda2.default.map(isCyto)),
-	    validLength = _ramda2.default.ifElse(isArray, checkLength, _ramda2.default.F),
-	    isColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]),
-	    isValid = _ramda2.default.converge(_ramda2.default.either, [isColony, isCell]),
-	    hasProp = function hasProp(o) {
-		return function (prop) {
-			return this.hasOwnProperty(prop);
-		}.bind(o);
-	},
-
-	// mustHave = R.compose(R.apply(R.compose), R.append(hasProp), R.of, R.flip(R.map)),
-	insertLengthCheck = _ramda2.default.converge(_ramda2.default.concat, [_ramda2.default.compose(_ramda2.default.append(_ramda2.default.length), _ramda2.default.of, _ramda2.default.head), _ramda2.default.compose(Array, _ramda2.default.last)]),
-	    validate = _ramda2.default.converge(_ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), function (a) {
-		return a;
-	}, _ramda2.default.append(hasProp), Array), [_ramda2.default.compose(_ramda2.default.equals, _ramda2.default.length), _ramda2.default.flip(_ramda2.default.map)]);
+	    validLength = _ramda2.default.ifElse(isList, checkLength, _ramda2.default.F),
+	    validColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]),
+	    validBranch = _ramda2.default.converge(_ramda2.default.either, [validColony, isCell]),
+	    hasOwnProp = _ramda2.default.flip(_ramda2.default.invoker(1, 'hasOwnProperty')),
+	    checkProps = _ramda2.default.compose(_ramda2.default.prepend(_ramda2.default.all(_ramda2.default.identity)), _ramda2.default.append(hasOwnProp)),
+	    validProps = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), checkProps, _ramda2.default.of, _ramda2.default.flip(_ramda2.default.map)),
+	    validCyto = validProps(['input', 'state', 'output']);
 
 	function Cyto(seed) {
-		// if(!seed.input || !seed.output || !seed.state)
-		if (validate(['input', 'state', 'output'])(seed)) throw Error('Bad Cyto formation');
+		if (!seed) return this.empty();
 
-		if (!isValid(seed.input) || !isValid(seed.output)) throw Error('Bad Colony formation');
+		if (!validCyto(seed) || !validBranch(seed.input) || !validBranch(seed.output)) throw Error('Bad Cyto formation');
 
 		this.state = new _state2.default(seed.state, this);
-		this.input = isColony(seed.input) ? new _colony2.default(seed.input) : seed.input;
-		this.output = isColony(seed.output) ? new _colony2.default(seed.output) : seed.output;
+		this.input = validColony(seed.input) ? new _colony2.default(seed.input) : seed.input;
+		this.output = validColony(seed.output) ? new _colony2.default(seed.output) : seed.output;
+	};
+
+	Cyto.prototype.empty = function () {
+		return new Cyto({
+			input: [],
+			state: {},
+			output: []
+		});
 	};
 
 	Cyto.prototype.map = function (transform) {
@@ -333,12 +356,44 @@
 	};
 
 	Cyto.prototype.reduce = function (transform, monoid) {
-		return _ramda2.default.reduce(transform, _ramda2.default.reduce(transform, transform(monoid, this.state), this.input), this.output);
+		var newState = transform(monoid, this.state),
+		    newInput = _ramda2.default.reduce(transform, newState, this.input),
+		    newOutput = _ramda2.default.reduce(transform, newInput, this.output);
+
+		return newOutput;
 	};
 
-	Cyto.prototype.concat = function (f) {};
+	Cyto.prototype.concat = function (cyto) {
+		var newCyto = new Cyto();
 
-	Cyto.prototype.empty = function (f) {};
+		if (isCell(this.input) && isCell(cyto.input)) {
+			this.input = _ramda2.default.merge(this.input, cyto.input);
+		} else if (isCell(this.input) && validColony(cyto.input)) {
+			newCyto.input = this.input;
+			this.input = cyto.input.concat(newCyto);
+		} else if (validColony(this.input) && isCell(cyto.input)) {
+			newCyto.input = cyto.input;
+			this.input.concat(newCyto);
+		} else if (validColony(this.input) && validColony(cyto.input)) {
+			this.input.concat(cyto.input);
+		}
+
+		if (isCell(this.output) && isCell(cyto.output)) {
+			this.output = _ramda2.default.merge(this.output, cyto.output);
+		} else if (isCell(this.output) && validColony(cyto.output)) {
+			newCyto.output = this.output;
+			this.output = cyto.output.concat(newCyto);
+		} else if (validColony(this.output) && isCell(cyto.output)) {
+			newCyto.output = cyto.output;
+			this.output.concat(newCyto);
+		} else if (validColony(this.output) && validColony(cyto.output)) {
+			this.output.concat(cyto.output);
+		}
+
+		this.state = _ramda2.default.merge(this.state, cyto.state);
+
+		return this;
+	};
 
 	Cyto.prototype.ap = function (f) {};
 
@@ -9201,6 +9256,10 @@
 	function Colony(cytos) {
 		this.value = cytos;
 	}
+
+	Colony.prototype.concat = function (colony) {
+		return this.value.concat(colony);
+	};
 
 	Colony.prototype.reduce = function (transform, monoid) {
 		return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
