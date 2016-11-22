@@ -1,9 +1,9 @@
 'use strict';
 import { R, Cyto, Cell } from '../../etc';
 
-var copyFrom = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
+const copyFrom = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
 
-var input = {
+const input = {
 		type : {
 			'handler' : ['keyup'],
 			'mouseHandler' : ['mouseup']

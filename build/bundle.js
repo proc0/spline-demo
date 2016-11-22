@@ -66,10 +66,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var isCell = function isCell(c) {
-		return c instanceof _etc.Cell;
-	};
-	var app = new _etc.Cyto({
+	var seed = new _etc.Cyto({
 		state: {
 			options: _options2.default
 		},
@@ -78,143 +75,115 @@
 	}),
 	    main = document.getElementsByTagName('main')[0];
 
-	function init(seed) {
-		// console.log(seed);
-		// R.map(trace, seed);
-		// console.log( R.reduce(redx, "", seed) );
-		console.log(_etc.R.reduce(reducer, { input: [], state: { input: {}, output: {} }, output: [] }, seed));
-	}
-
-	exports.default = init(app);
-
-
-	function reducer(a, b) {
-		// var newCyto = new Cyto(),
-		// 	newState = {
-		// 		input : {},
-		// 		output : {}
-		// 	};
-
-		if (b instanceof _etc.State) {
-			if (b.meta.input instanceof _etc.Colony) a.state.input = _etc.R.reduce(_etc.R.merge, {}, b.meta.input);
-			// 	newState.input = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.input);
-
-			if (b.meta.output instanceof _etc.Colony) a.state.output = _etc.R.reduce(_etc.R.merge, {}, b.meta.output);
-			// 	newState.output = R.reduce(R.compose(R.ifElse(isCell, R.identity, R.pluck('state')), R.last, Array), newCyto, b.meta.output);
-
-			if (b.meta.input instanceof _etc.Cell) a.input.push(b.meta.input);
-			// 	newCyto.input.concat([b.meta.input]);
-
-			if (b.meta.output instanceof _etc.Cell) a.output.push(b.meta.output);
-			// 	newCyto.output.concat([b.meta.output]);
-		}
-
-		// newCyto.state = newState;
-
-		// return a.concat(newCyto);
-		return a;
-	}
+	var cmp = _etc.R.apply(_etc.R.compose),
+	    fst = _etc.R.compose(_etc.R.head, Array),
+	    snd = _etc.R.compose(_etc.R.last, Array),
+	    wrap = _etc.R.compose(cmp, _etc.R.prepend(cmp), _etc.R.append(_etc.R.of), Array),
+	    then = _etc.R.compose(_etc.R.apply(wrap), _etc.R.map(_etc.R.prepend), _etc.R.reverse, Array),
+	    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
+	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), snd),
+	    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
+	    bindArrows = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap(_etc.R.append(bindHandler)))),
+	    category = _etc.R.curry(function (arrows, data) {
+		return bindArrows(arrows.type)(data.type)(arrows, data);
+	}),
+	    pipeSegment = _etc.R.pipe(category, then(_etc.R.head, lift)),
+	    buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
 
 	function trace(a) {
 		console.log(a);
-
 		return a;
 	}
 
-	function redx(a, b) {
-		var str;
+	function init(seed) {
+		_etc.R.map(trace, seed);
 
-		if (b instanceof _etc.Cyto) {
-			str = a + "\nCell";
-		}
+		var view = seed.focus(['L']).getCytos()[0],
+		    seedling = _etc.R.reduce(reducer, { input: [], output: [] }, seed),
+		    app = buildPipeline(_etc.R.flatten(_etc.R.append(_etc.R.reverse(seedling.input), seedling.output)));
 
-		if (b instanceof _etc.Cell) {
-			str = a + "\nCell";
-		}
+		console.log(app);
 
-		if (b instanceof _etc.State) {
-			str = a + "\nState";
-		}
-
-		return str;
+		return bind(app, view);
 	}
 
-	// var cmp  = R.apply(R.compose),
-	// 	fst  = R.compose(R.head, Array),
-	// 	snd  = R.compose(R.last, Array),
-	// 	wrap = R.compose(cmp, R.prepend(cmp), R.append(R.of), Array),
-	// 	then = R.compose(R.apply(wrap), R.map(R.prepend), R.reverse, Array),
+	exports.default = init(seed);
 
-	// 	getHandler 	= R.compose(R.flip(R.prop), fst),
-	// 	callHandler = R.compose(R.flip(R.call), snd),
-	// 	bindHandler = R.converge(R.compose, [callHandler, getHandler]),
-	// 	bindArrows	= R.pipe(DataType, then(R.flip(R.map), wrap(R.append(bindHandler)))),
-	// 	category = R.curry(function(arrows, data){
-	// 		return bindArrows(arrows.type)(data.type)(arrows, data);
-	// 	}),
+	//reduce cyto structures
+	//to a list of input cells
+	//and output cells
 
-	// 	pipeSegment = R.pipe(category, then(R.head, lift)),
-	// 	buildPipeline = R.compose(R.apply(R.pipe), R.map(pipeSegment));
-	// /**
-	//  * @name Core
-	//  * @type core :: IO()
-	//  */
-	// export default cyto(app)(init);
+	function reducer(a, b) {
 
-	// function init(dna){
-	// 		/***
-	// 		 *
-	// 		 **/
-	// 	var pipeline = R.flatten([dna.input, dna.output]),
-	// 		app = buildPipeline(pipeline),
+		var input = _etc.R.prop('input'),
+		    output = _etc.R.prop('output'),
+		    appendBranch = _etc.R.flip(_etc.R.invoker(1, 'push')),
+		    pushBranch = {
+			input: _etc.R.compose(appendBranch, input),
+			output: _etc.R.compose(appendBranch, output)
+		},
 
-	// 		getElement = function(className){
-	// 			return document.getElementsByClassName(className)[0];
-	// 		},
-	// 		initEvents = function(compEvents, compName){
-	// 			var inputEvents = dna.input[0].type,
-	// 				htmlElement = getElement(compName),
+		//build a mutation push by invoking push on memo array
+		buildPush = _etc.R.converge(_etc.R.compose(_etc.R.apply(_etc.R.compose), Array), [_etc.R.compose(_etc.R.flip(_etc.R.call)(a), _etc.R.flip(_etc.R.call)(pushBranch)), _etc.R.identity]),
 
-	// 				getEventList = R.compose(R.flatten, R.values),
-	// 				filterFields = R.filter(R.compose(R.not, R.equals('type'))),
-	// 				filterEvents = R.converge(R.compose(filterFields, R.intersection), [getEventList, snd]),
+		//builds a conditional that checks if either input/output is a Cell, than invokes push on "shadowed" method on pushBranch
+		pushCell = _etc.R.converge(_etc.R.ifElse, [_etc.R.compose(_etc.R.apply(_etc.R.compose), _etc.R.prepend(_etc.R.is(_etc.Cell)), _etc.R.of), buildPush, _etc.R.always(_etc.R.identity)]),
 
-	// 				handlError = R.compose(console.log, Error),
-	// 				isNotEmpty = R.converge(R.and, [R.compose(R.not, R.isNil), R.compose(R.not, R.isEmpty)]),
+		//final conditional that tests whether b is State, and then uses meta state to extract input/output cell; always return a
+		getCells = _etc.R.ifElse(_etc.R.is(_etc.State), _etc.R.compose(_etc.R.converge(_etc.R.always(a), [pushCell(input), pushCell(output)]), _etc.R.prop('meta')), _etc.R.always(a));
 
-	// 				bindEvent  = function(eventName){ return B.fromEvent(htmlElement, eventName).onValue(app) },
-	// 				initialize = R.compose(R.ifElse(isNotEmpty, R.map(bindEvent), handlError), filterEvents);
+		return getCells(b);
+	}
 
-	// 			return initialize( inputEvents, compEvents );
-	// 		},
-	// 		//TODO: cleanup method of initializing dom elements with comp states
-	// 		initUI = R.compose(R.mapObjIndexed(initEvents), R.prop('map'));
-	// 	//iterate through all ui elements, for each one get the mapping
-	// 	//which contains a map from the comp's css class to event names
-	// 	return R.map(initUI, dna.state.ui);
-	// }
+	function bind(app, view) {
 
-	// function lift(value){
-	// 	console.log(value);
-	// 	return value;
-	// }
+		var getElement = function getElement(className) {
+			return document.getElementsByClassName(className)[0];
+		},
+		    initEvents = function initEvents(compEvents, compName) {
+			var inputEvents = view.input.type,
+			    htmlElement = getElement(compName),
 
-	// function DataType(data){
 
-	// 	return function(type){
-	// 		var handlers = [];
+			// getEventList = R.compose(R.flatten, R.values),
+			filterFields = _etc.R.filter(_etc.R.compose(_etc.R.not, _etc.R.equals('type'))),
+			    filterEvents = _etc.R.converge(_etc.R.compose(filterFields, _etc.R.intersection), [_etc.R.values, snd]),
+			    handlError = _etc.R.compose(console.log, Error),
+			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
+			    bindEvent = function bindEvent(eventName) {
+				return _etc.B.fromEvent(htmlElement, eventName).onValue(app);
+			},
+			    initialize = _etc.R.compose(_etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), handlError), filterEvents);
 
-	// 		R.mapObjIndexed(function(eventNames, handlerName){
-	// 			var match = R.filter(R.equals(type), eventNames);
+			return initialize(inputEvents, compEvents);
+		},
 
-	// 			if(match.length)
-	// 				handlers.push(handlerName);
+		//TODO: cleanup method of initializing dom elements with comp states
+		initUI = _etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('maps'));
+		//iterate through all ui elements, for each one get the mapping
+		//which contains a map from the comp's css class to event names
+		return _etc.R.map(initUI, view.state.ui);
+	}
 
-	// 		}, data);
+	function lift(value) {
+		console.log(value);
+		return value;
+	}
 
-	// 		return handlers;
-	// 	}
-	// }
+	function DataType(data) {
+
+		return function (type) {
+			var handlers = [];
+
+			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
+				var match = _etc.R.filter(_etc.R.equals(type), eventNames);
+
+				if (match.length) handlers.push(handlerName);
+			}, data);
+
+			return handlers;
+		};
+	}
 
 /***/ },
 /* 1 */
@@ -235,7 +204,7 @@
 	  }
 	});
 
-	var _cell = __webpack_require__(4);
+	var _cell = __webpack_require__(6);
 
 	Object.defineProperty(exports, 'Cell', {
 	  enumerable: true,
@@ -253,7 +222,7 @@
 	  }
 	});
 
-	var _colony = __webpack_require__(6);
+	var _colony = __webpack_require__(4);
 
 	Object.defineProperty(exports, 'Colony', {
 	  enumerable: true,
@@ -297,50 +266,71 @@
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
-	var _cell = __webpack_require__(4);
+	var _colony = __webpack_require__(4);
 
-	var _cell2 = _interopRequireDefault(_cell);
+	var _colony2 = _interopRequireDefault(_colony);
 
 	var _state = __webpack_require__(5);
 
 	var _state2 = _interopRequireDefault(_state);
 
-	var _colony = __webpack_require__(6);
+	var _cell = __webpack_require__(6);
 
-	var _colony2 = _interopRequireDefault(_colony);
+	var _cell2 = _interopRequireDefault(_cell);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var isCell = function isCell(c) {
-		return c instanceof _cell2.default;
+	var handleError = function handleError(seed) {
+		console.log(seed);
+		throw Error('Bad Cyto formation.');
 	},
-	    isCyto = function isCyto(c) {
-		return c instanceof Cyto;
-	},
-	    isList = function isList(a) {
-		return a instanceof Array;
-	},
-	    checkLength = _ramda2.default.compose(_ramda2.default.length, _ramda2.default.filter(_ramda2.default.identity), _ramda2.default.map(isCyto)),
-	    validLength = _ramda2.default.ifElse(isList, checkLength, _ramda2.default.F),
-	    validColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]),
-	    validBranch = _ramda2.default.converge(_ramda2.default.either, [validColony, isCell]),
-	    hasOwnProp = _ramda2.default.flip(_ramda2.default.invoker(1, 'hasOwnProperty')),
-	    checkProps = _ramda2.default.compose(_ramda2.default.prepend(_ramda2.default.all(_ramda2.default.identity)), _ramda2.default.append(hasOwnProp)),
-	    validProps = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), checkProps, _ramda2.default.of, _ramda2.default.flip(_ramda2.default.map)),
-	    validCyto = validProps(['input', 'state', 'output']);
+	    validBranch = _ramda2.default.converge(_ramda2.default.or, [_ramda2.default.is(_colony2.default), _ramda2.default.is(_cell2.default)]),
+	    checkBranch = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), _ramda2.default.prepend(validBranch), _ramda2.default.of, _ramda2.default.prop),
+	    allPass = _ramda2.default.all(_ramda2.default.identity),
+	    hasProp = _ramda2.default.compose(_ramda2.default.converge(allPass), _ramda2.default.map(_ramda2.default.has)),
+	    isValid = _ramda2.default.converge(_ramda2.default.compose(allPass, Array), [checkBranch('input'), checkBranch('output')]),
+	    checkCyto = _ramda2.default.and(hasProp(['input', 'state', 'output']), isValid),
+	    validate = _ramda2.default.ifElse(checkCyto, _ramda2.default.identity, handleError);
 
 	function Cyto(seed) {
-		if (!seed) return this.empty();
-
-		if (!validCyto(seed) || !validBranch(seed.input) || !validBranch(seed.output)) throw Error('Bad Cyto formation');
+		if (!seed) return this.empty();else validate(seed);
 
 		this.state = new _state2.default(seed.state, this);
-		this.input = validColony(seed.input) ? new _colony2.default(seed.input) : seed.input;
-		this.output = validColony(seed.output) ? new _colony2.default(seed.output) : seed.output;
+		this.input = seed.input;
+		this.output = seed.output;
+	};
+
+	Cyto.prototype.of = function (seed) {
+		return new Cyto(seed);
+	};
+
+	Cyto.prototype.focus = function (directions) {
+		var head = undefined,
+		    changeDir = function (dir) {
+			if (dir === 'R') head = this.goRight(head || this);else if (dir === 'L') head = this.goLeft(head || this);
+
+			return head;
+		}.bind(this);
+
+		for (var d in directions) {
+			changeDir(directions[d]);
+		}
+
+		return head;
+	};
+
+	Cyto.prototype.goLeft = function (branch) {
+
+		if (_ramda2.default.is(_colony2.default, branch)) return _ramda2.default.map(_ramda2.default.prop('input'), branch.value);else if (_ramda2.default.is(_cell2.default, branch)) return branch;else if (_ramda2.default.is(Array, branch)) return _ramda2.default.flatten(_ramda2.default.map(_ramda2.default.ifElse(_ramda2.default.is(Cyto), _ramda2.default.prop('input'), _ramda2.default.prop('value')), branch));else if (_ramda2.default.is(Cyto, branch)) return branch.input;
+	};
+
+	Cyto.prototype.goRight = function (branch) {
+
+		if (_ramda2.default.is(_colony2.default, branch)) return _ramda2.default.map(_ramda2.default.prop('output'), branch.value);else if (_ramda2.default.is(_cell2.default, branch)) return branch;else if (_ramda2.default.is(Array, branch)) return _ramda2.default.flatten(_ramda2.default.map(_ramda2.default.ifElse(_ramda2.default.is(Cyto), _ramda2.default.prop('output'), _ramda2.default.prop('value')), branch));else if (_ramda2.default.is(Cyto, branch)) return branch.output;
 	};
 
 	Cyto.prototype.empty = function () {
-		return new Cyto({
+		return this.of({
 			input: [],
 			state: {},
 			output: []
@@ -348,7 +338,7 @@
 	};
 
 	Cyto.prototype.map = function (transform) {
-		return new Cyto({
+		return this.of({
 			input: _ramda2.default.map(transform, this.input),
 			output: _ramda2.default.map(transform, this.output),
 			state: transform(this.state)
@@ -364,7 +354,7 @@
 	};
 
 	Cyto.prototype.concat = function (cyto) {
-		var newCyto = new Cyto();
+		var newCyto = this.empty();
 
 		if (isCell(this.input) && isCell(cyto.input)) {
 			this.input = _ramda2.default.merge(this.input, cyto.input);
@@ -395,11 +385,11 @@
 		return this;
 	};
 
-	Cyto.prototype.ap = function (f) {};
+	Cyto.prototype.ap = function (functor) {
+		// return R.map(R.flip(R.map)(this), functor);
+	};
 
-	Cyto.prototype.of = function (f) {};
-
-	Cyto.prototype.traverse = function (f) {};
+	Cyto.prototype.traverse = function (f, of) {};
 
 	Cyto.prototype.chain = function (f) {};
 
@@ -9174,29 +9164,50 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	      value: true
 	});
-	exports.default = Cell;
+	exports.default = Colony;
 
 	var _ramda = __webpack_require__(3);
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
+	var _cyto = __webpack_require__(2);
+
+	var _cyto2 = _interopRequireDefault(_cyto);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function Cell(cell) {
-		if (!cell || !cell.type || !cell.maps) throw Error('Bad Cell formation');
+	var checkLength = _ramda2.default.compose(_ramda2.default.filter(_ramda2.default.identity), _ramda2.default.map(_ramda2.default.is(_cyto2.default))),
+	    validLength = _ramda2.default.ifElse(_ramda2.default.is(Array), _ramda2.default.compose(_ramda2.default.length, checkLength), _ramda2.default.always(0)),
+	    validColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]);
 
-		this.type = cell.type;
-		this.maps = cell.maps;
+	function Colony(cytos) {
+	      if (!validColony(cytos)) throw Error('Bad Colony formation.');
+
+	      this.value = cytos;
+	}
+
+	Colony.prototype.empty = function () {};
+
+	Colony.prototype.getCytos = function () {
+	      return this.value;
 	};
 
-	Cell.prototype.map = function (transform) {
-		return new Cell(transform(this));
+	Colony.prototype.of = function (cytos) {
+	      return new Colony(cytos);
 	};
 
-	Cell.prototype.reduce = function (transform, monoid) {
-		return transform(monoid, this);
+	Colony.prototype.concat = function (colony) {
+	      return this.value.concat(colony);
+	};
+
+	Colony.prototype.reduce = function (transform, monoid) {
+	      return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
+	};
+
+	Colony.prototype.map = function (transform) {
+	      return this.of(_ramda2.default.map(transform, this.value));
 	};
 
 /***/ },
@@ -9233,40 +9244,34 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = Colony;
+	exports.default = Cell;
 
 	var _ramda = __webpack_require__(3);
 
 	var _ramda2 = _interopRequireDefault(_ramda);
 
-	var _cell = __webpack_require__(4);
-
-	var _cell2 = _interopRequireDefault(_cell);
-
-	var _cyto = __webpack_require__(2);
-
-	var _cyto2 = _interopRequireDefault(_cyto);
-
-	var _state = __webpack_require__(5);
-
-	var _state2 = _interopRequireDefault(_state);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function Colony(cytos) {
-		this.value = cytos;
-	}
+	var hasProp = _ramda2.default.compose(_ramda2.default.converge(_ramda2.default.all(_ramda2.default.identity)), _ramda2.default.map(_ramda2.default.has)),
+	    validCell = hasProp(['type', 'maps']);
 
-	Colony.prototype.concat = function (colony) {
-		return this.value.concat(colony);
+	function Cell(dna) {
+		if (!validCell(dna)) throw Error('Bad Cell formation');
+
+		this.type = dna.type;
+		this.maps = dna.maps;
 	};
 
-	Colony.prototype.reduce = function (transform, monoid) {
-		return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
+	Cell.prototype.of = function (dna) {
+		return new Cell(dna);
 	};
 
-	Colony.prototype.map = function (transform, monoid) {
-		return _ramda2.default.map(_ramda2.default.map(transform), this.value);
+	Cell.prototype.map = function (transform) {
+		return this.of(transform(this));
+	};
+
+	Cell.prototype.reduce = function (transform, monoid) {
+		return transform(monoid, this);
 	};
 
 /***/ },
@@ -12718,9 +12723,11 @@
 
 	var _core2 = _interopRequireDefault(_core);
 
+	var _etc = __webpack_require__(1);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = [_core2.default];
+	exports.default = new _etc.Colony([_core2.default]);
 
 /***/ },
 /* 12 */
@@ -12734,9 +12741,9 @@
 
 	var _etc = __webpack_require__(1);
 
-	var _model = __webpack_require__(13);
+	var _core = __webpack_require__(13);
 
-	var _model2 = _interopRequireDefault(_model);
+	var _core2 = _interopRequireDefault(_core);
 
 	var _view = __webpack_require__(14);
 
@@ -12746,9 +12753,13 @@
 
 	var app = {
 		state: {
-			ui: _etc.R.map(_etc.R.prop('state'), _view2.default)
+			ui: _etc.R.reduce(function (arr, cellorState) {
+				if (cellorState instanceof _etc.State) arr.push(cellorState);
+
+				return arr;
+			}, [], _view2.default)
 		},
-		input: new _etc.Cell(_model2.default),
+		input: _core2.default,
 		output: _view2.default
 	};
 
@@ -12756,13 +12767,16 @@
 
 /***/ },
 /* 13 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
+
+	var _etc = __webpack_require__(1);
+
 	var props = {
 		type: {
 			'firstname': ['textinput'],
@@ -12784,7 +12798,7 @@
 		}
 	};
 
-	exports.default = props;
+	exports.default = new _etc.Cell(props);
 
 /***/ },
 /* 14 */
@@ -12800,9 +12814,11 @@
 
 	var _core2 = _interopRequireDefault(_core);
 
+	var _etc = __webpack_require__(1);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = [_core2.default];
+	exports.default = new _etc.Colony([_core2.default]);
 
 /***/ },
 /* 15 */
@@ -14064,9 +14080,11 @@
 
 	var _core2 = _interopRequireDefault(_core);
 
+	var _etc = __webpack_require__(1);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = [_core2.default];
+	exports.default = new _etc.Colony([_core2.default]);
 
 /***/ },
 /* 37 */

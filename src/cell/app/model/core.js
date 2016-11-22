@@ -1,6 +1,7 @@
 'use strict';
+import { Cell } from '../../../etc';
 
-var props = {
+const props = {
 		type : {
 			'firstname' : ['textinput'],
 			'lastname' : ['textinput']
@@ -21,4 +22,4 @@ var props = {
 		}
 	};
 
-export default props;
+export default new Cell(props);
