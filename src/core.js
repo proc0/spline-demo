@@ -42,7 +42,7 @@ function init(seed){
 		seedling = R.reduce(reducer, { input : [], output : [] }, seed),
 		app = buildPipeline(R.flatten(R.append(R.reverse(seedling.input), seedling.output)));
 	
-	console.log( app );
+	// console.log( app );
 
 	return bind(app, view);
 }

@@ -102,7 +102,7 @@
 		    seedling = _etc.R.reduce(reducer, { input: [], output: [] }, seed),
 		    app = buildPipeline(_etc.R.flatten(_etc.R.append(_etc.R.reverse(seedling.input), seedling.output)));
 
-		console.log(app);
+		// console.log( app );
 
 		return bind(app, view);
 	}
