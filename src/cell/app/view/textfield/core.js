@@ -17,7 +17,7 @@ var textfield = {
 			maps :{
 				textinput : function(event){
 
-
+					console.log(event);
 					return {
 						type : 'textinput',
 						obj : event
@@ -38,6 +38,8 @@ var textfield = {
 				}
 			}
 		})
-	};
+	},
+	main = document.getElementsByTagName('main')[0];
 
+main.innerHTML = main.HTML + template({});
 export default new Cyto(textfield);

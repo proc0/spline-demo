@@ -72,23 +72,78 @@
 		},
 		input: _cell2.default,
 		output: _io2.default
-	}),
-	    main = document.getElementsByTagName('main')[0];
+	});
+	// main = document.getElementsByTagName('main')[0];
 
-	var cmp = _etc.R.apply(_etc.R.compose),
-	    fst = _etc.R.compose(_etc.R.head, Array),
-	    snd = _etc.R.compose(_etc.R.last, Array),
-	    wrap = _etc.R.compose(cmp, _etc.R.prepend(cmp), _etc.R.append(_etc.R.of), Array),
-	    then = _etc.R.compose(_etc.R.apply(wrap), _etc.R.map(_etc.R.prepend), _etc.R.reverse, Array),
+	//comp :: [(* -> *)] -> (* -> *)
+	var comp = _etc.R.apply(_etc.R.compose),
+
+	//fst :: a -> * -> a
+	fst = _etc.R.compose(_etc.R.head, Array),
+
+	//lst :: a -> * -> b -> b
+	lst = _etc.R.compose(_etc.R.last, Array),
+
+	//wrap :: (* -> *) -> (* -> *) --wraps functions in composition thunk builder
+	wrap = _etc.R.compose(comp, _etc.R.prepend(comp), _etc.R.append(_etc.R.of)),
+
+	//then :: * -> (* -> *) --takes functions, and wraps them ready to be called
+	then = _etc.R.compose(_etc.R.apply(wrap), _etc.R.map(_etc.R.prepend), _etc.R.reverse, Array),
 	    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
-	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), snd),
+	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), lst),
 	    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
-	    bindArrows = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap(_etc.R.append(bindHandler)))),
-	    category = _etc.R.curry(function (arrows, data) {
-		return bindArrows(arrows.type)(data.type)(arrows, data);
+	    bindCell = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap([_etc.R.append(bindHandler)]))),
+	    category = _etc.R.curry(function (cell, event) {
+
+		var handlerNames = [],
+		    handlers = [];
+
+		_etc.R.mapObjIndexed(function (eventNames, handlerName) {
+			var match = _etc.R.filter(_etc.R.equals(event.type), eventNames);
+
+			if (match.length) handlerNames.push(handlerName);
+		}, cell.type);
+
+		if (handlerNames.length) {
+			handlers = _etc.R.map(_etc.R.flip(_etc.R.prop)(cell.maps), handlerNames);
+		}
+
+		var a1 = bindCell(handlers),
+		    a2 = a1(event);
+		// var a1 = bindCell(cell.type),
+		// 	a2 = a1(event.type);
+
+		return a2(cell.maps, event);
+
+		// return event;
 	}),
-	    pipeSegment = _etc.R.pipe(category, then(_etc.R.head, lift)),
-	    buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
+	    pipeSegment = _etc.R.pipe(category),
+
+	// pipeSegment = R.pipe(category, then(R.head, lift)),
+	buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
+
+	function DataType(handlers) {
+
+		return function (event) {
+			return handlers;
+		};
+	}
+	// function DataType(cellType){
+
+	// 	return function(eventType){
+	// 		var handlers = [];
+
+	// 		R.mapObjIndexed(function(eventNames, handlerName){
+	// 			var match = R.filter(R.equals(eventType), eventNames);
+
+	// 			if(match.length)
+	// 				handlers.push(handlerName);
+
+	// 		}, cellType);
+
+	// 		return handlers;
+	// 	}
+	// }
 
 	function trace(a) {
 		console.log(a);
@@ -98,13 +153,13 @@
 	function init(seed) {
 		_etc.R.map(trace, seed);
 
-		var view = seed.focus(['L']).getCytos()[0],
+		var app = seed.focus(['L']).getCytos()[0],
 		    seedling = _etc.R.reduce(reducer, { input: [], output: [] }, seed),
-		    app = buildPipeline(_etc.R.flatten(_etc.R.append(_etc.R.reverse(seedling.input), seedling.output)));
+		    pipeline = buildPipeline(_etc.R.concat(seedling.input, seedling.output));
 
 		// console.log( app );
 
-		return bind(app, view);
+		return bind(pipeline, app);
 	}
 
 	exports.default = init(seed);
@@ -115,43 +170,52 @@
 
 	function reducer(a, b) {
 
-		var input = _etc.R.prop('input'),
-		    output = _etc.R.prop('output'),
-		    appendBranch = _etc.R.flip(_etc.R.invoker(1, 'push')),
-		    pushBranch = {
-			input: _etc.R.compose(appendBranch, input),
-			output: _etc.R.compose(appendBranch, output)
-		},
+		// const input = R.prop('input'),
+		// 	output = R.prop('output'),
+		// 	appendBranch = R.flip(R.invoker(1, 'push')),
+		// 	pushBranch = {
+		// 		input : R.compose(appendBranch, input),
+		// 		output : R.compose(appendBranch, output)
+		// 	},
+		// 	//build a mutation push by invoking push on memo array
+		// 	buildPush = R.converge(R.compose(R.apply(R.compose), Array), [R.compose(R.flip(R.call)(a), R.flip(R.call)(pushBranch)), R.identity]),
+		// 	//builds a conditional that checks if either input/output is a Cell, than invokes push on "shadowed" method on pushBranch
+		// 	pushCell = R.converge(R.ifElse, [R.compose(R.apply(R.compose), R.prepend(R.is(Cell)), R.of), buildPush, R.always(R.identity)]),
+		// 	//final conditional that tests whether b is State, and then uses meta state to extract input/output cell; always return a
+		// 	getCells = R.ifElse(R.is(State), R.compose(R.converge(R.always(a), [pushCell(input), pushCell(output)]), R.prop('meta')), R.always(a));
 
-		//build a mutation push by invoking push on memo array
-		buildPush = _etc.R.converge(_etc.R.compose(_etc.R.apply(_etc.R.compose), Array), [_etc.R.compose(_etc.R.flip(_etc.R.call)(a), _etc.R.flip(_etc.R.call)(pushBranch)), _etc.R.identity]),
+		// return getCells(b);
 
-		//builds a conditional that checks if either input/output is a Cell, than invokes push on "shadowed" method on pushBranch
-		pushCell = _etc.R.converge(_etc.R.ifElse, [_etc.R.compose(_etc.R.apply(_etc.R.compose), _etc.R.prepend(_etc.R.is(_etc.Cell)), _etc.R.of), buildPush, _etc.R.always(_etc.R.identity)]),
+		if (b instanceof _etc.State) {
+			if (b.meta.input instanceof _etc.Cell) {
+				a.input = _etc.R.prepend(b.meta.input, a.input);
+			}
 
-		//final conditional that tests whether b is State, and then uses meta state to extract input/output cell; always return a
-		getCells = _etc.R.ifElse(_etc.R.is(_etc.State), _etc.R.compose(_etc.R.converge(_etc.R.always(a), [pushCell(input), pushCell(output)]), _etc.R.prop('meta')), _etc.R.always(a));
+			if (b.meta.output instanceof _etc.Cell) {
+				a.output = _etc.R.append(b.meta.output, a.output);
+			}
+		}
 
-		return getCells(b);
+		return a;
 	}
 
-	function bind(app, view) {
+	function bind(pipeline, app) {
 
 		var getElement = function getElement(className) {
 			return document.getElementsByClassName(className)[0];
 		},
 		    initEvents = function initEvents(compEvents, compName) {
-			var inputEvents = view.input.type,
+			var inputEvents = app.output.value[0].input.type,
 			    htmlElement = getElement(compName),
 
 
 			// getEventList = R.compose(R.flatten, R.values),
 			filterFields = _etc.R.filter(_etc.R.compose(_etc.R.not, _etc.R.equals('type'))),
-			    filterEvents = _etc.R.converge(_etc.R.compose(filterFields, _etc.R.intersection), [_etc.R.values, snd]),
+			    filterEvents = _etc.R.converge(_etc.R.compose(filterFields, _etc.R.intersection), [_etc.R.compose(_etc.R.flatten, _etc.R.values), lst]),
 			    handlError = _etc.R.compose(console.log, Error),
 			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
 			    bindEvent = function bindEvent(eventName) {
-				return _etc.B.fromEvent(htmlElement, eventName).onValue(app);
+				return _etc.B.fromEvent(htmlElement, eventName).onValue(pipeline);
 			},
 			    initialize = _etc.R.compose(_etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), handlError), filterEvents);
 
@@ -162,27 +226,12 @@
 		initUI = _etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('maps'));
 		//iterate through all ui elements, for each one get the mapping
 		//which contains a map from the comp's css class to event names
-		return _etc.R.map(initUI, view.state.ui);
+		return _etc.R.map(initUI, app.state.ui);
 	}
 
 	function lift(value) {
 		console.log(value);
 		return value;
-	}
-
-	function DataType(data) {
-
-		return function (type) {
-			var handlers = [];
-
-			_etc.R.mapObjIndexed(function (eventNames, handlerName) {
-				var match = _etc.R.filter(_etc.R.equals(type), eventNames);
-
-				if (match.length) handlers.push(handlerName);
-			}, data);
-
-			return handlers;
-		};
 	}
 
 /***/ },
@@ -12853,6 +12902,7 @@
 			maps: {
 				textinput: function textinput(event) {
 
+					console.log(event);
 					return {
 						type: 'textinput',
 						obj: event
@@ -12873,8 +12923,10 @@
 				}
 			}
 		})
-	};
+	},
+	    main = document.getElementsByTagName('main')[0];
 
+	main.innerHTML = main.HTML + (0, _textfield2.default)({});
 	exports.default = new _etc.Cyto(textfield);
 
 /***/ },
