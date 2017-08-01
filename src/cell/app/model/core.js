@@ -1,25 +1,26 @@
 'use strict';
-import { Cell } from '../../../etc';
+import { Cell, DATA } from '../../../etc';
 
-const props = {
-		type : {
-			'firstname' : ['textinput'],
-			'lastname' : ['textinput']
+export default new Cell({
+	meta : {
+		input : DATA.STATE,
+		output : DATA.STATE
+	},
+	type : {
+		'firstname' : ['textinput'],
+		'lastname' : ['textinput']
+	},
+	proc : {
+		firstname : function(action){	
+			return {
+				type : 'render'
+			};
 		},
-		maps : {
-			firstname : function(action){	
-				return {
-					type : 'render'
-				};
-			},
-
-			lastname : function (action){
-				
-				return {
-					type : 'render'
-				};
-			}
+		lastname : function (action){
+			
+			return {
+				type : 'render'
+			};
 		}
-	};
-
-export default new Cell(props);
+	}
+})

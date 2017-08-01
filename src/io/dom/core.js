@@ -1,30 +1,33 @@
 'use strict';
-import { R, Cyto, Cell } from '../../etc';
-
-const copyFrom = R.converge(R.compose(R.call(R.fromPairs), R.zip), [R.compose(R.last, Array), R.flip(R.props)]);
+import { R, Cyto, Cell, DATA } from '../../etc';
 
 const input = {
+		meta : {
+			input: DATA.USER_EVENT,
+			output: DATA.UI_EVENT
+		},
 		type : {
 			'handler' : ['keyup'],
 			'mouseHandler' : ['mouseup']
 		},
-		maps : {
+		proc : {
 			handler : function(event){
-				
-				var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
-
-				return eventObject;
+				return pick(['type', 'key', 'keyCode'], event)
 			},
 			mouseHandler : function(event){
-				return copyFrom(event, ['type', 'x', 'y']);
+				return pick(['type', 'x', 'y'], event)
 			}
 		}
 	},
 	output = {
+		meta : {
+			input: DATA.CONTEXT,
+			output: DATA.VOID
+		},
 		type : {
 			'dom' : ['html']
 		},
-		maps : {
+		proc : {
 			canvas : function(context){
 
 			},
@@ -34,12 +37,14 @@ const input = {
 				var main = document.getElementsByTagName('main')[0];
 
 				main.innerHTML = html;
+				// main.HTML
 			}
 		}
 	},
 	dom = {
 		state : {
-			dom : document
+			dom : document,
+			name : 'dom'
 		},
 		input : new Cell(input),
 		output : new Cell(output)

@@ -1,39 +1,58 @@
 'use strict';
 
-import R from '../../node_modules/ramda/dist/ramda';
 import Cyto from './cyto';
 
-const checkLength = R.compose(R.filter(R.identity), R.map(R.is(Cyto))),
-      validLength = R.ifElse(R.is(Array), R.compose(R.length, checkLength), R.always(0)),
-      validColony = R.converge(R.equals, [R.length, validLength]);
+export default class Colony {
 
-export default function Colony(cytos){
-      if(!validColony(cytos))
+      of(cytos){
+            return new Colony(cytos);
+      }
+      
+      init(colony){
+            this.value = colony
+      }
+
+      bindMethod(method){
+            return this[method].bind(this)
+      }
+
+      constructor(colony) {
+            this.focus = flip(curry(Cyto.prototype.focus.bind(Cyto.prototype)))(this)
+            const bindIf = compose(apply(ifElse), map(this.bindMethod.bind(this)))
+            return bindIf(['maybe', 'init', 'halt'])(colony)
+      }
+
+      maybe(colony){
+            const isCyto = compose(equals('Cyto'), prop('name'), prop('constructor')),
+                  checkLength = compose(filter(identity), map(isCyto)),
+                  validLength = ifElse(is(Array), compose(_length, checkLength), always(0)),
+                  validColony = converge(equals, [_length, validLength])
+
+            return colony && validColony(colony)
+      }
+
+      empty(){
+            return this.of([Cyto.empty()]);
+      }
+
+      getCytos(){
+            return this.value;
+      }
+
+      concat(colony){
+            return this.value.concat(colony);
+      }
+
+      reduce(transform, monoid){
+            return reduce(reduce(transform), monoid, this.value);
+      }
+
+      map(transform){
+            return this.of(map(transform, this.value));
+      }
+
+      halt(colony){ 
+            console.log(colony)
             throw Error('Bad Colony formation.')
-
-	this.value = cytos;
+      }   
 }
-
-Colony.prototype.empty = function(){
-
-}
-
-Colony.prototype.getCytos = function(){
-      return this.value;
-}
-
-Colony.prototype.of = function(cytos){
-      return new Colony(cytos);
-}
-
-Colony.prototype.concat = function(colony){
-	return this.value.concat(colony);
-}
-
-Colony.prototype.reduce = function(transform, monoid){
-	return R.reduce(R.reduce(transform), monoid, this.value);
-};
-
-Colony.prototype.map = function(transform){
-	return this.of(R.map(transform, this.value));
-};

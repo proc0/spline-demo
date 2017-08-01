@@ -47,191 +47,157 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	    value: true
 	});
 
 	var _etc = __webpack_require__(1);
 
-	var _cell = __webpack_require__(11);
+	var _cell = __webpack_require__(18);
 
 	var _cell2 = _interopRequireDefault(_cell);
 
-	var _io = __webpack_require__(36);
+	var _io = __webpack_require__(44);
 
 	var _io2 = _interopRequireDefault(_io);
 
-	var _options = __webpack_require__(38);
+	var _options = __webpack_require__(46);
 
 	var _options2 = _interopRequireDefault(_options);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var seed = new _etc.Cyto({
-		state: {
-			options: _options2.default
-		},
-		input: _cell2.default,
-		output: _io2.default
+	var IO = {
+	    input: 'L',
+	    output: 'R'
+	},
+	    SEED = {
+	    input: [],
+	    output: []
+	},
+	    app = new _etc.Cyto({
+	    state: {
+	        name: 'core',
+	        options: _options2.default
+	    },
+	    input: _cell2.default,
+	    output: _io2.default
 	});
-	// main = document.getElementsByTagName('main')[0];
 
-	//comp :: [(* -> *)] -> (* -> *)
-	var comp = _etc.R.apply(_etc.R.compose),
+	exports.default = init(app);
 
-	//fst :: a -> * -> a
-	fst = _etc.R.compose(_etc.R.head, Array),
 
-	//lst :: a -> * -> b -> b
-	lst = _etc.R.compose(_etc.R.last, Array),
+	function init(app) {
+	    var ui = app.focus(['L', 'R', 'L']),
+	        dna = reduce(harvest, SEED);
+	    // dna = compose(mapObjIndexed(reduce(concat, [])), reduce(harvest, SEED))
+	    // pipeline = buildPipeline(concat(dna.input, reverse(dna.output)));
 
-	//wrap :: (* -> *) -> (* -> *) --wraps functions in composition thunk builder
-	wrap = _etc.R.compose(comp, _etc.R.prepend(comp), _etc.R.append(_etc.R.of)),
-
-	//then :: * -> (* -> *) --takes functions, and wraps them ready to be called
-	then = _etc.R.compose(_etc.R.apply(wrap), _etc.R.map(_etc.R.prepend), _etc.R.reverse, Array),
-	    getHandler = _etc.R.compose(_etc.R.flip(_etc.R.prop), fst),
-	    callHandler = _etc.R.compose(_etc.R.flip(_etc.R.call), lst),
-	    bindHandler = _etc.R.converge(_etc.R.compose, [callHandler, getHandler]),
-	    bindCell = _etc.R.pipe(DataType, then(_etc.R.flip(_etc.R.map), wrap([_etc.R.append(bindHandler)]))),
-	    category = _etc.R.curry(function (cell, event) {
-
-		var handlerNames = [],
-		    handlers = [];
-
-		_etc.R.mapObjIndexed(function (eventNames, handlerName) {
-			var match = _etc.R.filter(_etc.R.equals(event.type), eventNames);
-
-			if (match.length) handlerNames.push(handlerName);
-		}, cell.type);
-
-		if (handlerNames.length) {
-			handlers = _etc.R.map(_etc.R.flip(_etc.R.prop)(cell.maps), handlerNames);
-		}
-
-		var a1 = bindCell(handlers),
-		    a2 = a1(event);
-		// var a1 = bindCell(cell.type),
-		// 	a2 = a1(event.type);
-
-		return a2(cell.maps, event);
-
-		// return event;
-	}),
-	    pipeSegment = _etc.R.pipe(category),
-
-	// pipeSegment = R.pipe(category, then(R.head, lift)),
-	buildPipeline = _etc.R.compose(_etc.R.apply(_etc.R.pipe), _etc.R.map(pipeSegment));
-
-	function DataType(handlers) {
-
-		return function (event) {
-			return handlers;
-		};
-	}
-	// function DataType(cellType){
-
-	// 	return function(eventType){
-	// 		var handlers = [];
-
-	// 		R.mapObjIndexed(function(eventNames, handlerName){
-	// 			var match = R.filter(R.equals(eventType), eventNames);
-
-	// 			if(match.length)
-	// 				handlers.push(handlerName);
-
-	// 		}, cellType);
-
-	// 		return handlers;
-	// 	}
-	// }
-
-	function trace(a) {
-		console.log(a);
-		return a;
+	    // return bind(pipeline, ui);
+	    return bind(dna(app), ui);
 	}
 
-	function init(seed) {
-		_etc.R.map(trace, seed);
+	function harvest(a, b) {
 
-		var app = seed.focus(['L']).getCytos()[0],
-		    seedling = _etc.R.reduce(reducer, { input: [], output: [] }, seed),
-		    pipeline = buildPipeline(_etc.R.concat(seedling.input, seedling.output));
+	    var harvester = function harvester(seed) {
+	        return function (state) {
+	            var cyto = state.meta;
 
-		// console.log( app );
+	            return cyto;
+	        };
+	    };
 
-		return bind(pipeline, app);
+	    // const harvester = seed => {
+	    //     return (node) => {
+	    //         const harvestCrops = (vector, io) => {
+	    //             const focus = invoker(1, 'focus'),
+	    //                 getIO = flip(focus)(node.meta),
+	    //                 commute = ifElse(is(Colony), focus(vector), F),
+	    //                 isCells = and(is(Array), compose(is(Cell), head)),
+	    //                 getCells = compose(filter(isCells), map(commute), map(getIO)),
+	    //                 harvestCells = compose(getCells, values),
+
+	    //                 round =  prop(vector, {
+	    //                     'L' : Math.floor.bind(Math),
+	    //                     'R' : Math.ceil.bind(Math)
+	    //                 }),
+	    //                 divBy2 = compose(round, flip(divide)(2)),
+	    //                 getMedian = compose(divBy2, flip(or)(0), _length),
+	    //                 prepMerge = flip(call)([getMedian, identity]),
+	    //                 mergeCells = compose(prepMerge, converge, flip(insert)),
+	    //                 farmCells = compose(mergeCells, harvestCells)
+
+	    //             return farmCells(IO)(seed[io])
+	    //         },
+	    //         check = filter(and(is(Array), compose(identity, _length))),
+	    //         farm = mapObjIndexed(compose(check, harvestCrops)),
+	    //         produce = compose(check, farm)
+
+	    //         return produce(IO)
+	    //     }
+	    // }
+
+	    return ifElse(is(_etc.State), harvester, always(a))(b);
+
+	    // if(b instanceof State){
+	    //     const o = b.meta.focus('R'),
+	    //         i = b.meta.focus('L'),          
+	    //         oo = o instanceof Colony ? o.focus('R') : null,
+	    //         io = i instanceof Colony ? i.focus('R') : null,
+	    //         oi = o instanceof Colony ? o.focus('L') : null,
+	    //         ii = i instanceof Colony ? i.focus('L') : null
+
+	    //     if(oi instanceof Array && oi[0] instanceof Cell){
+	    //         a.input = insert(Math.floor(a.input.length/2), oi, a.input)
+	    //     }
+	    //     if(ii instanceof Array && ii[0] instanceof Cell){
+	    //         a.input = insert(Math.floor(a.input.length/2), ii, a.input)
+	    //     }
+
+	    //     if(io instanceof Array && io[0] instanceof Cell){
+	    //         a.output = insert(Math.ceil(a.output.length/2), io, a.output)
+	    //     }
+	    //     if(oo instanceof Array && oo[0] instanceof Cell){
+	    //         a.output = insert(Math.ceil(a.output.length/2), oo, a.output)
+	    //     }
+	    // }
+
+	    // return a;
 	}
 
-	exports.default = init(seed);
-
-	//reduce cyto structures
-	//to a list of input cells
-	//and output cells
-
-	function reducer(a, b) {
-
-		// const input = R.prop('input'),
-		// 	output = R.prop('output'),
-		// 	appendBranch = R.flip(R.invoker(1, 'push')),
-		// 	pushBranch = {
-		// 		input : R.compose(appendBranch, input),
-		// 		output : R.compose(appendBranch, output)
-		// 	},
-		// 	//build a mutation push by invoking push on memo array
-		// 	buildPush = R.converge(R.compose(R.apply(R.compose), Array), [R.compose(R.flip(R.call)(a), R.flip(R.call)(pushBranch)), R.identity]),
-		// 	//builds a conditional that checks if either input/output is a Cell, than invokes push on "shadowed" method on pushBranch
-		// 	pushCell = R.converge(R.ifElse, [R.compose(R.apply(R.compose), R.prepend(R.is(Cell)), R.of), buildPush, R.always(R.identity)]),
-		// 	//final conditional that tests whether b is State, and then uses meta state to extract input/output cell; always return a
-		// 	getCells = R.ifElse(R.is(State), R.compose(R.converge(R.always(a), [pushCell(input), pushCell(output)]), R.prop('meta')), R.always(a));
-
-		// return getCells(b);
-
-		if (b instanceof _etc.State) {
-			if (b.meta.input instanceof _etc.Cell) {
-				a.input = _etc.R.prepend(b.meta.input, a.input);
-			}
-
-			if (b.meta.output instanceof _etc.Cell) {
-				a.output = _etc.R.append(b.meta.output, a.output);
-			}
-		}
-
-		return a;
+	function buildPipeline(seed) {
+	    return seed;
 	}
 
-	function bind(pipeline, app) {
+	function bind(pipeline, ui) {
 
-		var getElement = function getElement(className) {
-			return document.getElementsByClassName(className)[0];
-		},
-		    initEvents = function initEvents(compEvents, compName) {
-			var inputEvents = app.output.value[0].input.type,
-			    htmlElement = getElement(compName),
+	    var getElement = function getElement(className) {
+	        return document.getElementsByClassName(className)[0];
+	    },
+	        initEvents = function initEvents(compEvents, compName) {
+	        console.log(compEvents, compName);
+	        // const inputEvents = ui.output.value[0].input.type,
+	        //     htmlElement = getElement(compName),
 
+	        //     // getEventList = compose(flatten, values),
+	        //     filterFields = filter(compose(not, equals('type'))),
+	        //     filterEvents = converge(compose(filterFields, intersection), [compose(flatten, values), lst]),
 
-			// getEventList = R.compose(R.flatten, R.values),
-			filterFields = _etc.R.filter(_etc.R.compose(_etc.R.not, _etc.R.equals('type'))),
-			    filterEvents = _etc.R.converge(_etc.R.compose(filterFields, _etc.R.intersection), [_etc.R.compose(_etc.R.flatten, _etc.R.values), lst]),
-			    handlError = _etc.R.compose(console.log, Error),
-			    isNotEmpty = _etc.R.converge(_etc.R.and, [_etc.R.compose(_etc.R.not, _etc.R.isNil), _etc.R.compose(_etc.R.not, _etc.R.isEmpty)]),
-			    bindEvent = function bindEvent(eventName) {
-				return _etc.B.fromEvent(htmlElement, eventName).onValue(pipeline);
-			},
-			    initialize = _etc.R.compose(_etc.R.ifElse(isNotEmpty, _etc.R.map(bindEvent), handlError), filterEvents);
+	        //     handlError = compose(console.log, Error),
+	        //     isNotEmpty = converge(and, [compose(not, isNil), compose(not, isEmpty)]),
 
-			return initialize(inputEvents, compEvents);
-		},
+	        //     bindEvent  = function(eventName){
+	        //         return B.fromEvent(htmlElement, eventName).onValue(pipeline)
+	        //     },
+	        //     initialize = compose(ifElse(isNotEmpty, map(bindEvent), handlError), filterEvents);
 
-		//TODO: cleanup method of initializing dom elements with comp states
-		initUI = _etc.R.compose(_etc.R.mapObjIndexed(initEvents), _etc.R.prop('maps'));
-		//iterate through all ui elements, for each one get the mapping
-		//which contains a map from the comp's css class to event names
-		return _etc.R.map(initUI, app.state.ui);
-	}
+	        // return initialize( inputEvents, compEvents );
+	    },
 
-	function lift(value) {
-		console.log(value);
-		return value;
+	    //TODO: cleanup method of initializing dom elements with comp states
+	    initUI = compose(mapObjIndexed(initEvents), prop('proc'));
+	    //iterate through all ui elements, for each one get the muiing
+	    //which contains a map from the comp's css class to event names
+	    return map(initUI, ui);
 	}
 
 /***/ },
@@ -243,6 +209,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.B = exports.R = exports.DATA = exports.Colony = exports.State = exports.Cell = exports.Cyto = undefined;
 
 	var _cyto = __webpack_require__(2);
 
@@ -253,7 +220,7 @@
 	  }
 	});
 
-	var _cell = __webpack_require__(6);
+	var _cell = __webpack_require__(8);
 
 	Object.defineProperty(exports, 'Cell', {
 	  enumerable: true,
@@ -262,7 +229,7 @@
 	  }
 	});
 
-	var _state = __webpack_require__(5);
+	var _state = __webpack_require__(7);
 
 	Object.defineProperty(exports, 'State', {
 	  enumerable: true,
@@ -271,7 +238,7 @@
 	  }
 	});
 
-	var _colony = __webpack_require__(4);
+	var _colony = __webpack_require__(9);
 
 	Object.defineProperty(exports, 'Colony', {
 	  enumerable: true,
@@ -280,7 +247,7 @@
 	  }
 	});
 
-	var _ramda = __webpack_require__(3);
+	var _ramda = __webpack_require__(4);
 
 	Object.defineProperty(exports, 'R', {
 	  enumerable: true,
@@ -289,7 +256,7 @@
 	  }
 	});
 
-	var _Bacon = __webpack_require__(7);
+	var _Bacon = __webpack_require__(10);
 
 	Object.defineProperty(exports, 'B', {
 	  enumerable: true,
@@ -298,7 +265,19 @@
 	  }
 	});
 
+	var _utils = __webpack_require__(3);
+
+	var _utils2 = _interopRequireDefault(_utils);
+
+	var _data = __webpack_require__(14);
+
+	var DATA = _interopRequireWildcard(_data);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.DATA = DATA;
 
 /***/ },
 /* 2 */
@@ -309,143 +288,465 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.default = Cyto;
 
-	var _ramda = __webpack_require__(3);
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _ramda2 = _interopRequireDefault(_ramda);
+	var _utils = __webpack_require__(3);
 
-	var _colony = __webpack_require__(4);
+	var _utils2 = _interopRequireDefault(_utils);
 
-	var _colony2 = _interopRequireDefault(_colony);
-
-	var _state = __webpack_require__(5);
+	var _state = __webpack_require__(7);
 
 	var _state2 = _interopRequireDefault(_state);
 
-	var _cell = __webpack_require__(6);
+	var _cell = __webpack_require__(8);
 
 	var _cell2 = _interopRequireDefault(_cell);
 
+	var _colony = __webpack_require__(9);
+
+	var _colony2 = _interopRequireDefault(_colony);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var handleError = function handleError(seed) {
-		console.log(seed);
-		throw Error('Bad Cyto formation.');
-	},
-	    validBranch = _ramda2.default.converge(_ramda2.default.or, [_ramda2.default.is(_colony2.default), _ramda2.default.is(_cell2.default)]),
-	    checkBranch = _ramda2.default.compose(_ramda2.default.apply(_ramda2.default.compose), _ramda2.default.prepend(validBranch), _ramda2.default.of, _ramda2.default.prop),
-	    allPass = _ramda2.default.all(_ramda2.default.identity),
-	    hasProp = _ramda2.default.compose(_ramda2.default.converge(allPass), _ramda2.default.map(_ramda2.default.has)),
-	    isValid = _ramda2.default.converge(_ramda2.default.compose(allPass, Array), [checkBranch('input'), checkBranch('output')]),
-	    checkCyto = _ramda2.default.and(hasProp(['input', 'state', 'output']), isValid),
-	    validate = _ramda2.default.ifElse(checkCyto, _ramda2.default.identity, handleError);
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	function Cyto(seed) {
-		if (!seed) return this.empty();else validate(seed);
+	var Cyto = function () {
+		_createClass(Cyto, [{
+			key: 'DATA',
+			value: function DATA() {
+				return {
+					META: ['state', 'input', 'output'],
+					BRANCHES: ['Cell', 'Colony']
+				};
+			}
+		}, {
+			key: 'of',
+			value: function of(seed) {
+				return new Cyto(seed);
+			}
+		}, {
+			key: 'init',
+			value: function init(_seed) {
+				var seed = merge(_seed, {
+					state: new _state2.default(_seed.state, this)
+				});
 
-		this.state = new _state2.default(seed.state, this);
-		this.input = seed.input;
-		this.output = seed.output;
-	};
+				map(function (phase) {
+					this[phase] = seed[phase];
+				}.bind(this), this.DATA().META);
+			}
+		}, {
+			key: 'bindMethod',
+			value: function bindMethod(method) {
+				return this[method].bind(this);
+			}
+		}]);
 
-	Cyto.prototype.of = function (seed) {
-		return new Cyto(seed);
-	};
+		function Cyto(seed) {
+			_classCallCheck(this, Cyto);
 
-	Cyto.prototype.focus = function (directions) {
-		var head = undefined,
-		    changeDir = function (dir) {
-			if (dir === 'R') head = this.goRight(head || this);else if (dir === 'L') head = this.goLeft(head || this);
-
-			return head;
-		}.bind(this);
-
-		for (var d in directions) {
-			changeDir(directions[d]);
+			var bindIf = compose(apply(ifElse), map(this.bindMethod.bind(this)));
+			return bindIf(['maybe', 'init', 'halt'])(seed);
 		}
 
-		return head;
-	};
+		_createClass(Cyto, [{
+			key: 'maybe',
+			value: function maybe(seed) {
+				var _ = this.DATA(),
+				    dataValid = checkWith(_.META),
 
-	Cyto.prototype.goLeft = function (branch) {
 
-		if (_ramda2.default.is(_colony2.default, branch)) return _ramda2.default.map(_ramda2.default.prop('input'), branch.value);else if (_ramda2.default.is(_cell2.default, branch)) return branch;else if (_ramda2.default.is(Array, branch)) return _ramda2.default.flatten(_ramda2.default.map(_ramda2.default.ifElse(_ramda2.default.is(Cyto), _ramda2.default.prop('input'), _ramda2.default.prop('value')), branch));else if (_ramda2.default.is(Cyto, branch)) return branch.input;
-	};
+				//a valid branch is either a colony or a cell
+				isBranch = converge(or, map(equals, _.BRANCHES)),
+				    checkBranch = compose(isBranch, getProp('constructor.name')),
 
-	Cyto.prototype.goRight = function (branch) {
+				//exclude state from being a branch
+				branchesValid = checkWith(checkBranch, tail(_.META)),
+				    isValid = and(branchesValid, dataValid);
 
-		if (_ramda2.default.is(_colony2.default, branch)) return _ramda2.default.map(_ramda2.default.prop('output'), branch.value);else if (_ramda2.default.is(_cell2.default, branch)) return branch;else if (_ramda2.default.is(Array, branch)) return _ramda2.default.flatten(_ramda2.default.map(_ramda2.default.ifElse(_ramda2.default.is(Cyto), _ramda2.default.prop('output'), _ramda2.default.prop('value')), branch));else if (_ramda2.default.is(Cyto, branch)) return branch.output;
-	};
+				//lets put it all together
+				return seed && ifElse(isValid, identity, F)(seed);
+			}
+		}, {
+			key: 'empty',
+			value: function empty() {
+				return this.of({
+					input: _cell2.default.empty(),
+					state: _state2.default.empty(),
+					output: _cell2.default.empty()
+				});
+			}
+		}, {
+			key: 'map',
+			value: function (_map) {
+				function map(_x) {
+					return _map.apply(this, arguments);
+				}
 
-	Cyto.prototype.empty = function () {
-		return this.of({
-			input: [],
-			state: {},
-			output: []
-		});
-	};
+				map.toString = function () {
+					return _map.toString();
+				};
 
-	Cyto.prototype.map = function (transform) {
-		return this.of({
-			input: _ramda2.default.map(transform, this.input),
-			output: _ramda2.default.map(transform, this.output),
-			state: transform(this.state)
-		});
-	};
+				return map;
+			}(function (transform) {
+				return this.of({
+					input: map(transform, this.input),
+					output: map(transform, this.output),
+					state: transform(this.state)
+				});
+			})
+		}, {
+			key: 'reduce',
+			value: function (_reduce) {
+				function reduce(_x2, _x3) {
+					return _reduce.apply(this, arguments);
+				}
 
-	Cyto.prototype.reduce = function (transform, monoid) {
-		var newState = transform(monoid, this.state),
-		    newInput = _ramda2.default.reduce(transform, newState, this.input),
-		    newOutput = _ramda2.default.reduce(transform, newInput, this.output);
+				reduce.toString = function () {
+					return _reduce.toString();
+				};
 
-		return newOutput;
-	};
+				return reduce;
+			}(function (transform, monoid) {
+				var newState = transform(monoid, this.state),
+				    newInput = reduce(transform, newState, this.input),
+				    newOutput = reduce(transform, newInput, this.output);
 
-	Cyto.prototype.concat = function (cyto) {
-		var newCyto = this.empty();
+				return newOutput;
+			})
+		}, {
+			key: 'concat',
+			value: function concat(cyto) {
+				var newCyto = this.empty();
 
-		if (isCell(this.input) && isCell(cyto.input)) {
-			this.input = _ramda2.default.merge(this.input, cyto.input);
-		} else if (isCell(this.input) && validColony(cyto.input)) {
-			newCyto.input = this.input;
-			this.input = cyto.input.concat(newCyto);
-		} else if (validColony(this.input) && isCell(cyto.input)) {
-			newCyto.input = cyto.input;
-			this.input.concat(newCyto);
-		} else if (validColony(this.input) && validColony(cyto.input)) {
-			this.input.concat(cyto.input);
-		}
+				if (_cell2.default.maybe(this.input) && _cell2.default.maybe(cyto.input)) {
+					this.input = merge(this.input, cyto.input);
+				} else if (_cell2.default.maybe(this.input) && _colony2.default.maybe(cyto.input)) {
+					newCyto.input = this.input;
+					this.input = cyto.input.concat(newCyto);
+				} else if (_colony2.default.maybe(this.input) && _cell2.default.maybe(cyto.input)) {
+					newCyto.input = cyto.input;
+					this.input.concat(newCyto);
+				} else if (_colony2.default.maybe(this.input) && _colony2.default.maybe(cyto.input)) {
+					this.input.concat(cyto.input);
+				}
 
-		if (isCell(this.output) && isCell(cyto.output)) {
-			this.output = _ramda2.default.merge(this.output, cyto.output);
-		} else if (isCell(this.output) && validColony(cyto.output)) {
-			newCyto.output = this.output;
-			this.output = cyto.output.concat(newCyto);
-		} else if (validColony(this.output) && isCell(cyto.output)) {
-			newCyto.output = cyto.output;
-			this.output.concat(newCyto);
-		} else if (validColony(this.output) && validColony(cyto.output)) {
-			this.output.concat(cyto.output);
-		}
+				if (_cell2.default.maybe(this.output) && _cell2.default.maybe(cyto.output)) {
+					this.output = merge(this.output, cyto.output);
+				} else if (_cell2.default.maybe(this.output) && _colony2.default.maybe(cyto.output)) {
+					newCyto.output = this.output;
+					this.output = cyto.output.concat(newCyto);
+				} else if (_colony2.default.maybe(this.output) && _cell2.default.maybe(cyto.output)) {
+					newCyto.output = cyto.output;
+					this.output.concat(newCyto);
+				} else if (_colony2.default.maybe(this.output) && _colony2.default.maybe(cyto.output)) {
+					this.output.concat(cyto.output);
+				}
 
-		this.state = _ramda2.default.merge(this.state, cyto.state);
+				this.state = merge(this.state, cyto.state);
 
-		return this;
-	};
+				return this;
+			}
+		}, {
+			key: 'ap',
+			value: function ap(functor) {
+				// return map(flip(map)(this), functor)
+			}
+		}, {
+			key: 'traverse',
+			value: function traverse(f, of) {}
+		}, {
+			key: 'chain',
+			value: function chain(f) {}
+		}, {
+			key: 'equals',
+			value: function equals(node) {}
+		}, {
+			key: 'focus',
+			value: function focus(dir, node) {
+				var directions = typeof dir === 'string' ? [dir] : dir,
+				    destination = reduce(flip(this.selectNode.bind(this)), node || this, directions);
+				return destination;
+			}
+		}, {
+			key: 'selectNode',
+			value: function selectNode(direction, node) {
+				//left is input, right is output		
+				var io = prop(direction, {
+					'L': 'input',
+					'R': 'output'
+				}),
+				    condition = function condition(isType, move) {
+					return ifElse(isType, move, identity);
+				},
+				    applyCondition = compose(apply(condition), flatten, tail, Array),
 
-	Cyto.prototype.ap = function (functor) {
-		// return R.map(R.flip(R.map)(this), functor);
-	};
+				//reducer which takes (node, condition) and returns a selection
+				reduceCondition = converge(call, [applyCondition, identity]),
 
-	Cyto.prototype.traverse = function (f, of) {};
+				//if cyto, selection is either input or output
+				selectCyto = prop(io),
 
-	Cyto.prototype.chain = function (f) {};
+				//if colony, selection is the selection of its cytos
+				selectColony = compose(map(selectCyto), prop('value')),
 
-	Cyto.prototype.equals = function (node) {};
+				//call this function with same direction
+				recurse = curry(this.selectNode.bind(this))(direction),
+
+				//... for each element in array, then flatten it
+				//(since element Colonies return Arrays)
+				selectArray = compose(flatten, map(recurse)),
+
+				//condition order matters, check for Array first
+				//because when True, 'memo' gets passed on directly
+				conditions = [[is(Array), selectArray], [is(_colony2.default), selectColony], [is(Cyto), selectCyto]];
+
+				return reduce(reduceCondition, node, conditions);
+			}
+		}, {
+			key: 'halt',
+			value: function halt(seed) {
+				console.log(seed);
+				throw Error('Bad Cyto formation.');
+			}
+		}]);
+
+		return Cyto;
+	}();
+
+	exports.default = Cyto;
 
 /***/ },
 /* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _ramda = __webpack_require__(4);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	var _path = __webpack_require__(5);
+
+	var _path2 = _interopRequireDefault(_path);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var utils = {
+	    checkWith: _ramda2.default.curry(checkWith),
+	    getProp: _ramda2.default.curry(getProp),
+	    deepMerge: deepMerge,
+	    prefixPath: prefixPath,
+	    sink: sink,
+	    reorderPairs: reorderPairs1
+	};
+
+	_ramda2.default.map(function expose(obj) {
+	    for (var f in obj) {
+	        if (!global.hasOwnProperty(f)) {
+	            global[f] = obj[f];
+	        } else {
+	            console.warn(f + ' is already defined globally');
+	            global['_' + f] = obj[f];
+	        }
+	    }
+	}, [utils, _ramda2.default]);
+
+	exports.default = true;
+
+	/**
+	 * @description polymorphic function takes an optional validate function, a list of prop names, and an object
+	 *              and iterates through object properties checking the values. If a validate function is given, 
+	 *              that is used, if not it is simply truthy checked.
+	 * @param validate{Function | Array} if Function it is used to validate, and two more args are required
+	 * @param props{Array | Object} if Array, validate was supplied and a third arg (obj) is expected
+	 * @returns {Boolean}
+	 */
+
+	function checkWith(validate, props) {
+	    //note: props is a one-dimensional array
+	    //TODO: enhance by using getProp instead of prop, for deep checking
+	    var allPass = all(identity),
+	        checkProp = is(Function, validate) ? compose(apply(compose), prepend(validate), of, prop) : has,
+	        check = compose(converge(compose(allPass, flatten, Array)), map(checkProp));
+	    //if first arg is list, then check that list and make props the object
+	    //else wait for the object to be passed in by returning a function
+	    return is(Array, validate) ? check(validate) : is(Array, props) ? function (obj) {
+	        return check(props);
+	    } : False;
+	}
+
+	function getProp2(path, obj, defaults) {
+
+	    var _get = flip(propOr(defaults || S.Nothing()));
+	    // foldObj = converge( reduce( _get ), [last, compose(split('.'), head)]);
+
+	    // return compose( foldObj, Array)(prop, obj);
+	    return reduce(_get, obj, path.split('.'));
+	}
+	/**
+	 *  @method
+	 *  @description get the property of an object, any level
+	 *  @param {Object} obj : the object to search the properties in
+	 *  @param {Array} _prop : list of strings in hierarchical descending order
+	 *  @returns undefined or value
+	 */
+	function getProp(str, obj) {
+	    // reduce a list of functions that return properties w/ obj
+	    return reduce(flip(call), obj, map(prop, stsplit('.')));
+	}
+
+	function cloneObj(obj) {
+	    return converge(zipObj, [keys, converge(chain, [compose(apply(flip(prop)), Array), keys])])(obj);
+	}
+	/**
+	 * @method
+	 * @desc merge two objects, overwriting the values of the first with the second object.
+	 * @param a {Object} - first object
+	 * @param b {Object} - second object that will overwrite the first object's values
+	 */
+	function deepMerge(A, B) {
+	    // isObj :: Object -> Bool
+	    // return true if argument is object literal (not Array)
+	    var isObj = compose(equals("[object Object]"), call, bind(Object.prototype.toString)),
+
+	    // allObj :: [Object] -> (String -> Bool)
+	    // returns true if both are objects
+	    allObj = compose(all(isObj), Array),
+
+	    // isDefined :: a -> Bool
+	    // returns true if value is not undefined
+	    isDefined = compose(not, equals(undefined)),
+
+	    // getValues :: Objects* -> [(String -> a)]
+	    // returns an array of functions that take a key
+	    // and return the value of its respective object
+	    getValues = compose(chain(flip(prop)), Array),
+
+	    // firstDefined :: a* -> a
+	    // returns the first defined element in the list
+	    firstDefined = compose(head, filter(isDefined), Array),
+
+	    // areObj :: Object* -> (String -> Bool)
+	    // returns a function that takes a key, and uses the key on
+	    // all objects to check wether they are objects (allObj)
+	    areObj = compose(converge(allObj), getValues),
+
+	    // stack :: Object -> Object -> (String -> a)
+	    // yields a function that takes a key and will return one of the two object properties
+	    // returns the first object's value if it's there, else the second obj's values is used.
+	    stack = compose(converge(firstDefined), getValues),
+
+	    // stackMerge :: Object -> Object -> Object
+	    // shallow merge '_a' into '_b' to create the new 'a'
+	    // this preserves '_a' properties absent in '_b'
+	    stackMerge = apply(flip(merge)),
+
+	    // second_arg :: [a, b] -> [b]
+	    // takes a list with at least two items,
+	    // returns the second one
+	    second_arg = compose(head, tail),
+
+
+	    // cemetery
+	    // areObj = function(a, b){ return function(k){ return isObj(prop(k, a)) && isObj(prop(k, b)) }; },
+	    // stack = function(a, b){ return function(k){ return prop(k, a) !== undefined ? prop(k, a) : prop(k, b) }; },
+	    // recurse = function(k){
+	    // use closures to get values
+	    //  const _a = prop(k, a),
+	    //  _b = prop(k, b);
+	    //  return merger( merge(_b, _a), _b );
+	    // },
+
+	    // recursive merge
+	    // merger :: Object -> Object -> Object
+	    merger = function merger(a, b) {
+	        // use first object keys
+	        var keys = keys(a),
+
+	        // values :: String -> [a]
+	        // given a key, return a list of values
+	        // from closure objects (a & b)
+	        values = flip(pluck)([a, b]),
+
+	        // recurse :: String -> Object
+	        // use currunt values to call merger,
+	        // stackMerge the first argument to preserve missing properties
+	        recurse = compose(converge(merger, [stackMerge, second_arg]), values),
+
+
+	        // get new values or recurse
+	        // -----------------------------------------------------------------------
+	        // if both keys are objects then recurse
+	        // else take 'b' values with 'a' values that are not present in 'b'
+	        new_values = map(ifElse(areObj(a, b), recurse, stack(b, a)), keys),
+
+	        // create new object from key/value array
+	        c = fromPairs(zip(keys, new_values));
+
+	        // shallow merge of 'c' into 'b' this preserves
+	        // properties in 'b' not present in 'c'
+	        return merge(b, c);
+	    };
+
+	    return merger(A, B);
+	}
+	/**
+	 * @method
+	 * @desc
+	 * @param
+	 */
+	function prefixObj(str, obj) {
+	    return mapObj(concat(str), obj);
+	}
+	/**
+	 * @method
+	 * @desc
+	 * @param
+	 */
+	function prefixPath(str, obj) {
+	    return mapObj(_path2.default.resolve, prefixObj(str, obj));
+	}
+
+	function sink(list, order) {
+	    var float = function float(ls, k) {
+	        var isMatch = compose(equals(k), head, last, Array);
+	        return reduce(ifElse(isMatch, flip(append), flip(prepend)), [], ls);
+	    };
+	    return reduce(float, list, reverse(order));
+	}
+
+	function reorderPairs1(list, order) {
+	    var float = function float(ls, k) {
+	        var isMatch = compose(equals(k), head, last, Array);
+	        return reduce(ifElse(isMatch, flip(prepend), flip(append)), [], ls);
+	    };
+	    return reduce(float, list, reverse(order));
+	}
+
+	function reorderPairs2(list, order) {
+	    var float = function float(ls, k) {
+	        var newlist = [],
+	            isMatch = compose(equals(k), head),
+	            spliceList = compose(flip(list.splice.bind(ls))(1), flip(indexOf)(ls)),
+	            pushNew = newlist.push.bind(newlist);
+
+	        map(ifElse(isMatch, compose(pushNew, head, spliceList), identity), clone(ls));
+
+	        return concat(newlist, ls);
+	    };
+
+	    return reduce(float, list, reverse(order));
+	}
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	//  Ramda v0.20.1
@@ -9207,7 +9508,422 @@
 
 
 /***/ },
-/* 4 */
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {// Copyright Joyent, Inc. and other Node contributors.
+	//
+	// Permission is hereby granted, free of charge, to any person obtaining a
+	// copy of this software and associated documentation files (the
+	// "Software"), to deal in the Software without restriction, including
+	// without limitation the rights to use, copy, modify, merge, publish,
+	// distribute, sublicense, and/or sell copies of the Software, and to permit
+	// persons to whom the Software is furnished to do so, subject to the
+	// following conditions:
+	//
+	// The above copyright notice and this permission notice shall be included
+	// in all copies or substantial portions of the Software.
+	//
+	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+	// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+	// resolves . and .. elements in a path array with directory names there
+	// must be no slashes, empty elements, or device names (c:\) in the array
+	// (so also no leading and trailing slashes - it does not distinguish
+	// relative and absolute paths)
+	function normalizeArray(parts, allowAboveRoot) {
+	  // if the path tries to go above the root, `up` ends up > 0
+	  var up = 0;
+	  for (var i = parts.length - 1; i >= 0; i--) {
+	    var last = parts[i];
+	    if (last === '.') {
+	      parts.splice(i, 1);
+	    } else if (last === '..') {
+	      parts.splice(i, 1);
+	      up++;
+	    } else if (up) {
+	      parts.splice(i, 1);
+	      up--;
+	    }
+	  }
+
+	  // if the path is allowed to go above the root, restore leading ..s
+	  if (allowAboveRoot) {
+	    for (; up--; up) {
+	      parts.unshift('..');
+	    }
+	  }
+
+	  return parts;
+	}
+
+	// Split a filename into [root, dir, basename, ext], unix version
+	// 'root' is just a slash, or nothing.
+	var splitPathRe =
+	    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+	var splitPath = function(filename) {
+	  return splitPathRe.exec(filename).slice(1);
+	};
+
+	// path.resolve([from ...], to)
+	// posix version
+	exports.resolve = function() {
+	  var resolvedPath = '',
+	      resolvedAbsolute = false;
+
+	  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+	    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+	    // Skip empty and invalid entries
+	    if (typeof path !== 'string') {
+	      throw new TypeError('Arguments to path.resolve must be strings');
+	    } else if (!path) {
+	      continue;
+	    }
+
+	    resolvedPath = path + '/' + resolvedPath;
+	    resolvedAbsolute = path.charAt(0) === '/';
+	  }
+
+	  // At this point the path should be resolved to a full absolute path, but
+	  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+	  // Normalize the path
+	  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+	    return !!p;
+	  }), !resolvedAbsolute).join('/');
+
+	  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+	};
+
+	// path.normalize(path)
+	// posix version
+	exports.normalize = function(path) {
+	  var isAbsolute = exports.isAbsolute(path),
+	      trailingSlash = substr(path, -1) === '/';
+
+	  // Normalize the path
+	  path = normalizeArray(filter(path.split('/'), function(p) {
+	    return !!p;
+	  }), !isAbsolute).join('/');
+
+	  if (!path && !isAbsolute) {
+	    path = '.';
+	  }
+	  if (path && trailingSlash) {
+	    path += '/';
+	  }
+
+	  return (isAbsolute ? '/' : '') + path;
+	};
+
+	// posix version
+	exports.isAbsolute = function(path) {
+	  return path.charAt(0) === '/';
+	};
+
+	// posix version
+	exports.join = function() {
+	  var paths = Array.prototype.slice.call(arguments, 0);
+	  return exports.normalize(filter(paths, function(p, index) {
+	    if (typeof p !== 'string') {
+	      throw new TypeError('Arguments to path.join must be strings');
+	    }
+	    return p;
+	  }).join('/'));
+	};
+
+
+	// path.relative(from, to)
+	// posix version
+	exports.relative = function(from, to) {
+	  from = exports.resolve(from).substr(1);
+	  to = exports.resolve(to).substr(1);
+
+	  function trim(arr) {
+	    var start = 0;
+	    for (; start < arr.length; start++) {
+	      if (arr[start] !== '') break;
+	    }
+
+	    var end = arr.length - 1;
+	    for (; end >= 0; end--) {
+	      if (arr[end] !== '') break;
+	    }
+
+	    if (start > end) return [];
+	    return arr.slice(start, end - start + 1);
+	  }
+
+	  var fromParts = trim(from.split('/'));
+	  var toParts = trim(to.split('/'));
+
+	  var length = Math.min(fromParts.length, toParts.length);
+	  var samePartsLength = length;
+	  for (var i = 0; i < length; i++) {
+	    if (fromParts[i] !== toParts[i]) {
+	      samePartsLength = i;
+	      break;
+	    }
+	  }
+
+	  var outputParts = [];
+	  for (var i = samePartsLength; i < fromParts.length; i++) {
+	    outputParts.push('..');
+	  }
+
+	  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+	  return outputParts.join('/');
+	};
+
+	exports.sep = '/';
+	exports.delimiter = ':';
+
+	exports.dirname = function(path) {
+	  var result = splitPath(path),
+	      root = result[0],
+	      dir = result[1];
+
+	  if (!root && !dir) {
+	    // No dirname whatsoever
+	    return '.';
+	  }
+
+	  if (dir) {
+	    // It has a dirname, strip trailing slash
+	    dir = dir.substr(0, dir.length - 1);
+	  }
+
+	  return root + dir;
+	};
+
+
+	exports.basename = function(path, ext) {
+	  var f = splitPath(path)[2];
+	  // TODO: make this comparison case-insensitive on windows?
+	  if (ext && f.substr(-1 * ext.length) === ext) {
+	    f = f.substr(0, f.length - ext.length);
+	  }
+	  return f;
+	};
+
+
+	exports.extname = function(path) {
+	  return splitPath(path)[3];
+	};
+
+	function filter (xs, f) {
+	    if (xs.filter) return xs.filter(f);
+	    var res = [];
+	    for (var i = 0; i < xs.length; i++) {
+	        if (f(xs[i], i, xs)) res.push(xs[i]);
+	    }
+	    return res;
+	}
+
+	// String.prototype.substr - negative index don't work in IE8
+	var substr = 'ab'.substr(-1) === 'b'
+	    ? function (str, start, len) { return str.substr(start, len) }
+	    : function (str, start, len) {
+	        if (start < 0) start = str.length + start;
+	        return str.substr(start, len);
+	    }
+	;
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	// shim for using process in browser
+
+	var process = module.exports = {};
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+
+	function cleanUpNextTick() {
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
+	}
+
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = setTimeout(cleanUpNextTick);
+	    draining = true;
+
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    clearTimeout(timeout);
+	}
+
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        setTimeout(drainQueue, 0);
+	    }
+	};
+
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+
+	function noop() {}
+
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _ramda = __webpack_require__(4);
+
+	var _ramda2 = _interopRequireDefault(_ramda);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var State = function State(state, cyto) {
+	    _classCallCheck(this, State);
+
+	    var s = this;
+	    s.meta = cyto;
+	    _ramda2.default.mapObjIndexed(function (val, key, obj) {
+	        s[key] = val;
+	    }, state);
+	};
+
+	exports.default = State;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Cell = function () {
+	    function Cell(dna) {
+	        _classCallCheck(this, Cell);
+
+	        if (dna && checkWith(['type', 'proc', 'meta'], dna)) {
+	            this.type = dna.type;
+	            this.proc = dna.proc;
+	            this.meta = dna.meta;
+	        } else {
+	            throw Error('Bad Cell formation');
+	        }
+	    }
+
+	    _createClass(Cell, [{
+	        key: 'of',
+	        value: function of(dna) {
+	            return new Cell(dna);
+	        }
+	    }, {
+	        key: 'map',
+	        value: function map(transform) {
+	            return this.of(transform(this));
+	        }
+	    }, {
+	        key: 'reduce',
+	        value: function reduce(transform, monoid) {
+	            return transform(monoid, this);
+	        }
+	    }, {
+	        key: 'empty',
+	        value: function empty() {
+	            return {
+	                type: {},
+	                proc: {}
+	            };
+	        }
+	    }]);
+
+	    return Cell;
+	}();
+
+	exports.default = Cell;
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -9215,11 +9931,8 @@
 	Object.defineProperty(exports, "__esModule", {
 	      value: true
 	});
-	exports.default = Colony;
 
-	var _ramda = __webpack_require__(3);
-
-	var _ramda2 = _interopRequireDefault(_ramda);
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _cyto = __webpack_require__(2);
 
@@ -9227,104 +9940,104 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var checkLength = _ramda2.default.compose(_ramda2.default.filter(_ramda2.default.identity), _ramda2.default.map(_ramda2.default.is(_cyto2.default))),
-	    validLength = _ramda2.default.ifElse(_ramda2.default.is(Array), _ramda2.default.compose(_ramda2.default.length, checkLength), _ramda2.default.always(0)),
-	    validColony = _ramda2.default.converge(_ramda2.default.equals, [_ramda2.default.length, validLength]);
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	function Colony(cytos) {
-	      if (!validColony(cytos)) throw Error('Bad Colony formation.');
+	var Colony = function () {
+	      _createClass(Colony, [{
+	            key: 'of',
+	            value: function of(cytos) {
+	                  return new Colony(cytos);
+	            }
+	      }, {
+	            key: 'init',
+	            value: function init(colony) {
+	                  this.value = colony;
+	            }
+	      }, {
+	            key: 'bindMethod',
+	            value: function bindMethod(method) {
+	                  return this[method].bind(this);
+	            }
+	      }]);
 
-	      this.value = cytos;
-	}
+	      function Colony(colony) {
+	            _classCallCheck(this, Colony);
 
-	Colony.prototype.empty = function () {};
+	            this.focus = flip(curry(_cyto2.default.prototype.focus.bind(_cyto2.default.prototype)))(this);
+	            var bindIf = compose(apply(ifElse), map(this.bindMethod.bind(this)));
+	            return bindIf(['maybe', 'init', 'halt'])(colony);
+	      }
 
-	Colony.prototype.getCytos = function () {
-	      return this.value;
-	};
+	      _createClass(Colony, [{
+	            key: 'maybe',
+	            value: function maybe(colony) {
+	                  var isCyto = compose(equals('Cyto'), prop('name'), prop('constructor')),
+	                      checkLength = compose(filter(identity), map(isCyto)),
+	                      validLength = ifElse(is(Array), compose(_length, checkLength), always(0)),
+	                      validColony = converge(equals, [_length, validLength]);
 
-	Colony.prototype.of = function (cytos) {
-	      return new Colony(cytos);
-	};
+	                  return colony && validColony(colony);
+	            }
+	      }, {
+	            key: 'empty',
+	            value: function empty() {
+	                  return this.of([_cyto2.default.empty()]);
+	            }
+	      }, {
+	            key: 'getCytos',
+	            value: function getCytos() {
+	                  return this.value;
+	            }
+	      }, {
+	            key: 'concat',
+	            value: function concat(colony) {
+	                  return this.value.concat(colony);
+	            }
+	      }, {
+	            key: 'reduce',
+	            value: function (_reduce) {
+	                  function reduce(_x, _x2) {
+	                        return _reduce.apply(this, arguments);
+	                  }
 
-	Colony.prototype.concat = function (colony) {
-	      return this.value.concat(colony);
-	};
+	                  reduce.toString = function () {
+	                        return _reduce.toString();
+	                  };
 
-	Colony.prototype.reduce = function (transform, monoid) {
-	      return _ramda2.default.reduce(_ramda2.default.reduce(transform), monoid, this.value);
-	};
+	                  return reduce;
+	            }(function (transform, monoid) {
+	                  return reduce(reduce(transform), monoid, this.value);
+	            })
+	      }, {
+	            key: 'map',
+	            value: function (_map) {
+	                  function map(_x3) {
+	                        return _map.apply(this, arguments);
+	                  }
 
-	Colony.prototype.map = function (transform) {
-	      return this.of(_ramda2.default.map(transform, this.value));
-	};
+	                  map.toString = function () {
+	                        return _map.toString();
+	                  };
+
+	                  return map;
+	            }(function (transform) {
+	                  return this.of(map(transform, this.value));
+	            })
+	      }, {
+	            key: 'halt',
+	            value: function halt(colony) {
+	                  console.log(colony);
+	                  throw Error('Bad Colony formation.');
+	            }
+	      }]);
+
+	      return Colony;
+	}();
+
+	exports.default = Colony;
 
 /***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = State;
-
-	var _ramda = __webpack_require__(3);
-
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function State(state, cyto) {
-		var s = this;
-		s.meta = cyto;
-		_ramda2.default.mapObjIndexed(function (val, key, obj) {
-			s[key] = val;
-		}, state);
-	}
-
-/***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-	exports.default = Cell;
-
-	var _ramda = __webpack_require__(3);
-
-	var _ramda2 = _interopRequireDefault(_ramda);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var hasProp = _ramda2.default.compose(_ramda2.default.converge(_ramda2.default.all(_ramda2.default.identity)), _ramda2.default.map(_ramda2.default.has)),
-	    validCell = hasProp(['type', 'maps']);
-
-	function Cell(dna) {
-		if (!validCell(dna)) throw Error('Bad Cell formation');
-
-		this.type = dna.type;
-		this.maps = dna.maps;
-	};
-
-	Cell.prototype.of = function (dna) {
-		return new Cell(dna);
-	};
-
-	Cell.prototype.map = function (transform) {
-		return this.of(transform(this));
-	};
-
-	Cell.prototype.reduce = function (transform, monoid) {
-		return transform(monoid, this);
-	};
-
-/***/ },
-/* 7 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {(function() {
@@ -12710,7 +13423,7 @@
 	  return withDesc(new Bacon.Desc(this, "zip", [other]), Bacon.zipWith([this, other], f || Array));
 	};
 
-	if ("function" !== "undefined" && __webpack_require__(9) !== null && __webpack_require__(10) != null) {
+	if ("function" !== "undefined" && __webpack_require__(12) !== null && __webpack_require__(13) != null) {
 	  !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 	    return Bacon;
 	  }.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
@@ -12725,10 +13438,10 @@
 	  }
 	}).call(this);
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(8)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(11)(module)))
 
 /***/ },
-/* 8 */
+/* 11 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -12744,110 +13457,19 @@
 
 
 /***/ },
-/* 9 */
+/* 12 */
 /***/ function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
 
 /***/ },
-/* 10 */
+/* 13 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(__webpack_amd_options__) {module.exports = __webpack_amd_options__;
 
 	/* WEBPACK VAR INJECTION */}.call(exports, {}))
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _core = __webpack_require__(12);
-
-	var _core2 = _interopRequireDefault(_core);
-
-	var _etc = __webpack_require__(1);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	exports.default = new _etc.Colony([_core2.default]);
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _etc = __webpack_require__(1);
-
-	var _core = __webpack_require__(13);
-
-	var _core2 = _interopRequireDefault(_core);
-
-	var _view = __webpack_require__(14);
-
-	var _view2 = _interopRequireDefault(_view);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var app = {
-		state: {
-			ui: _etc.R.reduce(function (arr, cellorState) {
-				if (cellorState instanceof _etc.State) arr.push(cellorState);
-
-				return arr;
-			}, [], _view2.default)
-		},
-		input: _core2.default,
-		output: _view2.default
-	};
-
-	exports.default = new _etc.Cyto(app);
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _etc = __webpack_require__(1);
-
-	var props = {
-		type: {
-			'firstname': ['textinput'],
-			'lastname': ['textinput']
-		},
-		maps: {
-			firstname: function firstname(action) {
-				return {
-					type: 'render'
-				};
-			},
-
-			lastname: function lastname(action) {
-
-				return {
-					type: 'render'
-				};
-			}
-		}
-	};
-
-	exports.default = new _etc.Cell(props);
 
 /***/ },
 /* 14 */
@@ -12859,7 +13481,117 @@
 	  value: true
 	});
 
-	var _core = __webpack_require__(15);
+	var _UserEvent = __webpack_require__(15);
+
+	Object.defineProperty(exports, 'USER_EVENT', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_UserEvent).default;
+	  }
+	});
+
+	var _UIEvent = __webpack_require__(16);
+
+	Object.defineProperty(exports, 'UI_EVENT', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_UIEvent).default;
+	  }
+	});
+
+	var _Context = __webpack_require__(17);
+
+	Object.defineProperty(exports, 'CONTEXT', {
+	  enumerable: true,
+	  get: function get() {
+	    return _interopRequireDefault(_Context).default;
+	  }
+	});
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var VOID = exports.VOID = function VOID() {
+	  _classCallCheck(this, VOID);
+	};
+	//blahblah
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _utils = __webpack_require__(3);
+
+	var _utils2 = _interopRequireDefault(_utils);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var USER_EVENT = function USER_EVENT(props) {
+	    _classCallCheck(this, USER_EVENT);
+
+	    return map(function (prop) {
+	        this[prop[0]] = prop[1];
+	    }.bind(this), toPairs(props));
+	};
+
+	exports.default = USER_EVENT;
+
+/***/ },
+/* 16 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var UI_EVENT = function UI_EVENT() {
+	    _classCallCheck(this, UI_EVENT);
+	};
+
+	exports.default = UI_EVENT;
+
+/***/ },
+/* 17 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var CONTEXT = function CONTEXT() {
+	    _classCallCheck(this, CONTEXT);
+	};
+
+	exports.default = CONTEXT;
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _core = __webpack_require__(19);
 
 	var _core2 = _interopRequireDefault(_core);
 
@@ -12870,7 +13602,7 @@
 	exports.default = new _etc.Colony([_core2.default]);
 
 /***/ },
-/* 15 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12881,40 +13613,141 @@
 
 	var _etc = __webpack_require__(1);
 
-	var _textfield = __webpack_require__(16);
+	var _core = __webpack_require__(20);
+
+	var _core2 = _interopRequireDefault(_core);
+
+	var _view = __webpack_require__(21);
+
+	var _view2 = _interopRequireDefault(_view);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = new _etc.Cyto({
+		state: {
+			name: 'app'
+		},
+		input: _core2.default,
+		output: _view2.default
+	});
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _etc = __webpack_require__(1);
+
+	exports.default = new _etc.Cell({
+		meta: {
+			input: _etc.DATA.STATE,
+			output: _etc.DATA.STATE
+		},
+		type: {
+			'firstname': ['textinput'],
+			'lastname': ['textinput']
+		},
+		proc: {
+			firstname: function firstname(action) {
+				return {
+					type: 'render'
+				};
+			},
+			lastname: function lastname(action) {
+
+				return {
+					type: 'render'
+				};
+			}
+		}
+	});
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _core = __webpack_require__(22);
+
+	var _core2 = _interopRequireDefault(_core);
+
+	var _core3 = __webpack_require__(43);
+
+	var _core4 = _interopRequireDefault(_core3);
+
+	var _etc = __webpack_require__(1);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = new _etc.Colony([_core2.default, _core4.default]);
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _etc = __webpack_require__(1);
+
+	var _textfield = __webpack_require__(23);
 
 	var _textfield2 = _interopRequireDefault(_textfield);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var textfield = {
+	exports.default = new _etc.Cyto({
 		state: {
-			//auxiliary map for picking up which elements will bind to wich events
-			maps: {
-				textfield: ['keyup', 'mouseup']
-			},
-			secret: 'blah'
+			name: 'textfield'
 		},
 		input: new _etc.Cell({
-			type: {
-				'textinput': ['keyup', 'mouseup']
+			meta: {
+				input: _etc.DATA.UI_EVENT,
+				output: _etc.DATA.STATE
 			},
-			maps: {
-				textinput: function textinput(event) {
+			type: {
+				'textfield': ['keyup', 'mouseup']
+			},
+			proc: {
+				textfield: function textfield(event) {
 
 					console.log(event);
 					return {
-						type: 'textinput',
+						type: 'textfield',
 						obj: event
 					};
 				}
 			}
 		}),
 		output: new _etc.Cell({
+			meta: {
+				input: _etc.DATA.STATE,
+				output: _etc.DATA.OUTPUT
+			},
 			type: {
+				//handler : ['type1', 'type2']
 				'render': ['render']
 			},
-			maps: {
+			proc: {
+				init: function init() {
+					return {
+						type: 'html',
+						html: (0, _textfield2.default)({})
+					};
+				},
 				render: function render(state) {
 					return {
 						type: 'html',
@@ -12923,17 +13756,13 @@
 				}
 			}
 		})
-	},
-	    main = document.getElementsByTagName('main')[0];
-
-	main.innerHTML = main.HTML + (0, _textfield2.default)({});
-	exports.default = new _etc.Cyto(textfield);
+	});
 
 /***/ },
-/* 16 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Handlebars = __webpack_require__(17);
+	var Handlebars = __webpack_require__(24);
 	function __default(obj) { return obj && (obj.__esModule ? obj["default"] : obj); }
 	module.exports = (Handlebars["default"] || Handlebars).template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
 	    var helper;
@@ -12944,16 +13773,16 @@
 	},"useData":true});
 
 /***/ },
-/* 17 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Create a simple path alias to allow browserify to resolve
 	// the runtime on a supported path.
-	module.exports = __webpack_require__(18)['default'];
+	module.exports = __webpack_require__(25)['default'];
 
 
 /***/ },
-/* 18 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -12967,30 +13796,30 @@
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-	var _handlebarsBase = __webpack_require__(19);
+	var _handlebarsBase = __webpack_require__(26);
 
 	var base = _interopRequireWildcard(_handlebarsBase);
 
 	// Each of these augment the Handlebars object. No need to setup here.
 	// (This is done to easily share code between commonjs and browse envs)
 
-	var _handlebarsSafeString = __webpack_require__(33);
+	var _handlebarsSafeString = __webpack_require__(40);
 
 	var _handlebarsSafeString2 = _interopRequireDefault(_handlebarsSafeString);
 
-	var _handlebarsException = __webpack_require__(21);
+	var _handlebarsException = __webpack_require__(28);
 
 	var _handlebarsException2 = _interopRequireDefault(_handlebarsException);
 
-	var _handlebarsUtils = __webpack_require__(20);
+	var _handlebarsUtils = __webpack_require__(27);
 
 	var Utils = _interopRequireWildcard(_handlebarsUtils);
 
-	var _handlebarsRuntime = __webpack_require__(34);
+	var _handlebarsRuntime = __webpack_require__(41);
 
 	var runtime = _interopRequireWildcard(_handlebarsRuntime);
 
-	var _handlebarsNoConflict = __webpack_require__(35);
+	var _handlebarsNoConflict = __webpack_require__(42);
 
 	var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
 
@@ -13025,7 +13854,7 @@
 
 
 /***/ },
-/* 19 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13036,17 +13865,17 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
-	var _exception = __webpack_require__(21);
+	var _exception = __webpack_require__(28);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
-	var _helpers = __webpack_require__(22);
+	var _helpers = __webpack_require__(29);
 
-	var _decorators = __webpack_require__(30);
+	var _decorators = __webpack_require__(37);
 
-	var _logger = __webpack_require__(32);
+	var _logger = __webpack_require__(39);
 
 	var _logger2 = _interopRequireDefault(_logger);
 
@@ -13135,7 +13964,7 @@
 
 
 /***/ },
-/* 20 */
+/* 27 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13265,7 +14094,7 @@
 
 
 /***/ },
-/* 21 */
+/* 28 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13311,7 +14140,7 @@
 
 
 /***/ },
-/* 22 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13322,31 +14151,31 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _helpersBlockHelperMissing = __webpack_require__(23);
+	var _helpersBlockHelperMissing = __webpack_require__(30);
 
 	var _helpersBlockHelperMissing2 = _interopRequireDefault(_helpersBlockHelperMissing);
 
-	var _helpersEach = __webpack_require__(24);
+	var _helpersEach = __webpack_require__(31);
 
 	var _helpersEach2 = _interopRequireDefault(_helpersEach);
 
-	var _helpersHelperMissing = __webpack_require__(25);
+	var _helpersHelperMissing = __webpack_require__(32);
 
 	var _helpersHelperMissing2 = _interopRequireDefault(_helpersHelperMissing);
 
-	var _helpersIf = __webpack_require__(26);
+	var _helpersIf = __webpack_require__(33);
 
 	var _helpersIf2 = _interopRequireDefault(_helpersIf);
 
-	var _helpersLog = __webpack_require__(27);
+	var _helpersLog = __webpack_require__(34);
 
 	var _helpersLog2 = _interopRequireDefault(_helpersLog);
 
-	var _helpersLookup = __webpack_require__(28);
+	var _helpersLookup = __webpack_require__(35);
 
 	var _helpersLookup2 = _interopRequireDefault(_helpersLookup);
 
-	var _helpersWith = __webpack_require__(29);
+	var _helpersWith = __webpack_require__(36);
 
 	var _helpersWith2 = _interopRequireDefault(_helpersWith);
 
@@ -13363,14 +14192,14 @@
 
 
 /***/ },
-/* 23 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('blockHelperMissing', function (context, options) {
@@ -13408,7 +14237,7 @@
 
 
 /***/ },
-/* 24 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13418,9 +14247,9 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
-	var _exception = __webpack_require__(21);
+	var _exception = __webpack_require__(28);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
@@ -13508,7 +14337,7 @@
 
 
 /***/ },
-/* 25 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13518,7 +14347,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _exception = __webpack_require__(21);
+	var _exception = __webpack_require__(28);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
@@ -13539,14 +14368,14 @@
 
 
 /***/ },
-/* 26 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('if', function (conditional, options) {
@@ -13574,7 +14403,7 @@
 
 
 /***/ },
-/* 27 */
+/* 34 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13606,7 +14435,7 @@
 
 
 /***/ },
-/* 28 */
+/* 35 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -13624,14 +14453,14 @@
 
 
 /***/ },
-/* 29 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	exports['default'] = function (instance) {
 	  instance.registerHelper('with', function (context, options) {
@@ -13663,7 +14492,7 @@
 
 
 /***/ },
-/* 30 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13674,7 +14503,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var _decoratorsInline = __webpack_require__(31);
+	var _decoratorsInline = __webpack_require__(38);
 
 	var _decoratorsInline2 = _interopRequireDefault(_decoratorsInline);
 
@@ -13685,14 +14514,14 @@
 
 
 /***/ },
-/* 31 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	exports['default'] = function (instance) {
 	  instance.registerDecorator('inline', function (fn, props, container, options) {
@@ -13720,14 +14549,14 @@
 
 
 /***/ },
-/* 32 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	var logger = {
 	  methodMap: ['debug', 'info', 'warn', 'error'],
@@ -13773,7 +14602,7 @@
 
 
 /***/ },
-/* 33 */
+/* 40 */
 /***/ function(module, exports) {
 
 	// Build out our basic SafeString type
@@ -13794,7 +14623,7 @@
 
 
 /***/ },
-/* 34 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -13814,15 +14643,15 @@
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 
-	var _utils = __webpack_require__(20);
+	var _utils = __webpack_require__(27);
 
 	var Utils = _interopRequireWildcard(_utils);
 
-	var _exception = __webpack_require__(21);
+	var _exception = __webpack_require__(28);
 
 	var _exception2 = _interopRequireDefault(_exception);
 
-	var _base = __webpack_require__(19);
+	var _base = __webpack_require__(26);
 
 	function checkRevision(compilerInfo) {
 	  var compilerRevision = compilerInfo && compilerInfo[0] || 1,
@@ -14092,7 +14921,7 @@
 
 
 /***/ },
-/* 35 */
+/* 42 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/* global window */
@@ -14119,7 +14948,45 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 36 */
+/* 43 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _etc = __webpack_require__(1);
+
+	exports.default = new _etc.Cyto({
+	    state: {
+	        name: 'button'
+	    },
+	    input: new _etc.Cell({
+	        meta: {
+	            input: _etc.DATA.UI_EVENT,
+	            output: _etc.DATA.STATE
+	        },
+	        type: {
+	            '_button': ['mousedown']
+	        },
+	        proc: {
+	            '_button': function _button() {}
+	        }
+	    }),
+	    output: new _etc.Cell({
+	        meta: {
+	            input: _etc.DATA.STATE,
+	            output: _etc.DATA.OUTPUT
+	        },
+	        type: {},
+	        proc: {}
+	    })
+	});
+
+/***/ },
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14128,7 +14995,7 @@
 	  value: true
 	});
 
-	var _core = __webpack_require__(37);
+	var _core = __webpack_require__(45);
 
 	var _core2 = _interopRequireDefault(_core);
 
@@ -14139,7 +15006,7 @@
 	exports.default = new _etc.Colony([_core2.default]);
 
 /***/ },
-/* 37 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14150,30 +15017,33 @@
 
 	var _etc = __webpack_require__(1);
 
-	var copyFrom = _etc.R.converge(_etc.R.compose(_etc.R.call(_etc.R.fromPairs), _etc.R.zip), [_etc.R.compose(_etc.R.last, Array), _etc.R.flip(_etc.R.props)]);
-
 	var input = {
+		meta: {
+			input: _etc.DATA.USER_EVENT,
+			output: _etc.DATA.UI_EVENT
+		},
 		type: {
 			'handler': ['keyup'],
 			'mouseHandler': ['mouseup']
 		},
-		maps: {
+		proc: {
 			handler: function handler(event) {
-
-				var eventObject = copyFrom(event, ['type', 'key', 'keyCode']);
-
-				return eventObject;
+				return pick(['type', 'key', 'keyCode'], event);
 			},
 			mouseHandler: function mouseHandler(event) {
-				return copyFrom(event, ['type', 'x', 'y']);
+				return pick(['type', 'x', 'y'], event);
 			}
 		}
 	},
 	    output = {
+		meta: {
+			input: _etc.DATA.CONTEXT,
+			output: _etc.DATA.VOID
+		},
 		type: {
 			'dom': ['html']
 		},
-		maps: {
+		proc: {
 			canvas: function canvas(context) {},
 
 			dom: function dom(html) {
@@ -14181,12 +15051,14 @@
 				var main = document.getElementsByTagName('main')[0];
 
 				main.innerHTML = html;
+				// main.HTML
 			}
 		}
 	},
 	    dom = {
 		state: {
-			dom: document
+			dom: document,
+			name: 'dom'
 		},
 		input: new _etc.Cell(input),
 		output: new _etc.Cell(output)
@@ -14195,7 +15067,7 @@
 	exports.default = new _etc.Cyto(dom);
 
 /***/ },
-/* 38 */
+/* 46 */
 /***/ function(module, exports) {
 
 	'use strict';

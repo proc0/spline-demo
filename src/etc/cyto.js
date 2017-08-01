@@ -1,151 +1,178 @@
 'use strict';
 
-import R from '../../node_modules/ramda/dist/ramda';
-import Colony from './colony';
+import { default } from './utils';
 import State from './state';
 import Cell from './cell';
+import Colony from './colony';
 
-	
-const handleError = function(seed){ 
-		console.log(seed); 
-		throw Error('Bad Cyto formation.'); 
-	},
+export default class Cyto {
 
-	validBranch = R.converge(R.or, [R.is(Colony), R.is(Cell)]),
-	checkBranch = R.compose(R.apply(R.compose), R.prepend(validBranch), R.of, R.prop),
-	
-	allPass = R.all(R.identity),
-	hasProp = R.compose(R.converge(allPass), R.map(R.has)),
-	isValid = R.converge(R.compose(allPass, Array), [checkBranch('input'), checkBranch('output')]),
-	checkCyto = R.and(hasProp(['input', 'state', 'output']), isValid),
-
-	validate = R.ifElse(checkCyto, R.identity, handleError);
-
-export default function Cyto(seed){
-	if(!seed) return this.empty();
-	else validate(seed);
-
-	this.state = new State(seed.state, this);
-	this.input = seed.input;
-	this.output = seed.output;
-};
-
-Cyto.prototype.of = function(seed){
-	return new Cyto(seed);
-}
-
-Cyto.prototype.focus = function(directions){
-	let head = undefined,
-	changeDir = function(dir){
-		if(dir === 'R')
-			head = this.goRight(head || this);
-		else if(dir === 'L')
-			head = this.goLeft(head || this);
-
-		return head;
-	}.bind(this);
-
-	for(var d in directions){
-		changeDir(directions[d])
+	DATA(){
+		return {
+			META : [
+				'state', 
+				'input', 
+				'output'
+			],	
+			BRANCHES :[
+				'Cell',
+				'Colony'
+			]
+		}
 	}
 
-	return head;
-}
-
-Cyto.prototype.goLeft = function(branch){
-
-	if(R.is(Colony, branch))
-		return R.map(R.prop('input'), branch.value);
-	else if(R.is(Cell, branch))
-		return branch;
-	else if(R.is(Array, branch))
-		return R.flatten(R.map(R.ifElse(R.is(Cyto), R.prop('input'), R.prop('value')), branch))
-	else if(R.is(Cyto, branch))
-		return branch.input
-}
-
-Cyto.prototype.goRight = function(branch){
-
-	if(R.is(Colony, branch))
-		return R.map(R.prop('output'), branch.value);
-	else if(R.is(Cell, branch))
-		return branch;
-	else if(R.is(Array, branch))
-		return R.flatten(R.map(R.ifElse(R.is(Cyto), R.prop('output'), R.prop('value')), branch))
-	else if(R.is(Cyto, branch))
-		return branch.output;
-}
-
-Cyto.prototype.empty = function(){
-	return this.of({
-		input : [],
-		state : {},
-		output : []
-	});
-}
-
-Cyto.prototype.map = function(transform){
-	return this.of({
-		input : R.map(transform, this.input),
-		output : R.map(transform, this.output),
-		state : transform(this.state)
-	});
-}
-
-Cyto.prototype.reduce = function(transform, monoid){
-	const newState = transform(monoid, this.state),
-		newInput = R.reduce(transform, newState, this.input),
-		newOutput = R.reduce(transform, newInput, this.output);
-
-	return newOutput;
-}
-
-Cyto.prototype.concat = function(cyto){
-	const newCyto = this.empty();
-
-	if(isCell(this.input) && isCell(cyto.input)){
-		this.input = R.merge(this.input, cyto.input);
-	} else if(isCell(this.input) && validColony(cyto.input)){
-		newCyto.input = this.input; 
-		this.input = cyto.input.concat(newCyto);
-	} else if(validColony(this.input) && isCell(cyto.input)){
-		newCyto.input = cyto.input;
-		this.input.concat(newCyto);
-	} else if(validColony(this.input) && validColony(cyto.input)){
-		this.input.concat(cyto.input);
+	of(seed){
+		return new Cyto(seed)
 	}
 
-	if(isCell(this.output) && isCell(cyto.output)){
-		this.output = R.merge(this.output, cyto.output);
-	} else if(isCell(this.output) && validColony(cyto.output)){
-		newCyto.output = this.output; 
-		this.output = cyto.output.concat(newCyto);
-	} else if(validColony(this.output) && isCell(cyto.output)){
-		newCyto.output = cyto.output;
-		this.output.concat(newCyto);
-	} else if(validColony(this.output) && validColony(cyto.output)){
-		this.output.concat(cyto.output);
+	init(_seed){
+		const seed = merge(_seed, {
+				state : new State(_seed.state, this)
+			})
+
+		map(function(phase){ 
+			this[phase] = seed[phase]
+		}.bind(this), this.DATA().META)
 	}
 
-	this.state = R.merge(this.state, cyto.state);
+	bindMethod(method){
+		return this[method].bind(this)
+	}
 
-	return this;
-}
+	constructor(seed) {
+		const bindIf = compose(apply(ifElse), map(this.bindMethod.bind(this)))
+		return bindIf(['maybe', 'init', 'halt'])(seed)
+	}
 
-Cyto.prototype.ap = function(functor){
-	// return R.map(R.flip(R.map)(this), functor);
-}
+	maybe(seed){
+		const _ = this.DATA(),
+			dataValid = checkWith(_.META),
 
-Cyto.prototype.traverse = function(f, of){
+			//a valid branch is either a colony or a cell
+			isBranch = converge(or, map(equals, _.BRANCHES)),
+			checkBranch = compose(isBranch, getProp('constructor.name')),
+			//exclude state from being a branch
+			branchesValid = checkWith(checkBranch, tail(_.META)),
+
+			isValid = and(branchesValid, dataValid)
+			
+		//lets put it all together
+		return seed && ifElse(isValid, identity, F)(seed)
+	}
+
+	empty(){
+		return this.of({
+			input : Cell.empty(),
+			state : State.empty(),
+			output : Cell.empty()
+		})
+	}
+
+	map(transform){
+		return this.of({
+			input : map(transform, this.input),
+			output : map(transform, this.output),
+			state : transform(this.state)
+		})
+	}
+
+	reduce(transform, monoid){
+		const newState = transform(monoid, this.state),
+			newInput = reduce(transform, newState, this.input),
+			newOutput = reduce(transform, newInput, this.output)
+
+		return newOutput
+	}
+
+	concat(cyto){
+		const newCyto = this.empty()
+
+		if(Cell.maybe(this.input) && Cell.maybe(cyto.input)){
+			this.input = merge(this.input, cyto.input)
+		} else if(Cell.maybe(this.input) && Colony.maybe(cyto.input)){
+			newCyto.input = this.input 
+			this.input = cyto.input.concat(newCyto)
+		} else if(Colony.maybe(this.input) && Cell.maybe(cyto.input)){
+			newCyto.input = cyto.input
+			this.input.concat(newCyto)
+		} else if(Colony.maybe(this.input) && Colony.maybe(cyto.input)){
+			this.input.concat(cyto.input)
+		}
+
+		if(Cell.maybe(this.output) && Cell.maybe(cyto.output)){
+			this.output = merge(this.output, cyto.output)
+		} else if(Cell.maybe(this.output) && Colony.maybe(cyto.output)){
+			newCyto.output = this.output 
+			this.output = cyto.output.concat(newCyto)
+		} else if(Colony.maybe(this.output) && Cell.maybe(cyto.output)){
+			newCyto.output = cyto.output
+			this.output.concat(newCyto)
+		} else if(Colony.maybe(this.output) && Colony.maybe(cyto.output)){
+			this.output.concat(cyto.output)
+		}
+
+		this.state = merge(this.state, cyto.state)
+
+		return this
+	}
+
+	ap(functor){
+		// return map(flip(map)(this), functor)
+	}
+
+	traverse(f, of){
 
 
-}
+	}
 
-Cyto.prototype.chain = function(f){
+	chain(f){
 
-}
+	}
 
-Cyto.prototype.equals = function(node){
+	equals(node){
 
 
+	}
+
+	focus(dir, node){
+		const directions = typeof dir === 'string' ? [dir] : dir,
+			destination = reduce(flip(this.selectNode.bind(this)), node || this, directions)
+		return destination
+	}
+
+	selectNode(direction, node){
+		//left is input, right is output		
+		const io = prop(direction, { 
+				'L': 'input',
+				'R': 'output'
+			}),
+			condition = (isType, move) => {
+				return ifElse(isType, move, identity)
+			},
+			applyCondition = compose(apply(condition), flatten, tail, Array),
+			//reducer which takes (node, condition) and returns a selection
+			reduceCondition = converge(call, [applyCondition, identity]),
+			//if cyto, selection is either input or output
+			selectCyto = prop(io),
+			//if colony, selection is the selection of its cytos
+			selectColony = compose(map(selectCyto), prop('value')),
+			//call this function with same direction
+			recurse = curry(this.selectNode.bind(this))(direction),
+			//... for each element in array, then flatten it 
+			//(since element Colonies return Arrays)
+			selectArray = compose(flatten, map(recurse)),
+			//condition order matters, check for Array first
+			//because when True, 'memo' gets passed on directly
+			conditions = [
+				[ is(Array), selectArray ],
+				[ is(Colony), selectColony ],
+				[ is(Cyto), selectCyto ]]
+
+		return reduce(reduceCondition, node, conditions)
+	}
+
+	halt(seed){ 
+		console.log(seed)
+		throw Error('Bad Cyto formation.')
+	}
 }

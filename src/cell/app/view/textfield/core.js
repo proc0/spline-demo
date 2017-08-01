@@ -1,45 +1,52 @@
 'use strict';
-import { Cyto, Cell } from '../../../../etc';
+import { Cyto, Cell, DATA } from '../../../../etc';
 import template from './textfield.hbs';
 
-var textfield = {
-		state : {
-			//auxiliary map for picking up which elements will bind to wich events
-			maps : {
-				textfield : ['keyup', 'mouseup'],
-			},
-			secret : 'blah'
-		},
-		input : new Cell({
-			type : {
-				'textinput' : ['keyup', 'mouseup']
-			},
-			maps :{
-				textinput : function(event){
-
-					console.log(event);
-					return {
-						type : 'textinput',
-						obj : event
-					};
-				}
-			}
-		}),
-		output : new Cell({
-			type : {
-				'render' : ['render'],
-			},
-			maps : {
-				render : function (state){
-					return {
-						type : 'html',
-						html : template({})
-					};
-				}
-			}
-		})
+export default new Cyto({
+	state : {
+		name : 'textfield'
 	},
-	main = document.getElementsByTagName('main')[0];
+	input : new Cell({
+		meta : {
+			input : DATA.UI_EVENT,
+			output: DATA.STATE
+		},
+		type : {
+			'textfield' : ['keyup', 'mouseup']
+		},
+		proc :{
+			textfield : function(event){
 
-main.innerHTML = main.HTML + template({});
-export default new Cyto(textfield);
+				console.log(event);
+				return {
+					type : 'textfield',
+					obj : event
+				};
+			}
+		}
+	}),
+	output : new Cell({
+		meta : {
+			input : DATA.STATE,
+			output: DATA.OUTPUT
+		},
+		type : {
+			//handler : ['type1', 'type2']
+			'render' : ['render'],
+		},
+		proc : {
+			init : function(){
+				return {
+					type : 'html',
+					html : template({})
+				};
+			},
+			render : function (state){
+				return {
+					type : 'html',
+					html : template({})
+				};
+			}
+		}
+	})
+})

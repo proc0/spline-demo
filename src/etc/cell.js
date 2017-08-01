@@ -1,26 +1,33 @@
 'use strict';
 
-import R from '../../node_modules/ramda/dist/ramda';
+export default class Cell{
 
-const hasProp = R.compose(R.converge(R.all(R.identity)), R.map(R.has)),
-      validCell = hasProp(['type','maps']);
+    constructor(dna){
+    	if(dna && checkWith(['type','proc', 'meta'], dna)){
+            this.type = dna.type;
+            this.proc = dna.proc;
+            this.meta = dna.meta;
+        } else {
+            throw Error('Bad Cell formation');
+        }
+    }
 
-export default function Cell(dna){
-	if(!validCell(dna))
-		throw Error('Bad Cell formation');
+    of(dna){
+          return new Cell(dna);
+    }
 
-	this.type = dna.type;
-	this.maps = dna.maps;
-};
+    map(transform){
+        return this.of(transform(this));
+    }
 
-Cell.prototype.of = function(dna){
-      return new Cell(dna);
-}
+    reduce(transform, monoid){
+        return transform(monoid, this);
+    }
 
-Cell.prototype.map = function(transform){
-	return this.of(transform(this));
-}
-
-Cell.prototype.reduce = function(transform, monoid){
-	return transform(monoid, this);
+    empty(){
+        return {
+            type: {},
+            proc: {}
+        }
+    }
 }
